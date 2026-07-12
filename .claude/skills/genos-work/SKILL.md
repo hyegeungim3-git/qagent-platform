@@ -25,11 +25,19 @@ description: genos-app(GenOS 멀티 도메인 AI 플랫폼) 작업 오케스트�
 
 실행 모드는 서브 에이전트(생성-검증 패턴)다: pack-author 산출 → genos-verifier 검증 → 실패 항목만 재작업. 이 환경에는 팀 도구가 없다.
 
+### 서브에이전트 호출 계약 (스폰 시점·입력·산출물 소비)
+
+- **pack-author 스폰 시점**: 도메인 팩 콘텐츠 작성/심화(신규 팩·시나리오·답변·XAI·알림·라우팅). 2개 이상 팩이면 병렬 스폰. 단일 필드 한 줄 수정은 메인이 직접(스폰 오버헤드 낭비).
+- **pack-author 입력 프롬프트에 반드시 담을 것**: ① 대상 팩 파일 경로 + 작업 범위(어떤 키/시나리오) ② **세계관 제약** — 기존 수치 단일 원장(grep해서 넘겨라: 예 "한빛 진동 임계치 3.5mm/s·RMS 4.2·3/20 하향"), 재사용할 문서번호 체계·페르소나 ③ 금칙어(타 도메인 조직명·KOGAS) ④ 참조 스키마 정본(해당 `CONTENT_DEFAULTS`·소비 지점). pack-author는 코어를 고치지 않으며, 필요하면 그 사실만 보고하고 멈춘다.
+- **genos-verifier 스폰 시점**: 변경 후 검수. 소규모면 스폰 없이 `genos-verify` 스킬(verify.mjs)만 직접 실행.
+- **genos-verifier 산출물 소비**: 결과는 `PASS`/`FAIL` + `fails[]`(도메인·항목·원시값). **FAIL이면 fails의 그 항목만** pack-author에 재작업 지시(전체 재생성 금지) → 재검증 통과 후에만 커밋. PASS라도 "새 기능이 동작하는가"는 커버 안 되니 변경 지점 수동 확인은 별도.
+
 ## Phase 2: 구현
 
 - 파일 수정은 Edit 도구만. PowerShell 치환은 한글 파일을 파괴한다.
 - 새 팩 필드를 만들면 같은 커밋에서 `docs/DOMAIN-PACK-GUIDE.md` 스키마를 갱신한다 (스키마 표류 방지).
 - 관리자 mocks.js에 새 상수를 추가하면 **export let·__REB_DEFAULTS·applyAdminDomain 3곳 등록** — 누락 시 조용히 무시된다.
+- **새 도메인 팩을 추가하면** `.claude/skills/genos-verify/scripts/verify.mjs`의 `DOMAINS` 배열에도 판정 기준(banned 금칙어·generalMarkers·hubMarkers·orchCards)을 **함께 등록** — 안 하면 새 도메인이 자동 검증에서 빠진다(등록 3곳과 같은 "조용한 누락" 계열).
 - 함정을 밟기 쉬운 작업(빌드·자동화·배포·주석) 전에 `references/pitfalls.md`를 읽는다 — 전부 실제 사고 이력이다.
 
 ## Phase 3: 검증 (완료 = 빌드 + 실행 증거)

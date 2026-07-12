@@ -1,5 +1,8 @@
 # agentContent 스키마 수집 (팩 작성용)
 
+> ⚠️ **정본은 코드다**(DECISIONS.md ADR-7). 이 문서는 각 에이전트 파일 상단 `CONTENT_DEFAULTS`의 스냅샷이다.
+> 어긋나면 `CONTENT_DEFAULTS`(및 실제 소비 지점)를 신뢰하고 이 문서를 즉시 갱신하라. 추측으로 키를 쓰지 말고 해당 파일을 먼저 읽어라.
+
 공통 규칙: 각 키는 통째 교체 계약. shape·항목 수 유지. 도메인 팩 파일의 `agentContent: { "<agent-id>": {...} }`에 기입.
 
 ## agent-translate (TranslateAgent.jsx)

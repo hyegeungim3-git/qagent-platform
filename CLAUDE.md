@@ -2,6 +2,12 @@
 
 > **이 문서는 모든 AI 모델(Fable 5, Opus, Sonnet 등)과 세션의 공통 진입점이다.**
 > 작업 시작 전 반드시 끝까지 읽고, 규모 있는 작업 후에는 이 문서의 "현재 상태"를 갱신하라.
+>
+> ## 🔑 처음 이어받는 모델이라면 (승계 온보딩)
+> Fable 5가 아니어도 같은 수준을 재현하도록 설계돼 있다. 순서대로:
+> **[docs/HANDOVER.md](docs/HANDOVER.md)**(온보딩 프로토콜 + 자격 게이트 6문 + 캘리브레이션) →
+> **[docs/DECISIONS.md](docs/DECISIONS.md)**(왜 지금 모습인가 — 불변식/ADR) → 이 문서 나머지.
+> 이 저장소의 모든 변경 작업은 **`genos-work` 스킬**이 진입점(표준 루프). 왜 이 체계인지: 품질은 모델이 아니라 체계에서 나온다(`~/.claude/guides/품질기준-마스터.md` §0).
 
 ## 1. 프로젝트 정체
 
@@ -102,6 +108,7 @@ src/
 | 2026-07-12 | 초기 구성 (에이전트 2 · 스킬 3 · verify.mjs) | 전체 | v2 동결·v3 개설과 함께 모델 무관 품질 체계 구축 |
 | 2026-07-12 | pitfalls §3에 탭 스로틀·업데이터 부수효과 항목 추가 | genos-work/references/pitfalls.md | P1 구현 중 실발견 2건 반영 |
 | 2026-07-12 | verify.mjs가 스캔 전 genos.uiPrefs 제거 | genos-verify/scripts/verify.mjs | 다크·영어 설정 잔재가 한국어 마커 판정 오염 방지 |
+| 2026-07-12 | 승계 체계 추가 (DECISIONS.md·HANDOVER.md·CLAUDE.md 온보딩 포인터) | docs/, CLAUDE.md | Fable 5 이후 모델이 이어받거나 재현해도 같은 수준 유지 — 설계 '왜'와 온보딩 절차 외재화 |
 
 ## 6. 다음 세션 표준 지시문 (사용자가 이 문구로 시작하면 그대로 수행)
 

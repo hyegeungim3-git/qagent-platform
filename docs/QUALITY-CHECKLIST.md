@@ -23,6 +23,7 @@
 ### B-1. 정적 검사
 
 - [ ] `src/domains/index.js`에 import + DOMAINS + DOMAIN_LIST 3곳 등록됨
+- [ ] **`.claude/skills/genos-verify/scripts/verify.mjs`의 `DOMAINS` 배열에 판정 기준(banned·generalMarkers·hubMarkers·orchCards) 등록됨** — 누락 시 새 도메인이 자동 검증에서 빠짐
 - [ ] 필수 12필드 전부 존재 (id/orgName/orgShort/platformTitle/brandColor/welcome/statusBadge/footerNote/userFeatures/user/workspaces/llmModels)
 - [ ] llmModels: [0]=Claude Fable 5(보안 게이트웨이) / 구축형+running ≥1 / blocked 클라우드 1
 - [ ] agentCatalog 키 10개가 고정 ID 목록과 일치 (오타는 조용히 무시됨)

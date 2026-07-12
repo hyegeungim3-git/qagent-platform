@@ -3,14 +3,19 @@
 > 대상 독자: 이 플랫폼을 새 도메인(제조·금융·의료·타 공공기관 등)으로 전환하려는 **모든 AI 모델/세션**.
 > 이 가이드대로 작성하면 모델에 관계없이 동일한 수준의 결과물이 나와야 한다.
 > 작성 후에는 반드시 [QUALITY-CHECKLIST.md](QUALITY-CHECKLIST.md)의 "도메인 전환 검수"를 실행한다.
+>
+> ⚠️ **스키마 정본은 이 문서가 아니라 코드다**(DECISIONS.md ADR-7). 이 문서는 코드의 스냅샷·안내다.
+> 필드 shape의 최종 계약은 각 에이전트 파일 상단 `CONTENT_DEFAULTS`·실제 소비 지점·`liveEngine.js` 주석.
+> 이 문서와 코드가 어긋나면 **코드를 신뢰하고 이 문서를 즉시 갱신**하라.
 
 ## 0. 작업 순서 (요약)
 
 1. `src/domains/_template.js`를 복사해 `src/domains/<도메인id>.js` 생성
 2. 아래 §2 스키마에 따라 전 필드 작성 (§3 콘텐츠 품질 기준 준수)
 3. `src/domains/index.js`에 import + `DOMAINS` + `DOMAIN_LIST` 등록
-4. `npx vite build` → 프리뷰에서 도메인 전환 → **검수 체크리스트 실행**
-5. 커밋 (한국어 메시지) → push → 배포 확인
+4. **`.claude/skills/genos-verify/scripts/verify.mjs`의 `DOMAINS` 배열에 판정 기준 등록** — banned(금칙어)·generalMarkers·hubMarkers·orchCards. 누락 시 새 도메인이 자동 검증에서 빠진다(index.js 등록과 나란히 반드시 함께).
+5. ASCII 경로 복사 빌드(EXIT 0) → 프리뷰에서 도메인 전환 → **검수 체크리스트 + verify.mjs 실행** (빌드 판정 규칙: [DECISIONS.md ADR-3](DECISIONS.md))
+6. 커밋 (한국어 메시지) → push → 배포 확인
 
 코어 파일(RootApp/UserApp/AgentHub/App)은 **수정하지 않는 것이 정상**이다.
 수정이 필요하다고 느껴지면 = 코어에 하드코딩이 남아 있다는 뜻 → 해당 문자열을 팩 필드+fallback 패턴으로 일반화하는 작업을 먼저 분리 커밋으로 수행하라.
