@@ -77,7 +77,7 @@ const OrchestrationScenario = ({ scenario, agents, user, onBack }) => {
   }, [finished]);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 via-indigo-50/20 to-slate-100 custom-scrollbar">
+    <div className="flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-slate-100 custom-scrollbar">
       <div className="max-w-3xl mx-auto px-8 py-6">
 
         {/* ── 헤더 ─────────────────────────────────────────── */}
@@ -86,13 +86,13 @@ const OrchestrationScenario = ({ scenario, agents, user, onBack }) => {
             className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors shadow-sm shrink-0">
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-sm shrink-0">
             <Workflow className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-[18px] font-black text-slate-900 tracking-tight truncate">{scenario.title}</h2>
-              <span className="text-[9px] px-2 py-0.5 bg-violet-100 text-violet-700 rounded-full font-black shrink-0">오케스트레이션</span>
+              <h2 className="text-[18px] font-bold text-slate-900 tracking-tight truncate">{scenario.title}</h2>
+              <span className="text-[9px] px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full font-semibold shrink-0">오케스트레이션</span>
             </div>
             <p className="text-[11px] text-slate-500 font-medium truncate">요청 1건 → 에이전트 {stages.length}개 자동 릴레이</p>
           </div>
@@ -263,11 +263,11 @@ const OrchestrationScenario = ({ scenario, agents, user, onBack }) => {
         {/* ── 최종 결과 ────────────────────────────────────── */}
         {finished && (
           <div className="mt-4">
-            <div className="rounded-2xl overflow-hidden border-2 border-emerald-200 shadow-md bg-white">
-              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 flex items-center gap-2.5">
+            <div className="rounded-2xl overflow-hidden border border-emerald-200 shadow-sm bg-white">
+              <div className="bg-emerald-600 px-4 py-3 flex items-center gap-2.5">
                 <Sparkles className="w-4 h-4 text-emerald-100 shrink-0" />
-                <span className="text-[13px] font-black text-white">오케스트레이션 완료 — 최종 산출물</span>
-                <span className="ml-auto text-[9px] px-2 py-0.5 bg-emerald-500/60 text-emerald-50 rounded-full font-black border border-emerald-400/40">
+                <span className="text-[13px] font-bold text-white">오케스트레이션 완료 — 최종 산출물</span>
+                <span className="ml-auto text-[9px] px-2 py-0.5 bg-white/15 text-emerald-50 rounded-full font-semibold">
                   에이전트 {stages.length}개 릴레이
                 </span>
               </div>

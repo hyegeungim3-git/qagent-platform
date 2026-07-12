@@ -227,7 +227,7 @@ const RightPanel = ({
                 <Sparkles className="w-3 h-3" /><span>AI 추천</span>
               </div>
               <div className={cn("p-3 rounded-xl border-2 mb-2",
-                isSecure ? "bg-indigo-900/20 border-indigo-800/40" : "bg-gradient-to-br from-indigo-50 to-violet-50 border-indigo-100")}>
+                isSecure ? "bg-indigo-900/20 border-indigo-800/40" : "bg-indigo-50/60 border-indigo-100")}>
                 <div className={cn("text-[13px] font-black mb-1", isSecure ? "text-indigo-300" : "text-indigo-800")}>
                   {domain.agentFeed?.recommendTitle || "표준지공시지가 조사 마감 12일 전"}
                 </div>
