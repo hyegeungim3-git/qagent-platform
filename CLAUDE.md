@@ -14,12 +14,11 @@
 
 | 역할 | 주소 | 저장소/참조 |
 |---|---|---|
-| **v3 개발 라인 (push 대상)** | https://hyegeungim3-git.github.io/reb-ai-platform-v2/ | origin = reb-ai-platform-v2 의 `main` |
-| **v2 최종 동결 (2026-07-12)** | 같은 저장소의 태그 `v2.0` · 브랜치 `v2` | 수정 금지 — 복원: `git checkout v2.0` |
+| **v3 개발 라인 (push 대상)** | https://hyegeungim3-git.github.io/reb-ai-platform-v3/ | **origin = reb-ai-platform-v3** 의 `main` |
+| **v2 최종 동결 (2026-07-12)** | https://hyegeungim3-git.github.io/reb-ai-platform-v2/ | remote명 `v2` — main이 태그 v2.0으로 복원됨. push 금지 |
 | v2.0 초기 스냅샷 (7/5 동결) | https://hyegeungim3-git.github.io/reb-ai-platform/ | remote명 snapshot |
 | v1.0 안정 버전 | https://hyegeungim3-git.github.io/genos-app/ | genos-app |
 
-- v3을 별도 저장소(reb-ai-platform-v3)로 분리하려면 사용자가 GitHub에서 저장소를 만들어야 함(자동 생성은 권한 정책상 불가) — 만들어지면 remote 추가·base 변경·Pages 활성화를 진행할 것.
 - `main` push 시 GitHub Actions로 자동 배포. 배포 확인: `gh run watch <id> --exit-status`
 - 실패한 런은 `rerun --failed` 금지(아티팩트 중복) — 새 런을 실행할 것.
 
