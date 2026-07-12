@@ -13,27 +13,34 @@ import puppeteer from "puppeteer-core";
 const BASE = process.argv[2] || "http://localhost:5173";
 const ONLY = process.argv[3] || null;
 
-// 도메인별 판정 기준 — 새 도메인 팩을 추가하면 여기에 항목을 추가하라
+// 도메인별 판정 기준 — 새 도메인 팩을 추가하면 여기에 항목을 추가하라 (index.js 등록과 나란히)
 const DOMAINS = [
   {
     id: "reb", label: "한국부동산원",
-    banned: ["KOGAS", "kogas", "한빛정밀", "한성시청", "HBP-", "HSC-"],
+    banned: ["KOGAS", "kogas", "한빛정밀", "한성시청", "HBP-", "HSC-", "새빛대학교병원", "SUH-"],
     generalMarkers: ["한국부동산원", "오늘의 업무 브리핑", "실거래 이상거래 탐지"],
     hubMarkers: ["공시지가 이의신청 서류 일괄 처리", "실거래 신고 이상거래 검증"],
     orchCards: 2,
   },
   {
     id: "manufacturing", label: "한빛정밀",
-    banned: ["KOGAS", "kogas", "한국부동산원", "공시지가", "표준지", "KREA-", "한성시청", "HSC-"],
+    banned: ["KOGAS", "kogas", "한국부동산원", "공시지가", "표준지", "KREA-", "한성시청", "HSC-", "새빛대학교병원", "SUH-"],
     generalMarkers: ["한빛정밀", "오늘의 업무 브리핑", "열처리 로 진단"],
     hubMarkers: ["프레스 진동 알람 자동 대응", "협력사 검사성적서 일괄 처리"],
     orchCards: 2,
   },
   {
     id: "civic", label: "한성시청",
-    banned: ["KOGAS", "kogas", "한국부동산원", "공시지가", "KREA-", "한빛정밀", "HBP-"],
+    banned: ["KOGAS", "kogas", "한국부동산원", "공시지가", "KREA-", "한빛정밀", "HBP-", "새빛대학교병원", "SUH-"],
     generalMarkers: ["한성시", "오늘의 업무 브리핑", "재난 상황 확인"],
     hubMarkers: ["옥외광고물 허가 신청 일괄 처리", "호우경보 재난 상황보고 작성"],
+    orchCards: 2,
+  },
+  {
+    id: "hospital", label: "새빛대학교병원",
+    banned: ["KOGAS", "kogas", "한국부동산원", "공시지가", "표준지", "KREA-", "한빛정밀", "HBP-", "한성시청", "HSC-"],
+    generalMarkers: ["오늘의 업무 브리핑", "응급실 현황", "응급실 병상 가동률"],
+    hubMarkers: ["입원 진료비 삭감위험 사전점검", "응급실 포화 경보 대응"],
     orchCards: 2,
   },
 ];

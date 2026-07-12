@@ -163,6 +163,44 @@ const template = {
     recommendBody: "지난 ○○와 현행 ○○을 대조 검토하여 변경사항을 확인하시겠습니까?",
     pendingBody: "2026-03-17 ○○부서 정례회의 녹음이 미처리 상태입니다.",
   },
+
+  /* ===== v3/v4 필드 (선택, 그러나 데모용 팩은 작성 — 스키마 정본은 코드, DECISIONS.md ADR-7) ===== */
+
+  // 오케스트레이션은 객체 1개 또는 배열(카드 N장) 모두 허용. 관례: [서류 트리거형, 데이터/이벤트 트리거형] 2장.
+  // 데이터/이벤트 트리거형은 attachment를 생략한다. 분석 스테이지에 output.factors(판정 기여도, 합≈100),
+  // 판정·발행 스테이지에 review(사람 확인 지점) 추가 권장. → 위 orchestration을 배열로 바꿔 2개 작성.
+
+  // 채팅→에이전트 핸드오프 — GENERAL 답변 아래 '다음 단계' 이동 카드 (소비: UserApp handleSend)
+  agentRouting: [
+    // { keywords: ["소문자"], agentId: "orchestration:1" 또는 "agent-xxx", reason: "왜 이 에이전트로" }
+  ],
+
+  // 알림 센터(헤더 벨) + 오늘의 업무 브리핑(GENERAL 빈 화면) — link.agentId로 딥링크(orchestration:<idx> 허용)
+  notifications: [
+    // { id, severity: "alert"|"warn"|"info", title, body, time, link: { agentId } }  — 대표 사건과 같은 수치로
+  ],
+
+  // 라이브 지표 — GENERAL 첫 화면 실시간 카드 + 임계 상향 돌파 시 알림 생성. 스키마 정본: src/user/liveEngine.js 상단 주석.
+  // 대표 사건(데이터/이벤트 트리거)의 수치를 그대로 써서 mapIntel·시나리오와 한 원장으로 정합.
+  liveMetric: {
+    // label, unit, decimals, initial, min, max, window, threshold, thresholdLabel, drift, noise,
+    // recovery: { at, to }(고착 방지), alert: { severity, title, body('{value}' 치환), link:{agentId} }, source
+  },
+
+  // SECURE 탭 제안 4종 (다크 UI 고정 팔레트 bg-blue-950/50 · text-blue-400)
+  secureSuggestions: [
+    // { icon, iconBg:"bg-blue-950/50", iconColor:"text-blue-400", title, query }  — 4개
+  ],
+
+  // REVIEW/TRANSLATE/REPORT + SECURE 모드 응답 오버라이드 (citations는 항상 [], 도메인 언어로)
+  modeAnswers: {
+    // REVIEW: { content, citations: [], steps: null }, TRANSLATE, REPORT, SECURE_DEFAULT, SECURE_AIRGAP
+  },
+
+  // fileData: 인용 뷰어 원문 (docs[].id와 일치). 생략 시 REB FILE_DATA 폴백.
+  // agentContent: 에이전트 13종 내부 화면 콘텐츠 — 정본은 각 에이전트 파일 상단 CONTENT_DEFAULTS.
+  //   ⚠️ 생략하면 에이전트 내부가 REB 콘텐츠로 노출된다(금칙어). 상세 키: docs/AGENT-CONTENT-SCHEMA.md.
+  // adminContent: 관리자 45페이지 콘텐츠. 생략 시 관리자가 REB 페르소나로 노출. 정본: src/admin/mocks.js 상수.
 };
 
 export default template;

@@ -6,14 +6,16 @@
 import reb from "./reb.js";
 import manufacturing from "./manufacturing.js";
 import civic from "./civic.js";
+import hospital from "./hospital.js";
 
 export const DOMAINS = {
   [reb.id]: reb,
   [manufacturing.id]: manufacturing,
   [civic.id]: civic,
+  [hospital.id]: hospital,
 };
 
-export const DOMAIN_LIST = [reb, manufacturing, civic];
+export const DOMAIN_LIST = [reb, manufacturing, civic, hospital];
 
 const STORAGE_KEY = "genos.activeDomain";
 
