@@ -30,6 +30,7 @@ const ChatMessages = ({
   onErrReport, onDocPreview, onFeedback,
   briefingItems = [], onNavigateAgent,
   liveCfg = null, liveState = null, liveSpeed = 1, setLiveSpeed,
+  L = { suggested: "추천 질문", recent: "최근 대화", briefing: "오늘의 업무 브리핑", pending: (n) => `처리 대기 ${n}건` },
 }) => {
   const ModeIcon = mc.icon;
   // 답변 피드백 — 세션 내 표시 상태 (기록 저장은 UserApp onFeedback가 담당)
@@ -180,8 +181,8 @@ const ChatMessages = ({
                     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                       <div className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-100 flex items-center gap-2">
                         <Bell className="w-3.5 h-3.5 text-indigo-600" />
-                        <span className="text-[12px] font-black text-slate-800">오늘의 업무 브리핑</span>
-                        <span className="ml-auto text-[10px] font-bold text-slate-400">처리 대기 {briefingItems.length}건</span>
+                        <span className="text-[12px] font-black text-slate-800">{L.briefing}</span>
+                        <span className="ml-auto text-[10px] font-bold text-slate-400">{L.pending(briefingItems.length)}</span>
                       </div>
                       {briefingItems.map(n => (
                         <button key={n.id} onClick={() => n.link?.agentId && onNavigateAgent?.(n.link.agentId)}
@@ -224,7 +225,7 @@ const ChatMessages = ({
                 <div className="w-full max-w-2xl mb-3">
                   <div className="flex items-center gap-2 mb-2.5">
                     <Sparkles className="w-3 h-3 text-slate-400" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">추천 질문</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{L.suggested}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     {SUGGESTIONS[mode]?.map((s, i) => {
@@ -245,7 +246,7 @@ const ChatMessages = ({
                 <div className="w-full max-w-2xl">
                   <div className="flex items-center gap-2 mb-2.5">
                     <Clock className="w-3 h-3 text-slate-400" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">최근 대화</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{L.recent}</span>
                   </div>
                   <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm divide-y divide-slate-100">
                     {HISTORY.slice(0, 4).map((h) => {

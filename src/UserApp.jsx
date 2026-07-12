@@ -5,6 +5,7 @@ import { cn, orchList } from "./user/utils.jsx";
 import { initLive, stepLive, liveAlertOf } from "./user/liveEngine.js";
 import { logAudit } from "./user/auditLog.js";
 import { allScenarios } from "./user/scenarios.js";
+import { uiStrings, loadUiPrefs, saveUiPrefs, UI_LANGS } from "./user/i18n.js";
 import Toast from "./user/components/Toast.jsx";
 import {
   MODES as BASE_MODES, HISTORY as BASE_HISTORY, DOCS as BASE_DOCS,
@@ -386,6 +387,13 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain }) => {
     });
   };
 
+  // ── UI 환경설정 (테마·언어) — 크롬 라벨만 전환, 콘텐츠는 한국어 유지 ──
+  const [uiPrefs, setUiPrefs] = useState(loadUiPrefs);
+  const [showSettings, setShowSettings] = useState(false);
+  const L = uiStrings(uiPrefs.lang);
+  const isDark = uiPrefs.theme === "dark";
+  const updatePrefs = (patch) => setUiPrefs(p => { const next = { ...p, ...patch }; saveUiPrefs(next); return next; });
+
   // ── 라이브 데이터 엔진 (팩 liveMetric 공급 시에만 구동) ──
   // 엔진은 UserApp 수준에서 1초 틱 — 탭 전환·카드 언마운트와 무관하게 상태 유지
   const liveCfg = domain.liveMetric || null;
@@ -504,7 +512,7 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain }) => {
   /* ================================================================ */
   return (
     <div
-      className={cn("flex flex-col h-dvh w-full overflow-hidden transition-all duration-500", th.app)}
+      className={cn("flex flex-col h-dvh w-full overflow-hidden transition-all duration-500", th.app, isDark && "genos-dark")}
       style={{ fontFamily: "'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif" }}
     >
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
@@ -535,7 +543,8 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain }) => {
           setShowNoticeBanner={setShowNoticeBanner} setShowQnaModal={setShowQnaModal}
           onSwitchToAdmin={onSwitchToAdmin}
           onOpenTutorial={() => setShowTutorial(true)}
-          onOpenSettings={() => setToast({ message: "환경설정은 데모 범위에서 제공되지 않습니다 — 관리자 시스템에서 정책을 관리합니다." })}
+          onOpenSettings={() => setShowSettings(true)}
+          L={L}
         />
 
         {/* ======================== CENTER ========================== */}
@@ -558,6 +567,7 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain }) => {
             onExitPortal={onExitPortal}
             notifications={NOTIFS}
             onNotifNavigate={(agentId) => { setChatTab("AGENT"); setActiveAgentId(agentId); }}
+            L={L}
           />
 
           {/* ── AGENT 탭: 허브 & 개별 에이전트 (lazy loading) ── */}
@@ -602,6 +612,7 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain }) => {
               briefingItems={NOTIFS}
               onNavigateAgent={(agentId) => { setChatTab("AGENT"); setActiveAgentId(agentId); }}
               liveCfg={liveCfg} liveState={liveState} liveSpeed={liveSpeed} setLiveSpeed={setLiveSpeed}
+              L={L}
             />
           )}
 
@@ -632,6 +643,47 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain }) => {
       </div>
 
       {/* ====================== MODALS ====================== */}
+      {/* 환경설정 — 테마(다크 스킨은 사용자 포털 스코프)·UI 언어 */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowSettings(false)} aria-hidden="true" />
+          <div className={cn("relative w-full max-w-sm rounded-2xl border shadow-2xl p-5", isDark || isSecure ? "bg-[#111c33] border-slate-700" : "bg-white border-slate-200")}>
+            <div className={cn("text-[15px] font-black mb-4", isDark || isSecure ? "text-slate-100" : "text-slate-900")}>{L.settings}</div>
+            <div className="space-y-4">
+              <div>
+                <div className={cn("text-[11px] font-black uppercase tracking-wider mb-1.5", isDark || isSecure ? "text-slate-500" : "text-slate-400")}>{L.theme}</div>
+                <div className="flex gap-2">
+                  {[["light", L.themeLight], ["dark", L.themeDark]].map(([v, label]) => (
+                    <button key={v} onClick={() => updatePrefs({ theme: v })} aria-pressed={uiPrefs.theme === v}
+                      className={cn("flex-1 py-2 rounded-xl border text-[13px] font-bold transition-colors",
+                        uiPrefs.theme === v ? "bg-indigo-600 text-white border-indigo-600" : isDark || isSecure ? "border-slate-600 text-slate-300" : "border-slate-200 text-slate-600 hover:border-indigo-300")}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className={cn("text-[11px] mt-1.5 font-medium", isDark || isSecure ? "text-slate-500" : "text-slate-400")}>{L.themeNote}</p>
+              </div>
+              <div>
+                <div className={cn("text-[11px] font-black uppercase tracking-wider mb-1.5", isDark || isSecure ? "text-slate-500" : "text-slate-400")}>{L.language}</div>
+                <div className="flex gap-2">
+                  {UI_LANGS.map(lg => (
+                    <button key={lg.id} onClick={() => updatePrefs({ lang: lg.id })} aria-pressed={uiPrefs.lang === lg.id}
+                      className={cn("flex-1 py-2 rounded-xl border text-[13px] font-bold transition-colors",
+                        uiPrefs.lang === lg.id ? "bg-indigo-600 text-white border-indigo-600" : isDark || isSecure ? "border-slate-600 text-slate-300" : "border-slate-200 text-slate-600 hover:border-indigo-300")}>
+                      {lg.label}
+                    </button>
+                  ))}
+                </div>
+                <p className={cn("text-[11px] mt-1.5 font-medium", isDark || isSecure ? "text-slate-500" : "text-slate-400")}>{L.langNote}</p>
+              </div>
+            </div>
+            <button onClick={() => setShowSettings(false)}
+              className="mt-5 w-full py-2.5 rounded-xl bg-slate-800 text-white text-[13px] font-black hover:bg-slate-700 transition-colors">
+              닫기 · Close
+            </button>
+          </div>
+        </div>
+      )}
       {showBuilderModal && selectedAgent && (
         <AgentBuilderModal
           selectedAgent={selectedAgent}

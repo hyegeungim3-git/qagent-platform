@@ -73,7 +73,10 @@ async function scanDomain(browser, d) {
     await page.close();
     return { fails: [`서버 접속 실패: ${e.message}`], consoleErrors };
   }
-  await page.evaluate(id => localStorage.setItem("genos.activeDomain", id), d.id);
+  await page.evaluate(id => {
+    localStorage.setItem("genos.activeDomain", id);
+    localStorage.removeItem("genos.uiPrefs"); // 다크·영어 설정 잔재가 마커 판정을 오염하지 않도록
+  }, d.id);
   await page.reload({ waitUntil: "networkidle2" });
   await sleep(600);
 

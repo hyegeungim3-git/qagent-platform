@@ -20,6 +20,7 @@ const Sidebar = ({
   showUserMenu, setShowUserMenu, userMenuRef,
   setShowNoticeBanner, setShowQnaModal,
   onSwitchToAdmin, onOpenTutorial, onOpenSettings,
+  L = { tabGeneral: "일반", tabAgent: "에이전트", tabSecure: "보안", newChat: "새 대화", recent: "최근 대화" },
 }) => (
   <aside
     aria-label="사이드바 내비게이션"
@@ -73,7 +74,7 @@ const Sidebar = ({
     <div className={cn("px-3 py-3 border-b shrink-0", th.sidebarSection)}>
       {sidebarOpen ? (
         <div className={cn("p-1 rounded-xl flex gap-1", isSecure ? "bg-[#040814] border border-slate-800" : "bg-slate-200/60 border border-slate-200/80")}>
-          {[{id:"GENERAL",label:"일반",Icon:MessageSquare},{id:"AGENT",label:"에이전트",Icon:Bot},{id:"SECURE",label:"보안",Icon:Shield}].map(({id,label,Icon})=>(
+          {[{id:"GENERAL",label:L.tabGeneral,Icon:MessageSquare},{id:"AGENT",label:L.tabAgent,Icon:Bot},{id:"SECURE",label:L.tabSecure,Icon:Shield}].map(({id,label,Icon})=>(
             <button key={id} onClick={()=>onTabSwitch(id)} className={cn("flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] font-bold rounded-lg transition-all",
               chatTab===id?(id==="GENERAL"?"bg-white text-blue-700 shadow-sm":id==="AGENT"?"bg-indigo-600 text-white shadow-sm":"bg-[#0a0f1c] text-blue-400 border border-blue-800/50"):(isSecure?"text-slate-500 hover:text-slate-300":"text-slate-500 hover:text-slate-700 hover:bg-white/50"))}>
               <Icon className="w-3.5 h-3.5"/>{label}
@@ -95,7 +96,7 @@ const Sidebar = ({
     <div className={cn("px-3 pt-3 pb-2 shrink-0", !sidebarOpen && "flex justify-center px-0 py-3")}>
       {sidebarOpen ? (
         <button onClick={onNewChat} className="w-full flex items-center justify-center gap-2 h-10 rounded-xl bg-[#003087] text-white font-bold text-[13px] hover:bg-[#002571] transition-colors shadow-md tracking-tight">
-          <Plus className="w-3.5 h-3.5" /> 새 대화 시작
+          <Plus className="w-3.5 h-3.5" /> {L.newChat}
         </button>
       ) : (
         <button onClick={onNewChat} aria-label="새 대화 시작" className="w-10 h-10 rounded-xl bg-[#003087] text-white flex items-center justify-center hover:bg-[#002571] transition-colors shadow-md">
@@ -249,7 +250,7 @@ const Sidebar = ({
         sidebarOpen ? (
           <div className="px-2 space-y-0.5">
             <div className={cn("px-3 mb-2 flex items-center justify-between", th.sidebarLabel)}>
-              <span className="text-[10px] font-black uppercase tracking-wider">최근 대화</span>
+              <span className="text-[10px] font-black uppercase tracking-wider">{L.recent}</span>
               <button aria-label="대화 이력" className="p-1 rounded-lg hover:bg-white/70 transition-colors"><History className="w-3.5 h-3.5" /></button>
             </div>
             <div className="px-3 py-1 text-[10px] font-black text-slate-400 uppercase tracking-wider">오늘</div>

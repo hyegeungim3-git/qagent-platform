@@ -21,6 +21,7 @@ const ChatHeader = ({
   setShowQnaModal, setShowTutorial,
   showNoticeBanner, setShowNoticeBanner,
   onExitPortal, notifications = [], onNotifNavigate,
+  L = { networkPill: "내부망 전용" },
 }) => {
   const ModeIcon = mc.icon;
   // 오케스트레이션 활성 시나리오 — activeAgentId "orchestration:<idx>" (구형 "orchestration"은 0번)
@@ -76,7 +77,7 @@ const ChatHeader = ({
         <div className="flex items-center gap-2">
           <div className={cn("hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold", isSecure ? "bg-[#040814] border-blue-900/50 text-blue-400" : "bg-white border-slate-200 text-slate-600 shadow-sm")}>
             <div className={cn("w-2 h-2 rounded-full animate-pulse", isSecure ? "bg-blue-500" : "bg-green-500")}></div>
-            <span>{isSecure ? "보안 모드" : "내부망 전용"}</span>
+            <span>{isSecure ? "보안 모드" : L.networkPill}</span>
           </div>
           {/* 알림 센터 — 팩 notifications 공급 시에만 노출 */}
           {notifications.length > 0 && (

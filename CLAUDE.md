@@ -87,6 +87,7 @@ src/
 - ✅ v3-P3 감사 추적(2026-07-12): user/auditLog.js(도메인별 localStorage genos.audit.<id>, 상한 200) — 사용자 포털 실사용 이벤트 5종(query 신뢰도·근거 여부 / xai_open 첫 열람 / orch_complete 스테이지·HITL·문서번호 / live_alert / feedback) 수집, **SECURE 세션은 호출부에서 제외**(무저장 서사). 관리자 'AI 기본법 대응'에 4번째 탭 '감사 추적(실데이터)' — 지표 5카드(XAI 열람율=열람/질의 실측, 저신뢰·비근거 질의 등)+최근 30건 테이블+새로고침·초기화. DoD 4항목 실행 증거: 시나리오 완주 기록(릴레이 4단계·인적 확인 1지점·KREA-시장관리-2026-057) 조회, XAI 열람율 100% 실측, SECURE 질의 후 로그 불변, 초기화 동작. verify.mjs PASS·ASCII 빌드 EXIT 0
 - ✅ v3-P4 시나리오 빌더(2026-07-12): 관리자 '에이전트 > 시나리오 빌더'(id 'agent.scenario') — 13종 에이전트 **선택식**(오타 방지)으로 릴레이 스테이지 2~6단계 조립(빈 필드는 자동 문구 정규화: logs·output·handoff·ms), 도메인당 최대 3개 저장(genos.customScenarios.<도메인>). 코어: user/scenarios.js **allScenarios(domain)** — 팩 orchestration 뒤에 커스텀 오버레이(코어의 시나리오 조회는 이 경로만, UserApp·ChatHeader·AgentHub 전환 완료). 허브 카드에 '커스텀' 배지. JSON 보기 = 팩 스키마 그대로(정식 승격용). DoD 3항목 실행 증거: UI로 3단계 시나리오 생성→허브 카드 3장·완주(감사 로그 자동 기록·문서번호 표시)→JSON 파싱·키 일치→삭제 복귀. verify.mjs PASS·ASCII 빌드 EXIT 0
 - ✅ v3-P5 접근성·PWA(2026-07-12): **PWA** — public/(manifest.webmanifest·sw.js·icon-192/512.png System.Drawing 생성), main.jsx PROD 한정 SW 등록(BASE_URL 상대 — GH Pages base 대응). SW 전략: 내비게이션 네트워크 우선+오프라인 시 index 셸 폴백, 해시 자산 캐시 우선 런타임 적재. **접근성** — Lighthouse 접근성 96→100점(포털 main 랜드마크 추가). **verify.mjs 확장** — 도메인별 375 뷰포트 신규 로드 판정(가로 스크롤·포털 진입) 추가, 3도메인 PASS. 스코프 조정: 다크모드 전면·다국어 UI는 사유와 함께 백로그 분리(V3-ROADMAP §P5 기록). **이로써 v3 로드맵 P1~P5 전체 완료**
+- ✅ v3 저장소 분리 + 백로그 + V4 로드맵(2026-07-12): **분리** — reb-ai-platform-v3 생성(origin), base '/reb-ai-platform-v3/', Pages workflow 활성화, v3 라이브 200 + App 청크 마커 3종. **v2 복원** — v2 저장소 main에 v2.0 트리 복원 커밋을 fast-forward push(비파괴 — force는 권한 거부, commit-tree 방식), v2 URL이 동결본 재서빙. **백로그** — 환경설정 모달(genos.uiPrefs): ①다크 스킨 — .genos-dark를 UserApp 루트에 스코프한 유틸 오버라이드 CSS(!important, 관리자·포털 라이트 고정, SECURE 무충돌, 파스텔 배지는 포인트로 유지) ②UI 크롬 영어 토글(user/i18n.js — 탭·새 대화·추천 질문·최근 대화·브리핑·내부망 pill, 콘텐츠는 한국어 유지 명시). 검증: 다크 실측(사이드바 #0c1425·카드 #111c33·인사말 대비), 영어 라벨 5종+콘텐츠 한국어, 새로고침 영속, 복원 후 verify.mjs PASS. ⚠️ 편집 직후 스킨이 안 먹으면 HMR 꼬임 — 풀 리로드로 판정(uppercase 라벨은 innerText 대문자 주의). **V4-ROADMAP.md** 수립(W1 실 LLM 하이브리드 / W2 멀티 사용자 결재 / W3 진짜 다국어 / W4 다크 1급 / W5 데이터 수명주기)
 - ✅ 4단계 잔여 완료(2026-07-06): **에이전트 내부 화면 반응형** — 16개 파일 ~44지점(step2 워크플로우 레일 8곳 `hidden lg:flex`, 그리드 축소 24, 표 overflow-x-auto 7, 2단 비교 세로 스택, w-[px] max-w-full). 375에서 13종 전수 가로 스크롤 0, 1280 시각 무변화 검증. **aria 전수** — 아이콘 전용 버튼 ~40개 aria-label(에이전트 28 + layout/modals 12). 부수 수정: DocPreviewModal 인쇄가 generateDocHTML을 org 없이 호출하던 브랜딩 누수 → org prop 주입. 알려진 한계(문서화): <1024에서 챗봇 우측 FAQ·출처 패널 숨김(출처 칩 클릭 무반응), 문서 사본(A4 레플리카) 내부 레이아웃은 의도적 보존
 
 ## 하네스: GenOS 품질 유지 체계 (모델 무관 Fable 5 수준 재현)
@@ -100,6 +101,7 @@ src/
 |------|----------|------|------|
 | 2026-07-12 | 초기 구성 (에이전트 2 · 스킬 3 · verify.mjs) | 전체 | v2 동결·v3 개설과 함께 모델 무관 품질 체계 구축 |
 | 2026-07-12 | pitfalls §3에 탭 스로틀·업데이터 부수효과 항목 추가 | genos-work/references/pitfalls.md | P1 구현 중 실발견 2건 반영 |
+| 2026-07-12 | verify.mjs가 스캔 전 genos.uiPrefs 제거 | genos-verify/scripts/verify.mjs | 다크·영어 설정 잔재가 한국어 마커 판정 오염 방지 |
 
 ## 6. 다음 세션 표준 지시문 (사용자가 이 문구로 시작하면 그대로 수행)
 
