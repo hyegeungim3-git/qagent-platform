@@ -144,7 +144,7 @@ const OrchestrationScenario = ({ scenario, agents, user, onBack }) => {
                 <span className="ml-auto text-[9px] font-bold text-indigo-400 shrink-0">중간 산출물이 다음 에이전트로 자동 전달됩니다</span>
               </div>
               <button onClick={handleStart}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-[13px] font-black shadow-md hover:shadow-lg hover:opacity-95 transition-all">
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 text-white text-[13px] font-semibold shadow-sm hover:bg-indigo-700 transition-colors">
                 <Play className="w-4 h-4" />
                 자동화 실행 — 에이전트 {stages.length}개 릴레이 시작
               </button>
