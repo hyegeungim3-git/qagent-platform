@@ -11,6 +11,7 @@ import { DOMAIN_LIST, DOMAINS, CUSTOM_ID, loadCustomPack, saveCustomPack, delete
 /* ================================================================== */
 
 const emptyForm = (baseId) => {
+  // 베이스 팩 선택은 정식 팩 한정이 의도 — getDomain() 대신 DOMAINS 직접 참조 (ADR-8 승인 예외: 커스텀 팩 자기참조 순환 방지)
   const b = DOMAINS[baseId];
   const orch = Array.isArray(b.orchestration) ? b.orchestration : [b.orchestration].filter(Boolean);
   return {

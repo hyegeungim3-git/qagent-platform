@@ -70,6 +70,7 @@
 - **결정**: 도메인 조회는 `getDomain()/getDomainList()`, 시나리오 조회는 `allScenarios(domain)` 단일 경로.
 - **왜**: 단일 경로여야 이후 어떤 오버레이(커스텀·실 LLM·다국어)를 추가해도 전 소비처가 자동 반영된다.
 - **결과(불변식)**: 새로 도메인/시나리오를 읽는 코드를 쓸 때 반드시 리졸버 경유. 관리자 mocks.js 상수도 유사 계약 — 새 상수는 **`export let`·`__REB_DEFAULTS`·`applyAdminDomain` 3곳 등록**(누락 시 도메인 전환이 조용히 무시됨).
+- **승인된 예외 (유일)**: 팩 스튜디오(packstudio.jsx)의 **베이스 팩 선택**은 `DOMAINS` 직접 참조가 맞다 — 커스텀 팩이 자기 자신을 베이스로 삼는 순환을 막으려면 조회 대상이 정식 팩 한정이어야 하기 때문. 이 외의 `DOMAINS[` 직접 참조는 전부 위반이다 (판정: `grep -rn "DOMAINS\[" src | grep -v "domains/index.js" | grep -v packstudio` → 0건).
 
 ## ADR-9. 버전 라인 분리 — 과정은 보존, 결과는 동결
 
