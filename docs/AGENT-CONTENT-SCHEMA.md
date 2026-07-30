@@ -53,6 +53,22 @@
 - fileData: FILE_DATA shape { d1:{title,date,secLevel,text,highlights[]} ... } — 선택 (docs의 id와 일치)
 - generateDocHTML(doc, org): org = {name, short, color, en} 자동 주입됨 (UserApp) — 팩 작업 불필요. doc.sealText로 직인 문구 교체 가능
 
+## agent-address (AddressAgent.jsx) — 기준정보 매핑 확장 필드
+- headerTitle / headerDesc / headerStatus: string — 화면 헤더·연결 표시(생략 시 REB 주소 기본값)
+- modeTypes: `m` 키는 고정(single|batch|ocr|reverse)이나 **`{m:'master', color:'indigo'}` 확장 항목 추가 가능**.
+  배열 **첫 항목이 기본 선택 유형**이므로 도메인 대표 기능을 앞에 둘 것
+- masterMapping: **선택**(생략 시 master 카드는 자동 비노출 — 코어가 필터링). 전부 하위 절도 선택:
+  - subtitle, pipeline:[{label,sub,ms}] (생략 시 코어 기본 4단계)
+  - scopes:[{key,label,count,desc}] — 대상 소스 선택 칩(선택 수가 시작 버튼에 표시)
+  - summary:[{label,value,sub,tone:'base'|'warn'|'bad'}] — 진단 지표 카드(입력·결과 양쪽 노출)
+  - readiness:{level,max,label,note,levels:[string]} — 성숙도 게이지(levels 길이는 max와 맞출 것)
+  - naming:{pattern,example,note,segments:[{seg,label,desc}]} — 표준 명명규칙 분해
+  - rows:[{src,srcSystem,suggest,name,unit,conf,status:'auto'|'review'|'none',basis:[{label,detail}],alts:[{code,name,conf,reason}],convert}]
+    (status 3종 고정. `suggest:''`+`status:'none'`이면 '후보 없음'으로 렌더)
+  - reasons:[{label,count,action}] — 사유 분포 바(합계를 summary의 미매칭 수와 일치시킬 것)
+  - crossMatch:{systems:[string],cells:[[number|null]]} — 정사각 매트릭스, 대각선은 null
+  - apply:{label,before,after,autoCount,reviewCount,note} — 반영 버튼(누르면 auto 행이 '반영됨')
+
 ## agent-knowledge (KnowledgeAgent.jsx) — 온톨로지 확장 필드
 - headerTitle / headerDesc: string — 화면 헤더(도메인 리브랜딩. 생략 시 '지식 검색 에이전트')
 - results[].attrs: {label,value,match:boolean}[] — **선택**. 온톨로지 속성 매칭 배지(신규 사양 대비 일치/불일치). 생략 시 미노출

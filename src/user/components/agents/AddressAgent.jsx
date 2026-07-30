@@ -108,6 +108,22 @@ const OCR_ADDR_RESULTS=[
   {raw:'부산광역시 해운대구 우동 1402', ctx:'거래사례 B',  ocrConf:99.1, road:'부산광역시 해운대구 해운대로 772',jibun:'부산광역시 해운대구 우동 1402',    zip:'48099',lat:'35.1628',lng:'129.1636',legalCode:'2635010300',legalDong:'우동',   adminCode:'2635063000',adminDong:'우2동',  matchConf:98.2,status:'완전매칭'},
 ];
 
+/* ── 기준정보 매핑(마스터 정비) 모드 ─────────────────
+   팩이 masterMapping을 제공할 때만 처리 유형 카드가 노출된다(미제공 도메인 무변화). */
+const MASTER_PIPELINE_DEFAULT=[
+  {label:'소스 수집',     sub:'대상 시스템에서 원본 항목을 수집 중',  ms:1400},
+  {label:'명명규칙 파서', sub:'표준 명명규칙으로 구문 분해 중',       ms:1800},
+  {label:'표준코드 매퍼', sub:'표준 마스터와 후보 매칭 중',           ms:2600},
+  {label:'교차 검증',     sub:'시스템 간 정합성을 검증 중',           ms:1600},
+];
+const MASTER_ICONS=[Database,Cpu,ArrowRightLeft,CheckCircle2];
+const MASTER_COLORS=['bg-indigo-600','bg-violet-600','bg-indigo-500','bg-emerald-600'];
+const MASTER_STATUS={
+  auto:  {label:'자동 확정', dot:'bg-emerald-500', chip:'bg-emerald-50 border-emerald-200 text-emerald-700'},
+  review:{label:'검토 필요', dot:'bg-amber-500',   chip:'bg-amber-50 border-amber-200 text-amber-700'},
+  none:  {label:'미매칭',    dot:'bg-rose-500',    chip:'bg-rose-50 border-rose-200 text-rose-700'},
+};
+
 const CODE_LOOKUP={
   '1168010600':{type:'법정동',dong:'도곡동',   road:'서울특별시 강남구 언주로30길 18',  jibun:'서울특별시 강남구 도곡동 946-1',    zip:'06256',legalCode:'1168010600',adminCode:'1168064000',adminDong:'도곡2동',  region:'서울특별시 > 강남구 > 도곡동'},
   '1168064000':{type:'행정동',dong:'도곡2동',  road:'서울특별시 강남구 언주로30길 18',  jibun:'서울특별시 강남구 도곡동 946-1',    zip:'06256',legalCode:'1168010600',adminCode:'1168064000',legalDong:'도곡동',  region:'서울특별시 > 강남구 > 도곡2동'},
@@ -169,6 +185,24 @@ export const CONTENT_DEFAULTS={
   ocrFeatureLabel:'현장조사 보고서 특화',                     // OCR 업로드 존 강조 문구(도메인 문서 유형)
   codeLookup:CODE_LOOKUP,                                    // {코드10자리: {type('법정동'|'행정동'),dong,road,jibun,zip,legalCode,adminCode,adminDong?,legalDong?,region}}
   codeQuickExamples:CODE_QUICK_EXAMPLES,                     // {code,label}[3] — 역조회 예시 칩
+  headerTitle:'주소 표준화 에이전트',                         // 화면 헤더(도메인 리브랜딩)
+  headerDesc:'처리 유형 선택 → 입력 → AI 주소 표준화',
+  headerStatus:'도로명주소 DB 연결됨',                        // 우상단 연결 표시
+  masterMapping:null,
+  /* masterMapping 스키마 (선택 — 제공 시 modeTypes에 {m:'master',color:'indigo'} 카드를 함께 넣어야 노출)
+     {
+       subtitle,                                             // 워크벤치 부제
+       pipeline: [{label,sub,ms}],                           // 처리 단계(생략 시 코어 기본 4단계)
+       scopes:   [{key,label,count,desc}],                   // 대상 소스 시스템 선택 칩
+       summary:  [{label,value,sub,tone:'base'|'warn'|'bad'}], // 진단 지표 카드
+       readiness:{level,max,label,note,levels:[string]},     // 성숙도 게이지
+       naming:   {pattern,example,note,segments:[{seg,label,desc}]}, // 표준 명명규칙 분해
+       rows:     [{src,srcSystem,suggest,name,unit,conf,status:'auto'|'review'|'none',
+                   basis:[{label,detail}], alts:[{code,name,conf,reason}], convert}],
+       reasons:  [{label,count,action}],                     // 미매칭 사유 분포
+       crossMatch:{systems:[string],cells:[[number|null]]},  // 시스템 간 매칭률(%) 매트릭스
+       apply:    {label,before,after,autoCount,reviewCount,note} // 자동 확정 반영 효과
+     } */
 };
 
 const MatchStatusBadge=({status})=>{
@@ -192,7 +226,7 @@ const MatchStatusBadge=({status})=>{
 const AddressAgent=({onBack,domain})=>{
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-address"]||{})};
   const OCR_DOC_WORDS=C.ocrDocText.split(' ');
-  const [mode,setMode]=useState('single');
+  const [mode,setMode]=useState(()=>C.modeTypes?.[0]?.m||'single'); // 팩이 정렬한 첫 유형이 기본
   const [inputTab,setInputTab]=useState('address'); // 'address' | 'apt'
   const {step,setStep,agentIdx,doneIdx,start:startSim,resetSim}=useAgentSimulation(AGENTS);
   const [address,setAddress]=useState(C.defaultAddress);
@@ -216,12 +250,23 @@ const AddressAgent=({onBack,domain})=>{
   // OCR 모드
   const [ocrFile,setOcrFile]=useState(null);
   const [ocrFileDrag,setOcrFileDrag]=useState(false);
-  const [ocrStep,setOcrStep]=useState(1);
   const [ocrAgentIdx,setOcrAgentIdx]=useState(-1);
   const [ocrDoneIdx,setOcrDoneIdx]=useState([]);
   const [ocrWords,setOcrWords]=useState([]);
   const [ocrAddrFound,setOcrAddrFound]=useState(false);
   const [ocrSelectedRow,setOcrSelectedRow]=useState(null);
+  // 기준정보 매핑 모드
+  const MM=C.masterMapping;
+  const masterAgents=(MM?.pipeline||MASTER_PIPELINE_DEFAULT).map((p,i)=>({
+    icon:MASTER_ICONS[i%MASTER_ICONS.length], color:MASTER_COLORS[i%MASTER_COLORS.length],
+    label:p.label, sub:p.sub, ms:p.ms||1800,
+  }));
+  const [mstScopes,setMstScopes]=useState(()=>(MM?.scopes||[]).map(s=>s.key));
+  const [mstAgentIdx,setMstAgentIdx]=useState(-1);
+  const [mstDoneIdx,setMstDoneIdx]=useState([]);
+  const [mstFilter,setMstFilter]=useState('all');
+  const [mstRow,setMstRow]=useState(null);
+  const [mstApplied,setMstApplied]=useState(false);
   const ocrFileRef=useRef(null);
   const fileRef=useRef(null);
 
@@ -283,19 +328,34 @@ const AddressAgent=({onBack,domain})=>{
   };
 
   const startOcrProcess=()=>{
-    setOcrStep(2);setOcrAgentIdx(0);setOcrDoneIdx([]);setOcrWords([]);setOcrAddrFound(false);
+    setStep(2);setOcrAgentIdx(0);setOcrDoneIdx([]);setOcrWords([]);setOcrAddrFound(false);
     let delay=0;
     OCR_AGENTS.forEach((ag,i)=>{
       delay+=ag.ms;
       setTimeout(()=>{
         setOcrAgentIdx(i+1<OCR_AGENTS.length?i+1:-1);
         setOcrDoneIdx(p=>[...p,i]);
-        if(i===OCR_AGENTS.length-1) setTimeout(()=>setOcrStep(3),600);
+        if(i===OCR_AGENTS.length-1) setTimeout(()=>setStep(3),600);
       },delay);
     });
   };
 
-  const resetOcr=()=>{setOcrStep(1);setOcrFile(null);setOcrAgentIdx(-1);setOcrDoneIdx([]);setOcrWords([]);setOcrAddrFound(false);setOcrSelectedRow(null);};
+  const resetOcr=()=>{setOcrFile(null);setOcrAgentIdx(-1);setOcrDoneIdx([]);setOcrWords([]);setOcrAddrFound(false);setOcrSelectedRow(null);};
+
+  const startMasterProcess=()=>{
+    setStep(2);setMstAgentIdx(0);setMstDoneIdx([]);setMstRow(null);setMstApplied(false);setMstFilter('all');
+    let delay=0;
+    masterAgents.forEach((ag,i)=>{
+      delay+=ag.ms;
+      setTimeout(()=>{
+        setMstAgentIdx(i+1<masterAgents.length?i+1:-1);
+        setMstDoneIdx(p=>[...p,i]);
+        if(i===masterAgents.length-1) setTimeout(()=>setStep(3),600);
+      },delay);
+    });
+  };
+
+  const resetMaster=()=>{setMstAgentIdx(-1);setMstDoneIdx([]);setMstRow(null);setMstApplied(false);setMstFilter('all');};
 
   const doReverseSearch=()=>{
     const clean=revCode.replace(/\s/g,'');
@@ -340,6 +400,11 @@ const AddressAgent=({onBack,domain})=>{
     reader.readAsText(f,'utf-8');
   };
 
+  const mstAllRows=MM?.rows||[];
+  const mstCounts={all:mstAllRows.length,auto:0,review:0,none:0};
+  mstAllRows.forEach(r=>{mstCounts[r.status]=(mstCounts[r.status]||0)+1;});
+  const mstRows=mstAllRows.filter(r=>mstFilter==='all'||r.status===mstFilter);
+
   const batchCount=batchText.split('\n').filter(l=>l.trim()).length;
   const perfectMatch=C.batchResults.filter(r=>r.status==='완전매칭').length;
   const perfectMatchRate=Math.round((perfectMatch/C.batchResults.length)*100);
@@ -358,19 +423,21 @@ const AddressAgent=({onBack,domain})=>{
   const startBatch=()=>{setBatchProcessed(true);setStep(3);};
   const startReverse=()=>{doReverseSearch();setStep(3);};
 
-  const MODE_TYPES=C.modeTypes;
+  /* 팩이 masterMapping 없이 master 카드만 넣은 경우를 방어 */
+  const MODE_TYPES=C.modeTypes.filter(t=>t.m!=='master'||MM);
 
   const COLOR={
     rose:   {sel:'border-rose-500 bg-rose-50 shadow-rose-100',   icon:'bg-rose-600',   btn:'bg-rose-600 hover:bg-rose-700 shadow-rose-100',   ring:'focus:border-rose-400 focus:ring-rose-100',   check:'text-rose-500'},
     orange: {sel:'border-orange-500 bg-orange-50 shadow-orange-100', icon:'bg-orange-500', btn:'bg-orange-500 hover:bg-orange-600 shadow-orange-100', ring:'focus:border-orange-400 focus:ring-orange-100', check:'text-orange-500'},
     teal:   {sel:'border-teal-500 bg-teal-50 shadow-teal-100',   icon:'bg-teal-600',   btn:'bg-teal-600 hover:bg-teal-700 shadow-teal-100',   ring:'focus:border-teal-400 focus:ring-teal-100',   check:'text-teal-500'},
     purple: {sel:'border-purple-500 bg-purple-50 shadow-purple-100', icon:'bg-purple-600', btn:'bg-purple-600 hover:bg-purple-700 shadow-purple-100', ring:'focus:border-purple-400 focus:ring-purple-100', check:'text-purple-500'},
+    indigo: {sel:'border-indigo-500 bg-indigo-50 shadow-indigo-100', icon:'bg-indigo-600', btn:'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100', ring:'focus:border-indigo-400 focus:ring-indigo-100', check:'text-indigo-500'},
   };
 
   const resetAll=()=>{
     resetSim();setCopiedField(null);setMapOpen(false);
     setBatchProcessed(false);setRevCode('');setRevResult(null);setRevSearched(false);
-    setRevCopied(null);setCopiedAll(false);resetOcr();setAptResult(null);
+    setRevCopied(null);setCopiedAll(false);resetOcr();resetMaster();setAptResult(null);
   };
 
   const cur=MODE_TYPES.find(t=>t.m===mode)||MODE_TYPES[0];
@@ -388,12 +455,12 @@ const AddressAgent=({onBack,domain})=>{
             <MapPin className="w-5 h-5 text-white"/>
           </div>
           <div>
-            <div className="text-[15px] font-black text-slate-800">주소 표준화 에이전트</div>
-            <div className="text-xs text-slate-400">처리 유형 선택 → 입력 → AI 주소 표준화</div>
+            <div className="text-[15px] font-black text-slate-800">{C.headerTitle}</div>
+            <div className="text-xs text-slate-400">{C.headerDesc}</div>
           </div>
           <div className="ml-auto flex items-center gap-1.5 text-[10px] text-slate-400">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
-            도로명주소 DB 연결됨
+            {C.headerStatus}
           </div>
         </div>
 
@@ -548,6 +615,51 @@ const AddressAgent=({onBack,domain})=>{
             </div>
           )}
 
+          {/* 기준정보 매핑 — 대상 소스 선택 + 현재 진단 스냅샷 */}
+          {mode==='master'&&MM&&(
+            <div className="space-y-3">
+              {MM.summary?.length>0&&(
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {MM.summary.map((s,i)=>(
+                    <div key={i} className={cn('border rounded-xl px-3 py-2.5',
+                      s.tone==='bad'?'bg-rose-50 border-rose-200':s.tone==='warn'?'bg-amber-50 border-amber-200':'bg-slate-50 border-slate-200')}>
+                      <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{s.label}</div>
+                      <div className={cn('text-[17px] font-bold mt-0.5',
+                        s.tone==='bad'?'text-rose-700':s.tone==='warn'?'text-amber-700':'text-slate-800')}>{s.value}</div>
+                      {s.sub&&<div className="text-[10px] text-slate-400 mt-0.5 leading-snug">{s.sub}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {MM.scopes?.length>0&&(
+                <>
+                  <div className="text-[11px] text-slate-400">대상 소스 시스템 — 선택한 시스템의 항목만 매핑합니다</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {MM.scopes.map(s=>{
+                      const on=mstScopes.includes(s.key);
+                      return(
+                        <button key={s.key} aria-pressed={on}
+                          onClick={()=>setMstScopes(p=>on?p.filter(k=>k!==s.key):[...p,s.key])}
+                          className={cn('text-left px-3.5 py-2.5 rounded-xl border-2 transition-all',
+                            on?'border-indigo-500 bg-indigo-50':'border-slate-200 hover:border-slate-300 bg-white')}>
+                          <div className="flex items-center gap-2">
+                            <span className={cn('w-3.5 h-3.5 rounded-[5px] border-2 flex items-center justify-center shrink-0',
+                              on?'border-indigo-500 bg-indigo-500':'border-slate-300')}>
+                              {on&&<CheckCircle className="w-2.5 h-2.5 text-white"/>}
+                            </span>
+                            <span className={cn('text-[12px] font-bold',on?'text-indigo-700':'text-slate-600')}>{s.label}</span>
+                            <span className="ml-auto text-[10px] font-mono text-slate-400">{s.count}</span>
+                          </div>
+                          {s.desc&&<div className="text-[10px] text-slate-400 mt-1 ml-[22px] leading-snug">{s.desc}</div>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* 코드 역조회 */}
           {mode==='reverse'&&(
             <div className="space-y-3">
@@ -571,13 +683,14 @@ const AddressAgent=({onBack,domain})=>{
         </div>
 
         {/* 시작 버튼 */}
-        <button onClick={mode==='single'?startProcess:mode==='batch'?startBatch:mode==='ocr'?startOcrProcess:startReverse}
+        <button onClick={mode==='single'?startProcess:mode==='batch'?startBatch:mode==='ocr'?startOcrProcess:mode==='master'?startMasterProcess:startReverse}
           className={cn('w-full py-3.5 text-white font-black rounded-2xl flex items-center justify-center gap-2 transition-colors shadow-lg text-[15px]',CLR.btn)}>
           <Play className="w-4 h-4 fill-white"/>
           {mode==='single'&&inputTab==='apt'?'공동주택 코드 조회':
            mode==='single'?'주소 표준화 시작':
            mode==='batch'?'일괄 처리 시작':
-           mode==='ocr'?'OCR 주소 추출 시작':'역조회 검색'}
+           mode==='ocr'?'OCR 주소 추출 시작':
+           mode==='master'?`기준정보 매핑 시작${mstScopes.length?` (소스 ${mstScopes.length}종)`:''}`:'역조회 검색'}
         </button>
       </div>
     </div>
@@ -590,19 +703,23 @@ const AddressAgent=({onBack,domain})=>{
         <div className="w-full max-w-xl px-6">
           <div className="text-center mb-10">
             <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg',CLR.icon)}>
-              {mode==='ocr'?<ScanLine className="w-7 h-7 text-white animate-pulse"/>:<Radio className="w-7 h-7 text-white animate-pulse"/>}
+              {mode==='ocr'?<ScanLine className="w-7 h-7 text-white animate-pulse"/>
+               :mode==='master'?<ArrowRightLeft className="w-7 h-7 text-white animate-pulse"/>
+               :<Radio className="w-7 h-7 text-white animate-pulse"/>}
             </div>
             <div className="text-[18px] font-black text-slate-800">
-              {mode==='ocr'?'OCR 파이프라인 처리 중':'에이전트 파이프라인 처리 중'}
+              {mode==='ocr'?'OCR 파이프라인 처리 중':mode==='master'?'기준정보 매핑 파이프라인 처리 중':'에이전트 파이프라인 처리 중'}
             </div>
             <div className="text-sm text-slate-400 mt-1">
-              {mode==='ocr'?'문서에서 주소를 인식하고 표준화합니다':'주소를 파싱하고 공식 DB와 매핑합니다'}
+              {mode==='ocr'?'문서에서 주소를 인식하고 표준화합니다'
+               :mode==='master'?(MM?.subtitle||'원본 항목을 표준 코드 체계로 매핑합니다')
+               :'주소를 파싱하고 공식 DB와 매핑합니다'}
             </div>
           </div>
           <div className="space-y-3">
-            {(mode==='ocr'?OCR_AGENTS:AGENTS).map((ag,i)=>{
-              const isDone=(mode==='ocr'?ocrDoneIdx:doneIdx).includes(i);
-              const isActive=(mode==='ocr'?ocrAgentIdx:agentIdx)===i;
+            {(mode==='ocr'?OCR_AGENTS:mode==='master'?masterAgents:AGENTS).map((ag,i)=>{
+              const isDone=(mode==='ocr'?ocrDoneIdx:mode==='master'?mstDoneIdx:doneIdx).includes(i);
+              const isActive=(mode==='ocr'?ocrAgentIdx:mode==='master'?mstAgentIdx:agentIdx)===i;
               const AgIcon=ag.icon;
               return(
                 <div key={i}>
@@ -637,7 +754,7 @@ const AddressAgent=({onBack,domain})=>{
                     </div>
                     {isActive&&<div className="mt-3"><div className="h-1 bg-slate-100 rounded-full overflow-hidden"><div className={cn('h-1 rounded-full animate-pulse',CLR.icon.replace('bg-','bg-'))} style={{width:'70%'}}/></div></div>}
                   </div>
-                  {i<(mode==='ocr'?OCR_AGENTS:AGENTS).length-1&&<div className="flex justify-center my-1"><ChevronRight className="w-4 h-4 text-slate-300 rotate-90"/></div>}
+                  {i<(mode==='ocr'?OCR_AGENTS:mode==='master'?masterAgents:AGENTS).length-1&&<div className="flex justify-center my-1"><ChevronRight className="w-4 h-4 text-slate-300 rotate-90"/></div>}
                 </div>
               );
             })}
@@ -649,7 +766,7 @@ const AddressAgent=({onBack,domain})=>{
         </div>
       </div>
       <div className="hidden lg:flex w-80 shrink-0 border-l border-slate-100 bg-gradient-to-b from-slate-50 to-white p-4 overflow-y-auto flex-col">
-        <AgentWorkflowPanel agentId="agent-address" activeStep={mode==='ocr'?ocrAgentIdx:agentIdx} doneSteps={mode==='ocr'?ocrDoneIdx:doneIdx}/>
+        <AgentWorkflowPanel agentId="agent-address" activeStep={mode==='ocr'?ocrAgentIdx:mode==='master'?mstAgentIdx:agentIdx} doneSteps={mode==='ocr'?ocrDoneIdx:mode==='master'?mstDoneIdx:doneIdx}/>
       </div>
     </div>
   );
@@ -667,7 +784,8 @@ const AddressAgent=({onBack,domain})=>{
               {mode==='single'&&inputTab==='apt'?`공동주택 코드 조회 완료`:
                mode==='single'?'주소 표준화 완료':
                mode==='batch'?`일괄 처리 완료 (${C.batchResults.length}건)`:
-               mode==='ocr'?`OCR 주소 추출 완료 (${C.ocrAddrResults.length}건)`:'코드 역조회 완료'}
+               mode==='ocr'?`OCR 주소 추출 완료 (${C.ocrAddrResults.length}건)`:
+               mode==='master'?`기준정보 매핑 완료 (${MM?.rows?.length||0}건 검토 대상)`:'코드 역조회 완료'}
             </span>
           </div>
           <button onClick={resetAll}
@@ -975,6 +1093,272 @@ const AddressAgent=({onBack,domain})=>{
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── 기준정보 매핑 워크벤치 ── */}
+        {mode==='master'&&MM&&(
+          <div className="space-y-5">
+
+            {/* ① AI 준비도 + 진단 지표 */}
+            {MM.readiness&&(
+              <div className="border border-slate-200 rounded-2xl p-4 bg-white">
+                <div className="flex items-center justify-between gap-3 mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-indigo-500"/>
+                    <span className="text-[13px] font-bold text-slate-800">{MM.readiness.label}</span>
+                  </div>
+                  <span className="text-[12px] font-bold text-indigo-600">
+                    레벨 {MM.readiness.level} <span className="text-slate-300 font-medium">/ {MM.readiness.max}</span>
+                  </span>
+                </div>
+                <div className="flex gap-1">
+                  {Array.from({length:MM.readiness.max}).map((_,i)=>(
+                    <div key={i} className={cn('h-2 flex-1 rounded-full',i<MM.readiness.level?'bg-indigo-500':'bg-slate-100')}/>
+                  ))}
+                </div>
+                {MM.readiness.levels?.length>0&&(
+                  <div className="flex gap-1 mt-1.5">
+                    {MM.readiness.levels.map((lv,i)=>(
+                      <div key={i} className={cn('flex-1 text-[9px] text-center leading-tight',
+                        i<MM.readiness.level?'text-indigo-600 font-bold':'text-slate-300')}>{lv}</div>
+                    ))}
+                  </div>
+                )}
+                {MM.readiness.note&&<div className="text-[11px] text-slate-500 mt-2.5 leading-relaxed">{MM.readiness.note}</div>}
+              </div>
+            )}
+
+            {MM.summary?.length>0&&(
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {MM.summary.map((s,i)=>(
+                  <div key={i} className={cn('border rounded-xl px-3 py-2.5',
+                    s.tone==='bad'?'bg-rose-50 border-rose-200':s.tone==='warn'?'bg-amber-50 border-amber-200':'bg-slate-50 border-slate-200')}>
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{s.label}</div>
+                    <div className={cn('text-[17px] font-bold mt-0.5',
+                      s.tone==='bad'?'text-rose-700':s.tone==='warn'?'text-amber-700':'text-slate-800')}>{s.value}</div>
+                    {s.sub&&<div className="text-[10px] text-slate-400 mt-0.5 leading-snug">{s.sub}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ② 표준 명명 규칙 */}
+            {MM.naming&&(
+              <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                  <Hash className="w-3.5 h-3.5 text-slate-400"/>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">표준 명명 규칙</span>
+                  <span className="ml-auto text-[11px] font-mono text-slate-400">{MM.naming.pattern}</span>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {MM.naming.segments.map((sg,i)=>(
+                      <React.Fragment key={i}>
+                        {i>0&&<span className="text-slate-300 text-[13px]">·</span>}
+                        <div className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-100">
+                          <div className="text-[12px] font-mono font-bold text-indigo-700">{sg.seg}</div>
+                          <div className="text-[9px] text-indigo-400">{sg.label}</div>
+                        </div>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                    {MM.naming.segments.map((sg,i)=>(
+                      <div key={i} className="flex gap-2 text-[11px]">
+                        <span className="font-mono text-slate-400 shrink-0">{sg.seg}</span>
+                        <span className="text-slate-500 leading-snug">{sg.desc}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {MM.naming.note&&(
+                    <div className="text-[11px] text-slate-500 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 leading-relaxed">
+                      {MM.naming.note}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ③ 매핑 워크벤치 */}
+            {mstAllRows.length>0&&(
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">매핑 후보</span>
+                  {[{k:'all',label:'전체'},{k:'auto',label:MASTER_STATUS.auto.label},{k:'review',label:MASTER_STATUS.review.label},{k:'none',label:MASTER_STATUS.none.label}].map(f=>(
+                    <button key={f.k} onClick={()=>{setMstFilter(f.k);setMstRow(null);}}
+                      className={cn('px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all',
+                        mstFilter===f.k?'border-indigo-500 bg-indigo-50 text-indigo-700':'border-slate-200 text-slate-500 hover:border-slate-300')}>
+                      {f.label} <span className="font-mono opacity-60">{mstCounts[f.k]||0}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="border border-slate-200 rounded-2xl divide-y divide-slate-100 overflow-hidden">
+                  {mstRows.map((r,i)=>{
+                    const st=MASTER_STATUS[r.status]||MASTER_STATUS.review;
+                    const open=mstRow===r.src;
+                    const done=mstApplied&&r.status==='auto';
+                    return(
+                      <div key={i}>
+                        <button onClick={()=>setMstRow(open?null:r.src)}
+                          className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={cn('w-1.5 h-1.5 rounded-full shrink-0',st.dot)}/>
+                            <span className="text-[12px] font-mono text-slate-500 truncate">{r.src}</span>
+                            {r.srcSystem&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-bold shrink-0">{r.srcSystem}</span>}
+                            <ArrowRightLeft className="w-3 h-3 text-slate-300 shrink-0"/>
+                            <span className={cn('text-[12px] font-mono font-bold shrink-0',r.status==='none'?'text-slate-300':'text-slate-800')}>
+                              {r.suggest||'— 후보 없음'}
+                            </span>
+                            <span className={cn('ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0',
+                              done?'bg-emerald-600 border-emerald-600 text-white':st.chip)}>
+                              {done?'반영됨':st.label}
+                            </span>
+                            {r.conf!=null&&<span className="text-[11px] font-mono text-slate-400 w-11 text-right shrink-0">{r.conf}%</span>}
+                            <ChevronDown className={cn('w-3.5 h-3.5 text-slate-300 shrink-0 transition-transform',open&&'rotate-180')}/>
+                          </div>
+                          {r.name&&<div className="text-[11px] text-slate-400 mt-1 ml-3.5">{r.name}{r.unit?` · ${r.unit}`:''}</div>}
+                        </button>
+
+                        {open&&(
+                          <div className="px-4 pb-4 pt-1 bg-slate-50/60 space-y-3">
+                            {r.basis?.length>0&&(
+                              <div className="space-y-1.5">
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">판정 근거</div>
+                                {r.basis.map((b,bi)=>(
+                                  <div key={bi} className="flex gap-2 text-[11px]">
+                                    <span className="font-bold text-slate-600 w-24 shrink-0">{b.label}</span>
+                                    <span className="text-slate-500 leading-snug">{b.detail}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {r.convert&&(
+                              <div className="text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2 leading-relaxed">
+                                <span className="font-bold">변환 규칙 · </span>{r.convert}
+                              </div>
+                            )}
+                            {r.alts?.length>0&&(
+                              <div className="space-y-1.5">
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">대안 후보</div>
+                                {r.alts.map((a,ai)=>(
+                                  <div key={ai} className="flex items-start gap-2 text-[11px] bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
+                                    <span className="font-mono font-bold text-slate-600 shrink-0">{a.code}</span>
+                                    <span className="text-slate-400 shrink-0">{a.name}</span>
+                                    <span className="text-slate-500 leading-snug flex-1">{a.reason}</span>
+                                    <span className="font-mono text-slate-400 shrink-0">{a.conf}%</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {mstRows.length===0&&(
+                    <div className="px-4 py-8 text-center text-[12px] text-slate-400">해당 상태의 항목이 없습니다</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ④ 미매칭 사유 분포 */}
+            {MM.reasons?.length>0&&(
+              <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500"/>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">미매칭 사유와 조치</span>
+                </div>
+                <div className="p-4 space-y-2.5">
+                  {MM.reasons.map((rs,i)=>{
+                    const max=Math.max(...MM.reasons.map(x=>x.count));
+                    return(
+                      <div key={i}>
+                        <div className="flex items-center gap-2 text-[11px] mb-1">
+                          <span className="font-bold text-slate-600">{rs.label}</span>
+                          <span className="ml-auto font-mono text-slate-400">{rs.count.toLocaleString()}건</span>
+                        </div>
+                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-1.5 rounded-full bg-amber-400" style={{width:`${Math.round((rs.count/max)*100)}%`}}/>
+                        </div>
+                        {rs.action&&<div className="text-[10px] text-slate-400 mt-1 leading-snug">→ {rs.action}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ⑤ 시스템 간 정합성 */}
+            {MM.crossMatch&&(
+              <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                  <Network className="w-3.5 h-3.5 text-slate-400"/>
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">시스템 간 키 매칭률</span>
+                </div>
+                <div className="p-4 overflow-x-auto">
+                  <table className="w-full min-w-[380px] text-[11px]">
+                    <thead>
+                      <tr>
+                        <th className="text-left font-bold text-slate-400 pb-2 pr-2"/>
+                        {MM.crossMatch.systems.map((s,i)=>(
+                          <th key={i} className="font-bold text-slate-500 pb-2 px-2 text-center">{s}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {MM.crossMatch.systems.map((s,ri)=>(
+                        <tr key={ri}>
+                          <td className="font-bold text-slate-500 py-1 pr-2 whitespace-nowrap">{s}</td>
+                          {MM.crossMatch.cells[ri].map((v,ci)=>(
+                            <td key={ci} className="px-1 py-1">
+                              {v==null
+                                ?<div className="h-7 rounded-lg bg-slate-50"/>
+                                :<div className={cn('h-7 rounded-lg flex items-center justify-center font-mono font-bold',
+                                    v>=90?'bg-emerald-50 text-emerald-700':v>=75?'bg-amber-50 text-amber-700':'bg-rose-50 text-rose-700')}>
+                                    {v}%
+                                  </div>}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ⑥ 자동 확정 반영 */}
+            {MM.apply&&(
+              <div className={cn('rounded-2xl p-4 border transition-colors',
+                mstApplied?'bg-emerald-50 border-emerald-200':'bg-slate-900 border-slate-900')}>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <div className={cn('text-[12px] font-bold',mstApplied?'text-emerald-800':'text-white')}>{MM.apply.label}</div>
+                    <div className={cn('text-[11px] mt-0.5',mstApplied?'text-emerald-600':'text-slate-400')}>
+                      자동 확정 {MM.apply.autoCount}건 · 사람 검토 {MM.apply.reviewCount}건
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={cn('text-[15px] font-mono font-bold',mstApplied?'text-emerald-400/60 line-through':'text-slate-400')}>{MM.apply.before}</span>
+                    <ChevronRight className={cn('w-4 h-4',mstApplied?'text-emerald-500':'text-slate-500')}/>
+                    <span className={cn('text-[19px] font-mono font-bold',mstApplied?'text-emerald-700':'text-white')}>{MM.apply.after}</span>
+                  </div>
+                </div>
+                <button onClick={()=>setMstApplied(true)} disabled={mstApplied}
+                  className={cn('w-full mt-3 py-2.5 rounded-xl text-[12px] font-bold flex items-center justify-center gap-2 transition-colors',
+                    mstApplied?'bg-emerald-100 text-emerald-700 cursor-default':'bg-indigo-600 text-white hover:bg-indigo-500')}>
+                  {mstApplied
+                    ?<><CheckCircle2 className="w-4 h-4"/>표준 마스터에 반영됨 (검토 {MM.apply.reviewCount}건 대기)</>
+                    :<><RefreshCw className="w-4 h-4"/>자동 확정 {MM.apply.autoCount}건 표준 마스터에 반영</>}
+                </button>
+                {MM.apply.note&&(
+                  <div className={cn('text-[10px] mt-2 leading-relaxed',mstApplied?'text-emerald-600':'text-slate-400')}>{MM.apply.note}</div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
