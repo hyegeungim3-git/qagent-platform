@@ -36,6 +36,7 @@
 ## 4. 배포 (GitHub Pages)
 
 - **Pages 일시 오류 상습 재발**: build는 success인데 deploy-pages만 "try again later"로 실패하는 패턴이 4회 이상. **실패 런 `rerun --failed` 금지**(아티팩트 중복) — `gh workflow run`으로 새 런을 실행.
+- **Pages 설정 소실 (일시 오류와 구분할 것)**: `configure-pages@v5` 단계에서 `Get Pages site failed ... Not Found`로 **build 자체가 실패**하면 일시 오류가 아니라 저장소의 Pages 설정이 사라진 것이다(2026-07-30 v3에서 발생, 새 런 재시도 2회 모두 같은 지점 실패). 판정: `gh api repos/<owner>/<repo>/pages` → 404면 확정. 복구: `gh api repos/<owner>/<repo>/pages -X POST -f build_type=workflow` 후 새 런. **구분 기준 — deploy만 실패=일시 오류(새 런), build의 configure-pages 실패=설정 소실(재활성화 먼저).**
 - **라이브 마커는 올바른 청크에서**: lazy 컴포넌트 문자열(OrchestrationScenario, UserApp 소속 텍스트)은 index-*.js에 없다. index에서 청크 파일명을 추출해 해당 청크를 받아 확인. `App-[\w-]+\.js` 정규식은 `\b` 없이 쓰면 "UserApp-..."에 오매칭된다.
 - 배포 주소·리모트 역할은 CLAUDE.md 배포 표가 정본 — push 전에 origin이 어느 저장소인지 확인.
 

@@ -112,6 +112,7 @@ src/
 | 2026-07-12 | pitfalls §3에 탭 스로틀·업데이터 부수효과 항목 추가 | genos-work/references/pitfalls.md | P1 구현 중 실발견 2건 반영 |
 | 2026-07-12 | verify.mjs가 스캔 전 genos.uiPrefs 제거 | genos-verify/scripts/verify.mjs | 다크·영어 설정 잔재가 한국어 마커 판정 오염 방지 |
 | 2026-07-12 | 승계 체계 추가 (DECISIONS.md·HANDOVER.md·CLAUDE.md 온보딩 포인터) | docs/, CLAUDE.md | Fable 5 이후 모델이 이어받거나 재현해도 같은 수준 유지 — 설계 '왜'와 온보딩 절차 외재화 |
+| 2026-07-30 | pitfalls §4에 'Pages 설정 소실' 항목 추가 (일시 오류와 구분·복구법) | genos-work/references/pitfalls.md | M.AX 배포 중 configure-pages 404로 build 실패 — 새 런 재시도 2회 낭비 후 원인 판명 |
 
 ## 6. 다음 세션 표준 지시문 (사용자가 이 문구로 시작하면 그대로 수행)
 
