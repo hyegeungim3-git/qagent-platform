@@ -582,7 +582,7 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain }) => {
                activeAgentId === "agent-internalreg"  ? <InternalRegAgent  domain={domain} onBack={() => setActiveAgentId(null)} /> :
                activeAgentId === "agent-ocr"          ? <OCRAgent          domain={domain} onBack={() => setActiveAgentId(null)} /> :
                activeAgentId === "agent-knowledge"    ? <KnowledgeAgent    domain={domain} onBack={() => setActiveAgentId(null)} /> :
-               activeAgentId === "agent-dbquery"      ? <DBQueryAgent      domain={domain} onBack={() => setActiveAgentId(null)} /> :
+               activeAgentId === "agent-dbquery"      ? <DBQueryAgent      domain={domain} onBack={() => setActiveAgentId(null)} onNavigate={setActiveAgentId} /> :
                activeAgentId === "agent-address"      ? <AddressAgent      domain={domain} onBack={() => setActiveAgentId(null)} /> :
                activeAgentId === "agent-dataanalysis" ? <DataAnalysisAgent domain={domain} onBack={() => setActiveAgentId(null)} /> :
                activeAgentId === "agent-summary"      ? <SummaryAgent      domain={domain} onBack={() => setActiveAgentId(null)} /> :

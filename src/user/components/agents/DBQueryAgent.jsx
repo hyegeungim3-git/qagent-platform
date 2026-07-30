@@ -165,10 +165,16 @@ export const CONTENT_DEFAULTS = {
   landColumns: ['지번', '지목', '면적(㎡)', '소유구분', '용도지역', 'PNU', '공시지가(원/㎡)'], // string[7] — landRows 필드 순서와 일치
   lupColumns: ['지번', '용도지역', '지구', '건축제한', '화재경계지구'],                        // string[5] — lupRows 필드 순서와 일치
   restrictedNotice: '공시지가 정보는 관리자 이상 권한에서 조회 가능합니다.', // general 권한 안내 배너
+  /* ── 아래는 전부 선택 필드 — 팩이 제공할 때만 해당 패널이 렌더된다(미제공 도메인 무변화) ── */
+  interpretBySource: null, // {building|land|lup: {terms:[{phrase,column,op,value,note}], assumptions:[string], unmapped:[string]}}
+  planBySource: null,      // {building|land|lup: {steps:[{op,detail,rows,ms}], totalMs, note}} — 실행 계획
+  freshness: null,         // [{label,table,syncedAt,lag,rows,status:'ok'|'warn'|'bad'}] — 소스 신선도
+  qualityFlags: null,      // [{level:'bad'|'warn'|'info',label,detail}] — 결과 해석 시 주의사항
+  nextActions: null,       // [{label,agentId,reason}] — 결과를 넘길 후속 에이전트
 };
 
 /* ── 메인 컴포넌트 ── */
-export default function DBQueryAgent({ onBack, domain }) {
+export default function DBQueryAgent({ onBack, domain, onNavigate }) {
   const C = { ...CONTENT_DEFAULTS, ...(domain?.agentContent?.["agent-dbquery"] || {}) };
   const [step, setStep] = useState(1);
   const [query, setQuery] = useState('');
@@ -178,7 +184,9 @@ export default function DBQueryAgent({ onBack, domain }) {
   const [agentDone, setAgentDone] = useState([false, false, false]);
   const [showHistory, setShowHistory] = useState(false);
   const [showSQL, setShowSQL] = useState(false);
+  const [showPlan, setShowPlan] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
   const [sortField, setSortField] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
 
@@ -186,6 +194,11 @@ export default function DBQueryAgent({ onBack, domain }) {
   const permInfo = C.permissionLevels.find(p => p.id === permission);
   const sourceInfo = C.dbSources.find(s => s.key === source);
   const stats = (C.statsBySource[source] || []).map(s => ({ ...s, icon: STAT_ICONS[s.icon] || TableProperties }));
+  const interp = C.interpretBySource?.[source] || null;
+  const plan = C.planBySource?.[source] || null;
+  const currentRows = source === 'building' ? C.buildingRows : source === 'land' ? C.landRows : C.lupRows;
+  const currentHeaders = source === 'building' ? C.buildingColumns.map(c => c.label)
+    : source === 'land' ? C.landColumns : C.lupColumns;
 
   /* ── 파이프라인 실행 ── */
   function runPipeline() {
@@ -224,11 +237,21 @@ export default function DBQueryAgent({ onBack, domain }) {
 
   /* ── CSV 복사 ── */
   function handleCopy() {
-    const rows = source === 'building' ? C.buildingRows : source === 'land' ? C.landRows : C.lupRows;
-    const text = rows.map(r => Object.values(r).join('\t')).join('\n');
+    const text = [currentHeaders.join('\t'), ...currentRows.map(r => Object.values(r).join('\t'))].join('\n');
     navigator.clipboard?.writeText(text).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  /* ── 엑셀 다운로드 (BOM + TSV — 엑셀에서 한글 정상 인식) ── */
+  function handleDownload() {
+    const tsv = [currentHeaders.join('\t'), ...currentRows.map(r => Object.values(r).join('\t'))].join('\n');
+    const url = URL.createObjectURL(new Blob(['﻿' + tsv], { type: 'text/tab-separated-values;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = `${sourceInfo.label}_조회결과.xls`; a.click();
+    URL.revokeObjectURL(url);
+    setDownloaded(true);
+    setTimeout(() => setDownloaded(false), 2000);
   }
 
   /* ── 리셋 ── */
@@ -519,6 +542,60 @@ export default function DBQueryAgent({ onBack, domain }) {
           })}
         </div>
 
+        {/* 질의 해석 — 자연어를 어떤 조건으로 옮겼는지 (Text2SQL 판단 근거) */}
+        {interp && (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100">
+              <Search className="w-4 h-4 text-cyan-500" />
+              <span className="text-sm font-semibold text-slate-700">질의 해석</span>
+              <span className="ml-auto text-xs text-slate-400">자연어 → 조회 조건</span>
+            </div>
+            <div className="p-4 space-y-3">
+              {interp.terms?.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[520px] text-xs">
+                    <thead>
+                      <tr className="text-slate-400">
+                        {['질의 표현', '대상 컬럼', '조건', '판단'].map(h => (
+                          <th key={h} className="text-left font-semibold pb-2 pr-3 whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {interp.terms.map((t, i) => (
+                        <tr key={i}>
+                          <td className="py-2 pr-3 align-top">
+                            <span className="px-2 py-0.5 rounded bg-cyan-50 text-cyan-700 font-medium whitespace-nowrap">{t.phrase}</span>
+                          </td>
+                          <td className="py-2 pr-3 align-top font-mono text-slate-600 whitespace-nowrap">{t.column}</td>
+                          <td className="py-2 pr-3 align-top font-mono text-slate-500 whitespace-nowrap">{t.op} {t.value}</td>
+                          <td className="py-2 align-top text-slate-500 leading-snug">{t.note}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {interp.assumptions?.length > 0 && (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 space-y-1">
+                  <div className="text-[11px] font-bold text-amber-700">질의에 없어 AI가 가정한 조건</div>
+                  {interp.assumptions.map((a, i) => (
+                    <div key={i} className="text-[11px] text-amber-700 leading-relaxed">· {a}</div>
+                  ))}
+                </div>
+              )}
+              {interp.unmapped?.length > 0 && (
+                <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 space-y-1">
+                  <div className="text-[11px] font-bold text-slate-500">조건으로 옮기지 못한 표현</div>
+                  {interp.unmapped.map((u, i) => (
+                    <div key={i} className="text-[11px] text-slate-500 leading-relaxed">· {u}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* SQL Accordion */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <button
@@ -541,6 +618,106 @@ export default function DBQueryAgent({ onBack, domain }) {
           )}
         </div>
 
+        {/* 실행 계획 */}
+        {plan && (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <button
+              onClick={() => setShowPlan(v => !v)}
+              className="w-full flex items-center gap-2 px-4 py-3 hover:bg-slate-50 transition-colors text-left">
+              <Zap className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-semibold text-slate-700">실행 계획</span>
+              {plan.totalMs && (
+                <span className="ml-auto text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{plan.totalMs}</span>
+              )}
+              <ChevronDown className={cn('w-4 h-4 text-slate-400 transition-transform ml-1', showPlan && 'rotate-180')} />
+            </button>
+            {showPlan && (
+              <div className="border-t border-slate-200 p-4 space-y-2">
+                {plan.steps?.map((s, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="flex flex-col items-center shrink-0 pt-0.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                      {i < plan.steps.length - 1 && <div className="w-px flex-1 min-h-[18px] bg-slate-200" />}
+                    </div>
+                    <div className="flex-1 min-w-0 pb-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-mono font-semibold text-blue-700">{s.op}</span>
+                        {s.rows != null && (
+                          <span className="text-[10px] font-mono text-slate-400">rows {Number(s.rows).toLocaleString()}</span>
+                        )}
+                        {s.ms != null && (
+                          <span className="text-[10px] font-mono text-slate-400">{s.ms}ms</span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-500 leading-snug mt-0.5">{s.detail}</div>
+                    </div>
+                  </div>
+                ))}
+                {plan.note && (
+                  <div className="text-[11px] text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 leading-relaxed mt-1">
+                    {plan.note}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 데이터 신선도 + 품질 경고 */}
+        {(C.freshness?.length > 0 || C.qualityFlags?.length > 0) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {C.freshness?.length > 0 && (
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-100">
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-xs font-semibold text-slate-600">데이터 신선도</span>
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {C.freshness.map((f, i) => (
+                    <div key={i} className="px-4 py-2.5 flex items-center gap-3">
+                      <span className={cn('w-1.5 h-1.5 rounded-full shrink-0',
+                        f.status === 'bad' ? 'bg-rose-500' : f.status === 'warn' ? 'bg-amber-500' : 'bg-emerald-500')} />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[12px] font-medium text-slate-700 truncate">{f.label}</div>
+                        <div className="text-[10px] font-mono text-slate-400 truncate">{f.table}{f.rows ? ` · ${f.rows}행` : ''}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-[11px] text-slate-500 font-mono">{f.syncedAt}</div>
+                        <div className={cn('text-[10px] font-bold',
+                          f.status === 'bad' ? 'text-rose-600' : f.status === 'warn' ? 'text-amber-600' : 'text-slate-400')}>{f.lag}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {C.qualityFlags?.length > 0 && (
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-100">
+                  <Shield className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-xs font-semibold text-slate-600">결과 해석 시 주의</span>
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {C.qualityFlags.map((q, i) => (
+                    <div key={i} className="px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0',
+                          q.level === 'bad' ? 'bg-rose-50 border-rose-200 text-rose-700'
+                            : q.level === 'warn' ? 'bg-amber-50 border-amber-200 text-amber-700'
+                              : 'bg-slate-50 border-slate-200 text-slate-500')}>
+                          {q.level === 'bad' ? '결측' : q.level === 'warn' ? '주의' : '참고'}
+                        </span>
+                        <span className="text-[12px] font-medium text-slate-700 leading-snug">{q.label}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 leading-relaxed mt-1">{q.detail}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 다운로드 / 복사 버튼 */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -562,14 +739,23 @@ export default function DBQueryAgent({ onBack, domain }) {
               {copied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? '복사됨' : 'CSV 복사'}
             </button>
-            <button className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition-all">
+            <button
+              onClick={handleDownload}
+              className={cn('flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all',
+                downloaded
+                  ? 'border-green-400 bg-green-50 text-green-700'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700')}>
               <Download className="w-3.5 h-3.5" />
-              엑셀 다운로드
+              {downloaded ? '내려받음' : '엑셀 다운로드'}
             </button>
-            <button className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all">
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              보고서 생성
-            </button>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('agent-report')}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all">
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                보고서 생성
+              </button>
+            )}
           </div>
         </div>
 
@@ -741,6 +927,28 @@ export default function DBQueryAgent({ onBack, domain }) {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* 다음 단계 — 조회 결과를 넘길 후속 에이전트 */}
+        {C.nextActions?.length > 0 && onNavigate && (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-100">
+              <ChevronRight className="w-3.5 h-3.5 text-indigo-500" />
+              <span className="text-xs font-semibold text-slate-600">다음 단계</span>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {C.nextActions.map((a, i) => (
+                <button key={i} onClick={() => onNavigate(a.agentId)}
+                  className="w-full text-left px-4 py-3 hover:bg-indigo-50/50 transition-colors group">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-semibold text-slate-700 group-hover:text-indigo-700">{a.label}</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-indigo-500 ml-auto shrink-0" />
+                  </div>
+                  <div className="text-[11px] text-slate-500 leading-relaxed mt-0.5">{a.reason}</div>
+                </button>
+              ))}
             </div>
           </div>
         )}

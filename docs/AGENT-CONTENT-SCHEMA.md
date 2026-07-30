@@ -53,6 +53,15 @@
 - fileData: FILE_DATA shape { d1:{title,date,secLevel,text,highlights[]} ... } — 선택 (docs의 id와 일치)
 - generateDocHTML(doc, org): org = {name, short, color, en} 자동 주입됨 (UserApp) — 팩 작업 불필요. doc.sealText로 직인 문구 교체 가능
 
+## agent-dbquery (DBQueryAgent.jsx) — 조회 근거 확장 필드
+전부 **선택**(미제공 시 해당 패널 비노출). 소스 키는 dbSources와 동일한 building|land|lup 고정.
+- interpretBySource: {building|land|lup: {terms:[{phrase,column,op,value,note}], assumptions:[string], unmapped:[string]}}
+  — 자연어를 어떤 조건으로 옮겼는지. `assumptions`는 질의에 없어 AI가 채운 값, `unmapped`는 변환하지 못한 표현(정직 표기)
+- planBySource: {building|land|lup: {steps:[{op,detail,rows,ms}], totalMs, note}} — 실행 계획 아코디언
+- freshness: [{label,table,syncedAt,lag,rows,status:'ok'|'warn'|'bad'}] — 소스별 최종 동기화
+- qualityFlags: [{level:'bad'|'warn'|'info',label,detail}] — 결과 해석 시 주의(결측·NULL·기한 초과 등)
+- nextActions: [{label,agentId,reason}] — 결과를 넘길 후속 에이전트(코어가 onNavigate로 이동)
+
 ## agent-address (AddressAgent.jsx) — 기준정보 매핑 확장 필드
 - headerTitle / headerDesc / headerStatus: string — 화면 헤더·연결 표시(생략 시 REB 주소 기본값)
 - modeTypes: `m` 키는 고정(single|batch|ocr|reverse)이나 **`{m:'master', color:'indigo'}` 확장 항목 추가 가능**.
