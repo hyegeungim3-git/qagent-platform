@@ -1426,6 +1426,8 @@ LIMIT 50;`,
     },
     /* ── 금형 도면 온톨로지 검색 에이전트 (M.AX 온톨로지 — 유사 도면 검색·설계 아웃라인 참조) ── */
     "agent-knowledge": {
+      headerTitle: '금형 도면 온톨로지 검색 에이전트',
+      headerDesc: '도면 12,400장 온톨로지 — 유사 도면 검색 + 설계 아웃라인 자동 생성 (설계 리드타임 5.2일 → 1.8일)',
       defaultQuery: '브래킷 굽힘 금형 유사 도면 및 설계 아웃라인',
       quickQueries: ['유사 금형 도면 검색','프로그레시브 금형 설계 표준','금형 간섭 체크 기준','절삭유 농도 관리 기준'],
       knowledgeBases: [
@@ -1449,12 +1451,29 @@ LIMIT 50;`,
           page: 1, score: 92.0, secLevel: 'C', line: '도면 1/4 · 스테이지 배치도',
           excerpt: `SPCC 2.0T · 전장 84.5mm · 굽힘 R2.0 / 5스테이지(피어싱–노칭–굽힘1–굽힘2–블랭킹) 구성. 스프링백 보정 1.8°, 다이 클리어런스 편측 0.16mm(판두께의 8%). 양산 실적 28만 타, 타당 불량 0.11%.`,
           keywords: ['SPCC 2.0T','굽힘 R2.0','5스테이지','스프링백 1.8°'],
+          // 온톨로지 속성 매칭 — 신규 사양(M-318) 대비 일치 여부. 유사도 92.0%의 근거
+          attrs: [
+            { label: '소재',        value: 'SPCC 2.0T',   match: true },
+            { label: '굽힘 R',      value: 'R2.0',        match: true },
+            { label: '전장',        value: '84.5mm',      match: true },
+            { label: '홀 피치',     value: '42.00mm',     match: true },
+            { label: '스테이지',    value: '5단',         match: true },
+            { label: '프레스 톤수', value: '250t',        match: false },
+          ],
         },
         {
           id: 2, title: 'HBM-1987 브래킷 굽힘 금형 (4스테이지)', source: '금형도면_HBM-1987_Rev.B.dwg',
           page: 1, score: 88.4, secLevel: 'C', line: '도면 1/3 · 다이 세트 상세',
           excerpt: `동일 계열 브래킷 금형이나 홀 피치가 42.00 → 38.50mm로 상이하다. 스프링백 보정 2.1°, 초기 양산 시 플랜지 주름이 발생해 패드 압력을 0.8 → 1.2MPa로 상향한 개선 이력이 있다.`,
           keywords: ['홀 피치 38.50','패드 압력 1.2MPa','주름 개선'],
+          attrs: [
+            { label: '소재',        value: 'SPCC 2.0T',   match: true },
+            { label: '굽힘 R',      value: 'R2.0',        match: true },
+            { label: '전장',        value: '80.0mm',      match: false },
+            { label: '홀 피치',     value: '38.50mm',     match: false },
+            { label: '스테이지',    value: '4단',         match: false },
+            { label: '프레스 톤수', value: '200t',        match: true },
+          ],
         },
         {
           id: 3, title: '프로그레시브 금형 스테이지 배치 설계 표준', source: '금형설계표준_DIE-STD-04.pdf',
@@ -1484,6 +1503,55 @@ LIMIT 50;`,
         { title: '금형 재질 선정 기준 (SKD11 · STD61)',    source: '금형설계표준_DIE-STD-02.pdf',   relevance: 71 },
         { title: 'HBM-2043 브래킷 드로잉 금형 (형상 부분 일치)', source: '금형도면_HBM-2043_Rev.A.dwg',  relevance: 64 },
       ],
+      // 온톨로지 산출물 — 유사 도면(HBM-2211 92.0%)을 기준으로 신규 품번 M-318 설계 아웃라인 자동 생성
+      outline: {
+        title: '설계 아웃라인 자동 생성 — M-318 브래킷 굽힘 금형',
+        badge: '온톨로지 기반',
+        subtitle: '기준 도면 HBM-2211 (유사도 92.0%) · 프로그레시브 5스테이지',
+        shape: {
+          viewBox: '0 0 400 150',
+          paths: [
+            // 스트립 레이아웃(캐리어) — 소재 진행 방향
+            { d: 'M14 40 H386 M14 118 H386', stroke: '#cbd5e1', width: 1, dash: '4 3' },
+            // 5스테이지 다이 세트 경계
+            { d: 'M28 34 H100 V124 H28 Z', stroke: '#a78bfa', width: 1.4 },
+            { d: 'M100 34 H172 V124 H100 Z', stroke: '#a78bfa', width: 1.4 },
+            { d: 'M172 34 H244 V124 H172 Z', stroke: '#7c3aed', width: 1.8 },
+            { d: 'M244 34 H316 V124 H244 Z', stroke: '#7c3aed', width: 1.8 },
+            { d: 'M316 34 H388 V124 H316 Z', stroke: '#a78bfa', width: 1.4 },
+            // 제품 단면(굽힘 후 형상) — 3스테이지 위치에 표기
+            { d: 'M186 96 H214 L226 74 M186 96 L174 74', stroke: '#0f766e', width: 2.4 },
+            // 홀 피치 치수선
+            { d: 'M186 132 H272 M186 128 V136 M272 128 V136', stroke: '#64748b', width: 1 },
+          ],
+          labels: [
+            { x: 64,  y: 30, text: '① 피어싱', size: 8 },
+            { x: 136, y: 30, text: '② 노칭', size: 8 },
+            { x: 208, y: 30, text: '③ 굽힘 1', size: 8, color: '#7c3aed' },
+            { x: 280, y: 30, text: '④ 굽힘 2', size: 8, color: '#7c3aed' },
+            { x: 352, y: 30, text: '⑤ 블랭킹', size: 8 },
+            { x: 229, y: 146, text: '홀 피치 38.50mm (신규 사양)', size: 8 },
+            { x: 240, y: 70, text: 'R2.0', size: 8, color: '#0f766e' },
+            { x: 200, y: 16, text: '← 소재 이송 방향 (SPCC 2.0T)', size: 8, color: '#94a3b8' },
+          ],
+        },
+        specs: [
+          { label: '스테이지',     value: '5단 (피어싱–노칭–굽힘1–굽힘2–블랭킹)', from: 'HBM-2211' },
+          { label: '다이 클리어런스', value: '편측 0.16mm (8%t)',   from: 'HBM-2211' },
+          { label: '스프링백 보정', value: '1.8°',                 from: 'HBM-2211' },
+          { label: '홀 피치',      value: '38.50mm',              from: '신규 사양' },
+          { label: '패드 압력',    value: '1.2MPa',               from: 'HBM-1987 개선' },
+          { label: '스테이지 피치', value: '16.0mm (8t 이상)',      from: 'DIE-STD-04' },
+        ],
+        checks: [
+          { status: 'ok',   label: '인접 스테이지 최소 피치 8t 확보', detail: '16.0mm ≥ 16.0mm (판두께 2.0T 기준)' },
+          { status: 'ok',   label: '스트리퍼–펀치 홀더 이격 3mm 확보', detail: 'CAD 간섭 체크 통과 (최소 3.4mm)' },
+          { status: 'warn', label: '플랜지 주름 발생 가능 구간 식별',   detail: 'HBM-1987 초기 이력과 동일 조건 — 패드 압력 1.2MPa 선반영 권장' },
+          { status: 'warn', label: '굽힘 다이 R부 쇼트피닝 미반영',     detail: '트러블슈팅 사례(타수 50만) 기준 — 도면 주기사항에 추가 필요' },
+        ],
+        effect: { label: '설계 리드타임 (시범 적용 12건 평균)', before: '5.2일', after: '1.8일', delta: '65% 단축' },
+        note: '아웃라인은 온톨로지 검색 결과 기반 초안입니다. 성형 시뮬레이션과 DR2 설계 검토를 거쳐 확정되며, 도면 원본(.dwg)은 대외비 등급으로 사내망에서만 열람됩니다. (시뮬레이션 데모 — 실서비스에서는 CAD/CAM 엔진과 연동)',
+      },
     },
     /* ── 사규·안전규정 조회 에이전트 ── */
     "agent-internalreg": {
