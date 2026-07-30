@@ -53,6 +53,14 @@
 - fileData: FILE_DATA shape { d1:{title,date,secLevel,text,highlights[]} ... } — 선택 (docs의 id와 일치)
 - generateDocHTML(doc, org): org = {name, short, color, en} 자동 주입됨 (UserApp) — 팩 작업 불필요. doc.sealText로 직인 문구 교체 가능
 
+## agent-knowledge (KnowledgeAgent.jsx) — 온톨로지 확장 필드
+- headerTitle / headerDesc: string — 화면 헤더(도메인 리브랜딩. 생략 시 '지식 검색 에이전트')
+- results[].attrs: {label,value,match:boolean}[] — **선택**. 온톨로지 속성 매칭 배지(신규 사양 대비 일치/불일치). 생략 시 미노출
+- outline: **선택**(생략 시 패널 자체 비노출) — 검색 결과로 초안을 산출하는 도메인용(금형 설계 등)
+  - { title, badge, subtitle, shape:{viewBox, paths:[{d,stroke?,fill?,width?,dash?}], labels:[{x,y,text,size?,color?,anchor?}]},
+      specs:[{label,value,from}], checks:[{label,status:'ok'|'warn'|'fail',detail}],
+      effect:{label,before,after,delta}, note }
+
 ## agent-dbquery (DBQueryAgent.jsx)
 - headerTitle / headerSubtitle / dbStatusLabel / emptyTitle: string
 - dbSources: {key,label,desc}[3] — key 'building'|'land'|'lup' 고정

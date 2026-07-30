@@ -81,14 +81,29 @@ const SEC_LABELS={C:'대외비',S:'내부',O:'일반'};
 
 /* 도메인 이관: REB 기본 콘텐츠 — 도메인 팩 agentContent["agent-knowledge"]로 키 단위 오버라이드 */
 export const CONTENT_DEFAULTS={
+  headerTitle:'지식 검색 에이전트',          // string — 화면 헤더 제목(도메인별 리브랜딩용)
+  headerDesc:'사내 문서·규정 시맨틱/전문 검색 — 벡터 임베딩 기반 유사도 검색', // string — 헤더 설명
   defaultQuery:'표준지공시지가 조사 기준일 및 조사 방법', // string — 검색어 초기값(aiSummaries 키와 일치 권장)
   quickQueries:['표준지 선정 기준','이의신청 처리 절차','현장조사 안전 수칙','출장비 정산 기준'], // string[4] — 추천 검색어 칩
   knowledgeBases: KNOWLEDGE_BASES,          // {id,name,docs,updated,icon(lucide 컴포넌트),color(tailwind 색상명)}[7] — 지식베이스 목록
   defaultSelectedKbIds:['kb1','kb2','kb3'], // string[3] — 초기 선택 지식베이스 id(knowledgeBases.id와 일치)
   recentSearches: RECENT_SEARCHES,          // {id,query,date,results}[3] — 최근 검색 이력
   results: MOCK_RESULTS,                    // {id,title,source,page,score,secLevel:'C'|'S'|'O',line,excerpt,keywords:string[]}[5] — 검색 결과(score 내림차순)
+                                            //   선택 필드 attrs: {label,value,match:boolean}[] — 온톨로지 속성 매칭(제조 도면 등). 없으면 미노출
   aiSummaries: AI_SUMMARIES,                // {[질의문]:요약문, DEFAULT:폴백요약} — 질의별 AI 요약
   similarDocs: SIMILAR_DOCS,                // {title,source,relevance}[3] — 유사 문서 추천
+
+  /* 선택(생략 시 해당 UI 비노출) — 온톨로지 기반 산출물 패널.
+     '검색'을 넘어 참조 결과로 초안을 만들어내는 도메인(예: 금형 설계)용. */
+  outline:null,
+  /* outline 스키마:
+     { title, subtitle, badge,
+       shape: { viewBox, paths:[{d, stroke?, fill?, dash?}], labels:[{x,y,text}] },   // 단순 SVG 스케치
+       specs: [{label, value, from}],           // 자동 산출 제원(출처 도면 표기)
+       checks: [{label, status:'ok'|'warn'|'fail', detail}],  // 자동 검증(간섭·공차 등)
+       effect: {label, before, after, delta},   // 기대 효과(리드타임 등)
+       note }                                   // 하단 안내(실서비스 대체 지점 등)
+  */
 };
 
 const KnowledgeAgent=({onBack,domain})=>{
@@ -143,8 +158,8 @@ const KnowledgeAgent=({onBack,domain})=>{
             <Search className="w-5 h-5 text-white"/>
           </div>
           <div>
-            <div className="text-[15px] font-black text-slate-800">지식 검색 에이전트</div>
-            <div className="text-xs text-slate-400">사내 문서·규정 시맨틱/전문 검색 — 벡터 임베딩 기반 유사도 검색</div>
+            <div className="text-[15px] font-black text-slate-800">{C.headerTitle}</div>
+            <div className="text-xs text-slate-400">{C.headerDesc}</div>
           </div>
         </div>
 
@@ -474,6 +489,26 @@ const KnowledgeAgent=({onBack,domain})=>{
                       <span className="text-[11px] font-bold text-violet-700">위치: {r.line}</span>
                     </div>
                   )}
+                  {/* 온톨로지 속성 매칭 — 팩이 attrs를 공급할 때만 (제조 도면 등 구조화 지식) */}
+                  {r.attrs?.length>0&&(
+                    <div className="mb-3">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                        <Network className="w-3 h-3"/>온톨로지 속성 매칭
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                        {r.attrs.map((a,ai)=>(
+                          <div key={ai} className={cn('px-2.5 py-1.5 rounded-lg border text-[10px]',
+                            a.match?'bg-emerald-50 border-emerald-200':'bg-slate-50 border-slate-200')}>
+                            <div className="text-slate-400 font-medium">{a.label}</div>
+                            <div className={cn('font-black flex items-center gap-1 mt-0.5',a.match?'text-emerald-700':'text-slate-600')}>
+                              {a.match&&<CheckCircle className="w-2.5 h-2.5 shrink-0"/>}
+                              <span className="truncate">{a.value}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {/* 유사도 바 */}
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] text-slate-400 w-16 shrink-0">유사도</span>
@@ -487,6 +522,101 @@ const KnowledgeAgent=({onBack,domain})=>{
             </div>
           ))}
         </div>
+
+        {/* 온톨로지 산출물 — 설계 아웃라인 (팩이 outline을 공급할 때만 노출) */}
+        {C.outline&&(
+          <div className="bg-white border-2 border-violet-200 rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-5 py-3.5 bg-violet-50/70 border-b border-violet-100 flex items-center gap-2 flex-wrap">
+              <Sparkles className="w-4 h-4 text-violet-600 shrink-0"/>
+              <span className="text-[13px] font-bold text-slate-800">{C.outline.title}</span>
+              {C.outline.badge&&(
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-violet-600 text-white font-semibold shrink-0">{C.outline.badge}</span>
+              )}
+              {C.outline.subtitle&&(
+                <span className="ml-auto text-[10px] text-slate-500 font-medium truncate">{C.outline.subtitle}</span>
+              )}
+            </div>
+
+            {/* 도면 스케치 + 자동 산출 제원 */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 p-4">
+              {C.outline.shape&&(
+                <div className="lg:col-span-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">자동 생성 아웃라인 (개념도)</div>
+                  <svg viewBox={C.outline.shape.viewBox} className="w-full h-44" role="img" aria-label="자동 생성된 설계 아웃라인 개념도">
+                    {C.outline.shape.paths.map((p,pi)=>(
+                      <path key={pi} d={p.d} fill={p.fill||'none'} stroke={p.stroke||'#7c3aed'} strokeWidth={p.width||1.5}
+                        strokeDasharray={p.dash||undefined} strokeLinejoin="round"/>
+                    ))}
+                    {(C.outline.shape.labels||[]).map((l,li)=>(
+                      <text key={li} x={l.x} y={l.y} fontSize={l.size||9} fill={l.color||'#64748b'} textAnchor={l.anchor||'middle'}>{l.text}</text>
+                    ))}
+                  </svg>
+                </div>
+              )}
+              {C.outline.specs?.length>0&&(
+                <div className="lg:col-span-2 space-y-1.5">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">자동 산출 제원</div>
+                  {C.outline.specs.map((s,si)=>(
+                    <div key={si} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white">
+                      <span className="text-[11px] text-slate-500 font-medium shrink-0 w-20 truncate">{s.label}</span>
+                      <span className="text-[12px] font-bold text-slate-800 font-mono tabular-nums flex-1 min-w-0 truncate">{s.value}</span>
+                      {s.from&&<span className="text-[9px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded shrink-0">{s.from}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 자동 검증 (간섭·공차 등) */}
+            {C.outline.checks?.length>0&&(
+              <div className="px-4 pb-4">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">설계 자동 검증</div>
+                <div className="space-y-1.5">
+                  {C.outline.checks.map((c,ci)=>{
+                    const tone=c.status==='ok'?{bg:'bg-emerald-50 border-emerald-200',t:'text-emerald-700',Icon:CheckCircle}
+                      :c.status==='warn'?{bg:'bg-amber-50 border-amber-200',t:'text-amber-700',Icon:Shield}
+                      :{bg:'bg-rose-50 border-rose-200',t:'text-rose-700',Icon:Shield};
+                    const TIcon=tone.Icon;
+                    return(
+                      <div key={ci} className={cn('flex items-start gap-2 px-3 py-2 rounded-lg border',tone.bg)}>
+                        <TIcon className={cn('w-3.5 h-3.5 shrink-0 mt-px',tone.t)}/>
+                        <div className="min-w-0 flex-1">
+                          <span className={cn('text-[11px] font-bold',tone.t)}>{c.label}</span>
+                          {c.detail&&<span className="text-[11px] text-slate-500 ml-1.5">{c.detail}</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 기대 효과 + 안내 */}
+            {(C.outline.effect||C.outline.note)&&(
+              <div className="px-4 pb-4 space-y-2">
+                {C.outline.effect&&(
+                  <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-900">
+                    <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0"/>
+                    <span className="text-[11px] text-slate-300 font-medium shrink-0">{C.outline.effect.label}</span>
+                    <span className="ml-auto flex items-center gap-2 shrink-0">
+                      <span className="text-[12px] text-slate-500 line-through font-mono tabular-nums">{C.outline.effect.before}</span>
+                      <ChevronRight className="w-3 h-3 text-slate-600"/>
+                      <span className="text-[15px] font-black text-white font-mono tabular-nums">{C.outline.effect.after}</span>
+                      {C.outline.effect.delta&&(
+                        <span className="text-[10px] font-black text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full">{C.outline.effect.delta}</span>
+                      )}
+                    </span>
+                  </div>
+                )}
+                {C.outline.note&&(
+                  <p className="text-[10px] text-slate-400 leading-relaxed flex items-start gap-1.5">
+                    <Lock className="w-3 h-3 shrink-0 mt-0.5"/>{C.outline.note}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 유사 문서 추천 */}
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
