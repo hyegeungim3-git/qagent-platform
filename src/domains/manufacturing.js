@@ -1248,6 +1248,91 @@ LIMIT 50;`,
       landColumns: ['품목코드','재질','현재고(EA)','구매 주체','규격','자재마스터 번호','협력사 단가(원/EA)'],
       lupColumns: ['라인코드','공정 구분','특별관리구역','작업 제한사항','화기작업 구역'],
       restrictedNotice: '협력사 단가 정보는 관리자 이상 권한에서 조회 가능합니다.',
+      /* 질의 해석 — 자연어를 어떤 조건으로 옮겼는지(가정·미변환 표현까지 정직하게) */
+      interpretBySource: {
+        building: {
+          terms: [
+            { phrase: '화성공장',        column: 'plant_info.plant_nm',         op: '=',              value: "'화성공장'", note: '사업장 마스터 7개소 중 1건 매칭' },
+            { phrase: '최근 도입 설비',   column: 'equipment_master.install_year', op: '>=',            value: '2014',       note: '"최근" 기준이 질의에 없어 감가상각 내용연수 12년으로 환산' },
+            { phrase: '가동시간 많은 순', column: 'run_hours',                   op: 'ORDER BY',       value: 'DESC',       note: '정렬만 적용 — 임계값 조건은 넣지 않음' },
+            { phrase: '(암묵)',          column: 'equip_status',                op: '=',              value: "'ACTIVE'",   note: '폐기·이설 설비는 기본 제외 — 포함하려면 질의에 명시 필요' },
+          ],
+          assumptions: [
+            '"최근 도입"의 기준 연도가 없어 2014년(내용연수 12년) 이후로 가정했습니다. 다른 기준이 필요하면 연도를 직접 지정하세요.',
+            '표준 태그 사전은 LEFT JOIN이라 미매칭 설비도 결과에서 빠지지 않습니다.',
+          ],
+          unmapped: [
+            '"상태가 안 좋은" — 정성 표현이라 조건으로 변환하지 않고, 대신 검사 상태 컬럼을 결과에 포함했습니다.',
+          ],
+        },
+        land: {
+          terms: [
+            { phrase: 'SUS 계열',   column: 'material_master.material', op: 'LIKE',     value: "'SUS%'", note: '재질 코드 접두 매칭 — SUS304·SUS316 등 포함' },
+            { phrase: '재고 부족',  column: 'stock_qty',                op: '<=',       value: '2500',   note: '"부족" 기준이 없어 안전재고 2,500EA 기준을 적용' },
+            { phrase: '적은 순',    column: 'stock_qty',                op: 'ORDER BY', value: 'ASC',    note: '' },
+          ],
+          assumptions: ['안전재고 기준(2,500EA)은 자재마스터의 품목별 값이 아니라 공통 기본값입니다 — 품목별 기준이 필요하면 명시하세요.'],
+          unmapped: ['"곧 소진될" — 소요량 추세가 필요해 이번 조회에서는 계산하지 않았습니다.'],
+        },
+        lup: {
+          terms: [
+            { phrase: '2공장',       column: 'line_layout.plant_cd',   op: '=',        value: "'P2'",     note: '사업장 코드 P2(창원2 사출동)로 해석' },
+            { phrase: '라인 배치',   column: 'process_type',           op: 'IS NOT',   value: 'NULL',     note: '공정 구분이 미지정인 예비 라인은 제외' },
+            { phrase: '(기본 정렬)', column: 'line_cd',                op: 'ORDER BY', value: 'ASC',      note: '' },
+          ],
+          assumptions: ['"2공장"은 사업장 약칭이라 창원2 사출동(P2)으로 해석했습니다 — 아산 2라인을 뜻했다면 라인코드로 조회하세요.'],
+          unmapped: [],
+        },
+      },
+      /* 실행 계획 — 어떤 인덱스·조인으로 갔는지 */
+      planBySource: {
+        building: {
+          totalMs: '0.31초',
+          steps: [
+            { op: 'Index Scan',     detail: 'plant_info (plant_nm) — 사업장 1건 확정',                     rows: 1,  ms: 0.4 },
+            { op: 'Index Scan',     detail: 'equipment_master (plant_cd, install_year) — 조건 통과 설비',   rows: 38, ms: 6.2 },
+            { op: 'Hash Left Join', detail: 'tag_dictionary (raw_tag) — 표준 태그 사전 4,820건 해시 적재',  rows: 38, ms: 14.8 },
+            { op: 'Sort + Limit',   detail: 'run_hours DESC → 상위 50건 절단',                             rows: 8,  ms: 1.1 },
+          ],
+          note: '태그 사전은 LEFT JOIN이라 미매칭 설비도 결과에서 빠지지 않고 표준 코드만 NULL이 됩니다 — 조회 건수를 신뢰할 수 있는 대신, 표준 코드 유무는 아래 주의사항을 함께 보세요.',
+        },
+        land: {
+          totalMs: '0.55초',
+          steps: [
+            { op: 'Seq Scan',     detail: 'material_master — material LIKE 접두 조건은 인덱스 미사용',  rows: 1840, ms: 31.5 },
+            { op: 'Filter',       detail: 'stock_qty <= 2500 적용',                                    rows: 5,    ms: 2.2 },
+            { op: 'Sort + Limit', detail: 'stock_qty ASC → 상위 50건',                                 rows: 5,    ms: 0.6 },
+          ],
+          note: '재질 접두 검색(LIKE \'SUS%\')이 순차 스캔을 유발합니다. 재질 코드 컬럼에 인덱스를 추가하면 조회 시간이 크게 줄어듭니다.',
+        },
+        lup: {
+          totalMs: '0.22초',
+          steps: [
+            { op: 'Index Scan', detail: 'line_layout (plant_cd) — 2공장 라인',  rows: 12, ms: 3.1 },
+            { op: 'Filter',     detail: 'process_type IS NOT NULL',             rows: 5,  ms: 0.4 },
+            { op: 'Sort',       detail: 'line_cd ASC',                          rows: 5,  ms: 0.2 },
+          ],
+          note: '작업 제한사항은 배열 컬럼이라 라인당 1행으로 집계돼 반환됩니다.',
+        },
+      },
+      /* 데이터 신선도 — 어느 소스가 얼마나 최신인지 */
+      freshness: [
+        { label: 'SCADA 시계열',    table: 'scada_ts',          syncedAt: '09:00', lag: '실시간',   rows: '8.2억',  status: 'ok' },
+        { label: 'MES 생산 실적',   table: 'prod_result',       syncedAt: '08:55', lag: '5분 지연', rows: '1,284만', status: 'ok' },
+        { label: '설비 마스터',     table: 'equipment_master',  syncedAt: '어제 18:00', lag: '1일 주기', rows: '412',  status: 'ok' },
+        { label: '표준 태그 사전',  table: 'tag_dictionary',    syncedAt: '07.28 14:20', lag: '3일 경과', rows: '4,820', status: 'warn' },
+      ],
+      /* 결과 해석 시 주의 — 데이터 표준화 세계관과 연결 */
+      qualityFlags: [
+        { level: 'bad',  label: 'MES↔SCADA 로트 키 결측 29%',       detail: '프레스 PLC가 로트번호 태그를 발행하지 않아 시간 근사 결합만 가능합니다. 이 결과의 공정조건 항목은 결합에 성공한 71%만 반영합니다.' },
+        { level: 'warn', label: '미매칭 태그는 표준 코드가 NULL',      detail: '표준 태그 사전에 없는 원본 태그(전체 1,834개)는 조인 결과가 비어 있습니다 — 기준정보 표준화 에이전트에서 매핑 후보를 확인하세요.' },
+        { level: 'info', label: 'PRS-108 법정 안전검사 기한 초과',     detail: '검사 기한이 지난 설비 1대가 결과에 포함돼 있습니다 (군산 프레스동, 2009년 도입).' },
+      ],
+      nextActions: [
+        { label: '미매칭 태그 매핑 후보 확인', agentId: 'agent-address',      reason: '조인에서 NULL로 남은 태그의 표준 코드 후보와 판정 근거를 봅니다.' },
+        { label: '공정조건-품질 상관 분석',    agentId: 'agent-dataanalysis', reason: '결합에 성공한 로트로 변수 기여도와 최적 관리 범위를 도출합니다.' },
+        { label: '조회 결과 보고서화',         agentId: 'agent-report',       reason: '설비 현황과 검사 기한 초과 건을 사내 보고서 양식으로 정리합니다.' },
+      ],
     },
     /* ── 설비 태그·기준정보 표준화 에이전트 (M.AX 과제① 데이터 표준화. modeTypes.m 키 고정, master는 확장 유형) ── */
     "agent-address": {
