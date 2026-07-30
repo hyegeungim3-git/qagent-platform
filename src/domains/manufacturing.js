@@ -612,7 +612,7 @@ const manufacturing = {
     "agent-internalreg":  { name: "사규·안전규정 조회 에이전트", shortName: "규정 조회", desc: "취업규칙, 산업안전 규정, 품질 매뉴얼을 조항 단위로 검색하고 개정 이력을 추적합니다." },
     "agent-ocr":          { name: "도면·성적서 OCR 에이전트", shortName: "도면 OCR", desc: "스캔 도면, 검사성적서, 수입검사 서류를 인식해 치수·공차까지 구조화된 데이터로 변환합니다." },
     "agent-dbquery":      { name: "MES·SCADA 데이터 조회 에이전트", shortName: "MES 조회", desc: "자연어로 질문하면 MES·SCADA·ERP 데이터를 설비 태그 표준 사전으로 매칭해 생산 실적·가동률·재고를 SQL로 조회합니다." },
-    "agent-address":      { name: "기준정보 표준화 에이전트", shortName: "기준정보", desc: "사업장·협력사 주소와 자재·설비 기준정보를 표준 코드로 매핑하고 미매칭·중복 항목을 정비합니다." },
+    "agent-address":      { name: "기준정보 표준화 에이전트", shortName: "기준정보", desc: "포스프레임·SCADA·MES 설비 태그와 사업장·협력사 기준정보를 표준 명명규칙으로 매핑하고 미매칭·중복 항목을 정비합니다." },
     "agent-dataanalysis": { name: "공정 데이터 분석 에이전트", shortName: "공정 분석", desc: "공정 센서(온도·진동)와 품질 결과를 연계 분석해 불량을 사전 예측(AUC 0.91)하고 최적 공정변수 조합을 도출합니다." },
     "agent-summary":      { name: "기술문서 요약 에이전트", shortName: "문서 요약", desc: "사양서, 감사 보고서, 고객 클레임 문서를 유형·길이별로 요약하고 개정본을 비교합니다." },
     "agent-translate":    { name: "수출문서 번역 에이전트", shortName: "수출 번역", desc: "수출 사양서, 계약서, 기술 매뉴얼을 용어집 기반으로 번역하고 역번역으로 검증합니다." },
@@ -1249,8 +1249,11 @@ LIMIT 50;`,
       lupColumns: ['라인코드','공정 구분','특별관리구역','작업 제한사항','화기작업 구역'],
       restrictedNotice: '협력사 단가 정보는 관리자 이상 권한에서 조회 가능합니다.',
     },
-    /* ── 자재코드 표준화 에이전트 (제조 재해석: 사업장·협력사 주소/기준정보 표준화. modeTypes.m 키 고정) ── */
+    /* ── 설비 태그·기준정보 표준화 에이전트 (M.AX 과제① 데이터 표준화. modeTypes.m 키 고정, master는 확장 유형) ── */
     "agent-address": {
+      headerTitle: '설비 태그·기준정보 표준화 에이전트',
+      headerDesc: '포스프레임 태그 4,820개 · 표준화 62% — 미매칭 1,834개 매핑 후보 도출',
+      headerStatus: '포스프레임 수집 서버 연결됨',
       defaultAddress: '경남 창원시 성산구 외동 853-4',
       addressPlaceholder: '예: 경남 창원시 성산구 외동 853-4',
       quickExamples: ['충남 아산시 둔포면 아산밸리로 177','경북 구미시 공단동 249-3','전북 군산시 소룡동 1578-2'],
@@ -1310,6 +1313,7 @@ LIMIT 50;`,
         { input: '울산 북구 효암로 339',               road: '울산광역시 북구 효암로 339',                 jibun: '울산광역시 북구 효문동 641-5',             zip: '44252', legalCode: '3120010500', adminCode: '3120052000', legalDong: '효문동',  adminDong: '효문동',  conf: 98.4, status: '완전매칭' },
       ],
       modeTypes: [
+        { m: 'master',  icon: '🧬', label: '설비 태그 매핑', desc: '포스프레임·SCADA·MES 태그를 표준 명명규칙으로 매핑·정비',    color: 'indigo' },
         { m: 'single',  icon: '📍', label: '단일 주소',   desc: '협력사·사업장 비정형 주소 1건을 도로명·우편번호·좌표로 변환', color: 'rose' },
         { m: 'batch',   icon: '📋', label: '일괄 처리',   desc: '협력사·사업장 기준정보 목록을 붙여넣거나 파일로 일괄 표준화',   color: 'orange' },
         { m: 'ocr',     icon: '🔍', label: 'OCR 파일',    desc: '검사성적서·거래명세서에서 협력사 주소 자동 추출',              color: 'teal' },
@@ -1356,6 +1360,151 @@ LIMIT 50;`,
         { code: '4812556000', label: '창원 성주동 (행정)' },
         { code: '4719012600', label: '구미 공단동 (법정)' },
       ],
+      /* M.AX 과제① 데이터 표준화 — 진단 답변(태그 4,820 · 62% · 미매칭 1,834 · MES↔SCADA 71% · 준비도 2/5)과 같은 원장 */
+      masterMapping: {
+        subtitle: '포스프레임·SCADA·MES 태그를 표준 명명규칙으로 매핑합니다',
+        pipeline: [
+          { label: '태그 수집기',   sub: '포스프레임·SCADA·MES에서 태그 메타데이터 수집 중', ms: 1500 },
+          { label: '명명규칙 파서', sub: '벤더별 표기를 4단 명명규칙으로 분해 중',            ms: 1900 },
+          { label: '표준코드 매퍼', sub: '표준 태그 사전과 유사도 매칭 중',                   ms: 2700 },
+          { label: '교차 검증',     sub: 'MES 로트 키·단위 정합성 검증 중',                   ms: 1700 },
+        ],
+        scopes: [
+          { key: 'posframe', label: '포스프레임 수집 서버', count: '4,820', desc: '프레스·열처리 설비 시계열 태그 (수집 주기 1초)' },
+          { key: 'scada',    label: 'SCADA',                count: '1,240', desc: '라인 제어·알람 태그' },
+          { key: 'mes',      label: 'MES 기준정보',          count: '860',   desc: '품목·로트·설비 마스터' },
+        ],
+        summary: [
+          { label: '수집 태그',       value: '4,820', sub: '수집 주기 1초', tone: 'base' },
+          { label: '표준화 완료',     value: '62%',   sub: '2,988개',      tone: 'warn' },
+          { label: '미매칭',          value: '1,834', sub: '조치 대상',    tone: 'bad'  },
+          { label: 'MES↔SCADA 매칭', value: '71%',   sub: '로트 키 결측', tone: 'warn' },
+        ],
+        readiness: {
+          level: 2, max: 5,
+          label: 'AI 활용 준비도',
+          levels: ['수집', '정제', '연계', '예측', '자율'],
+          note: '현재 레벨 2(수집) — 태그 표준화와 로트 키 삽입이 끝나야 레벨 3(연계)로 올라갑니다. 품질 예측 모델은 그 다음에 착수해야 재작업이 없습니다.',
+        },
+        naming: {
+          pattern: '<사업장>-<설비군><호기>-<물리량>-<집계>',
+          example: 'CWN-PRS03-VIB-RMS',
+          segments: [
+            { seg: 'CWN',   label: '사업장',     desc: '창원본사 CWN · 아산 ASN · 구미 GUM (사업장 코드 3자리)' },
+            { seg: 'PRS03', label: '설비군·호기', desc: '프레스 PRS · 침탄로 CBF · 머시닝 MCT + 호기 2자리' },
+            { seg: 'VIB',   label: '물리량',     desc: '진동 VIB · 온도 TMP · 압력 PRE · 전류 CUR (OPC-UA 정보모델 참조)' },
+            { seg: 'RMS',   label: '집계',       desc: 'RMS · AVG · MAX — 단위(mm/s, ℃)는 태그명이 아니라 속성으로 분리 보관' },
+          ],
+          note: '벤더별 표기(PRS_C03_VIB_RMS · C03진동 · VIB-3)가 같은 물리량을 서로 다른 태그로 적재하던 문제를 4단 규칙으로 통일합니다.',
+        },
+        rows: [
+          {
+            src: 'PRS_C03_VIB_RMS', srcSystem: '포스프레임',
+            suggest: 'CWN-PRS03-VIB-RMS', name: '창원 3호 프레스 크랭크축 진동', unit: 'mm/s',
+            conf: 98.4, status: 'auto',
+            basis: [
+              { label: '규칙 매칭', detail: '설비군 PRS · 호기 C03 · 물리량 VIB · 집계 RMS — 4개 세그먼트 전부 규칙 사전에 존재' },
+              { label: '값 검증',   detail: '최근 30일 범위 0.8~4.6mm/s — 진동 RMS 태그 표준 범위와 일치' },
+              { label: '설비 대조', detail: 'MES 설비 마스터 PRS-C03(창원본사 프레스동 PR-03베이)와 1:1 대응' },
+            ],
+            alts: [
+              { code: 'CWN-PRS03-VIB-PEAK', name: '진동 피크', conf: 41, reason: '원본 태그에 집계 방식이 RMS로 명시돼 배제' },
+            ],
+          },
+          {
+            src: 'C03진동', srcSystem: 'SCADA',
+            suggest: 'CWN-PRS03-VIB-RMS', name: '위 태그로 통합 (중복 적재 해소)', unit: 'mm/s',
+            conf: 91.2, status: 'auto',
+            basis: [
+              { label: '별칭 사전', detail: '한글 약식 표기 "C03"을 설비 PRS-C03 별칭으로 등록 — 사업장·물리량은 등록 라인으로 보완' },
+              { label: '중복 판정', detail: '포스프레임 PRS_C03_VIB_RMS와 값 상관계수 0.98 — 동일 물리량으로 판정' },
+            ],
+            convert: '대표 태그로 통합하고 SCADA 태그는 별칭으로만 유지합니다 — 같은 진동을 두 태그로 세던 중복 1건 해소',
+            alts: [
+              { code: 'CWN-PRS03-VIB-AVG', name: '진동 평균', conf: 37, reason: 'SCADA 원본이 1초 평균이 아닌 순시 RMS라 배제' },
+            ],
+          },
+          {
+            src: 'VIB-3', srcSystem: 'SCADA',
+            suggest: 'CWN-PRS03-VIB-RMS', name: '사업장·단위 확인 필요', unit: '미정의',
+            conf: 74.6, status: 'review',
+            basis: [
+              { label: '규칙 매칭', detail: '설비 식별자가 "3"뿐이라 사업장·설비군을 문맥으로 유추 — 아산 3호 프레스와 충돌 가능' },
+              { label: '값 검증',   detail: '값 범위 8~46 — mm/s(속도)가 아니라 μm(변위)로 추정됨' },
+            ],
+            convert: 'μm(변위) → mm/s(속도) 환산은 회전수에 의존합니다. 자동 변환 대신 계측기 사양 확인이 필요해 사람 검토로 넘깁니다.',
+            alts: [
+              { code: 'ASN-PRS03-VIB-RMS', name: '아산 3호 프레스 진동', conf: 68, reason: '사업장 접두어가 없어 창원·아산 중 확정 불가' },
+            ],
+          },
+          {
+            src: 'CBF1_ZONE2_TEMP', srcSystem: '포스프레임',
+            suggest: 'CWN-CBF01-TMP-AVG', name: '침탄로 1호 2존 온도', unit: '℃',
+            conf: 96.8, status: 'auto',
+            basis: [
+              { label: '규칙 매칭', detail: '침탄로 CBF · 1호기 · 온도 TMP — 존 번호는 태그명이 아닌 속성(zone=2)으로 분리' },
+              { label: '값 검증',   detail: '910~935℃ — 침탄 공정 표준 범위 내, 이상치 없음' },
+            ],
+            convert: '존 번호를 속성으로 이관하면 1~4존을 한 태그군으로 묶어 존별 편차를 그룹 집계할 수 있습니다.',
+            alts: [],
+          },
+          {
+            src: '온도_최종_v2', srcSystem: 'MES 기준정보',
+            suggest: 'CWN-CBF01-TMP-MAX', name: '수기 생성 태그 — 담당 부서 확인 필요', unit: '℃',
+            conf: 62.3, status: 'review',
+            basis: [
+              { label: '명명 불일치', detail: '설비·물리량 식별자가 없는 수기 태그 — 등록 부서와 참조 화면으로 추정' },
+              { label: '참조 화면',   detail: '열처리 일보 화면에서만 사용 — 침탄로 최종 존 온도로 추정' },
+            ],
+            alts: [
+              { code: 'CWN-CBF01-TMP-AVG', name: '침탄로 평균 온도', conf: 58, reason: '집계 방식(최댓값·평균) 미상 — 등록 담당자 회신 필요' },
+            ],
+          },
+          {
+            src: '(로트 키 태그 없음)', srcSystem: 'SCADA',
+            suggest: '', name: 'MES 실적과 결합 불가 — 설비 조치 항목', unit: '',
+            conf: null, status: 'none',
+            basis: [
+              { label: '결측 항목', detail: '프레스 PLC 트리거 시점에 로트번호 태그가 발행되지 않아 시간 근사 결합만 가능(정확도 71%)' },
+              { label: '영향',     detail: '공정조건-품질결과 결합 실패 29% — 품질 예측 모델 학습 데이터에서 제외됨' },
+            ],
+            convert: 'AI로 보정할 수 없는 항목입니다. PLC 프로그램 수정으로 로트번호 태그를 발행해야 매칭률 71% → 95% 목표가 달성됩니다.',
+            alts: [],
+          },
+          {
+            src: 'OLD_PRS_B02_TEMP', srcSystem: '포스프레임',
+            suggest: '', name: '폐기 설비 잔존 태그', unit: '',
+            conf: null, status: 'none',
+            basis: [
+              { label: '설비 대조', detail: 'MES 설비 마스터에 없음 — 2024년 폐기된 B02 프레스의 잔존 태그' },
+              { label: '수집 상태', detail: '최근 180일 값 변화 없음(고정값 0) — 통신 두절 상태로 판단' },
+            ],
+            convert: '수집 대상에서 제외를 권고합니다. 태그 삭제는 과거 이력 보존 여부를 확인한 뒤 진행하세요.',
+            alts: [],
+          },
+        ],
+        reasons: [
+          { label: '벤더별 약식 표기 (사업장·호기 누락)', count: 812, action: '별칭 사전 확장으로 자동 매핑 — 1차 조치 대상' },
+          { label: '단위·데이터형 미정의',                count: 436, action: '계측기 사양서 대조 후 단위 속성 부여' },
+          { label: '수기 생성 태그 (부서별 임시)',         count: 298, action: '등록 부서 확인 후 표준 태그로 승계 또는 폐기' },
+          { label: '폐기·이설 설비 잔존 태그',             count: 187, action: '수집 대상에서 제외 (이력 보존 확인 후 삭제)' },
+          { label: '중복 적재 (동일 물리량 복수 태그)',    count: 101, action: '대표 태그로 통합하고 나머지는 별칭 유지' },
+        ],
+        crossMatch: {
+          systems: ['포스프레임', 'SCADA', 'MES'],
+          cells: [
+            [null, 94, 68],
+            [94, null, 71],
+            [68, 71, null],
+          ],
+        },
+        apply: {
+          label: '표준 태그 사전 반영',
+          before: '62%', after: '89%',
+          autoCount: '1,312', reviewCount: '522',
+          note: '자동 확정 1,312건은 별칭 사전·단위 규칙으로 판정된 항목입니다. 나머지 522건은 계측기 사양 확인이나 담당 부서 회신이 필요해 사람 검토로 넘깁니다 — 유사도 기반 추정이라 실제 적용 시 ±15% 편차가 예상됩니다.',
+        },
+      },
     },
     /* ── 기술문서 요약 에이전트 ── */
     "agent-summary": {
