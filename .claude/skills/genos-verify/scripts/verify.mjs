@@ -25,9 +25,9 @@ const DOMAINS = [
   {
     id: "manufacturing", label: "한빛정밀",
     banned: ["KOGAS", "kogas", "한국부동산원", "공시지가", "표준지", "KREA-", "한성시청", "HSC-", "새빛대학교병원", "SUH-"],
-    generalMarkers: ["한빛정밀", "오늘의 업무 브리핑", "열처리 로 진단"],
-    hubMarkers: ["프레스 진동 알람 자동 대응", "협력사 검사성적서 일괄 처리"],
-    orchCards: 2,
+    generalMarkers: ["한빛정밀", "오늘의 업무 브리핑", "설비 데이터 진단", "금형 설계 지원"],
+    hubMarkers: ["프레스 진동 알람 자동 대응", "협력사 검사성적서 일괄 처리", "금형 설계 아웃라인 자동 생성"],
+    orchCards: 3,
   },
   {
     id: "civic", label: "한성시청",
