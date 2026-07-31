@@ -2382,6 +2382,7 @@ LIMIT 50;`,
      현장에서 설비명을 타이핑하는 대신 설비에 붙은 QR을 찍는 게 표준 동선이다.
      code를 찍으면 agentId(에이전트·시나리오)로 이동하거나 query를 바로 실행한다.
      팩이 이 필드를 주지 않으면 입력창의 스캔 버튼 자체가 비노출. */
+  scanLabel: "설비·로트 코드 스캔",
   scanRegistry: [
     { code: "PRS-C03", type: "equip", label: "창원본사 3번 프레스 — 진동 알람 대응",
       agentId: "orchestration:0" },
@@ -2400,6 +2401,14 @@ LIMIT 50;`,
      draftSeed는 데모가 스스로 만들 수 없는 '현장 사실'만 담는다
      (실시간 알람·시나리오 완주 등은 감사 로그에서 자동으로 합쳐진다). */
   shiftHandover: {
+    /* 코어 라벨은 중립어라, 제조 현장 표현은 여기서 명시한다 */
+    hint: "알람·조치·미결을 자동으로 모아 다음 조에 넘깁니다",
+    itemLabels: {
+      alarm:   "설비 이상·알람",
+      action:  "조치 완료",
+      pending: "인계 사항(미결)",
+      quality: "품질 특이사항",
+    },
     shifts: [
       { id: "A", label: "주간조", time: "06:00–14:00" },
       { id: "B", label: "중간조", time: "14:00–22:00" },
