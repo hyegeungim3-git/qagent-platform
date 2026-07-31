@@ -6,6 +6,7 @@
 import React, { useState, useEffect, Suspense, lazy } from "react";
 import { Shield, User, ArrowRight, Lock, CheckCircle2, Layers } from "lucide-react";
 import { DOMAINS, getDomain, getDomainList, getActiveDomainId, setActiveDomainId } from "./domains/index.js";
+import { parseRoute, syncHash, sameRoute, DEFAULT_ADMIN_ID } from "./router.js";
 
 // 코드 스플리팅: 초기 로드 사이즈 축소
 const UserApp = lazy(() => import("./UserApp"));
@@ -214,25 +215,59 @@ const LoadingFallback = ({ domain }) => (
 );
 
 const RootApp = () => {
-  // "SELECTOR" | "USER" | "ADMIN"
-  const [view, setView] = useState("SELECTOR");
-  const [domainId, setDomainId] = useState(getActiveDomainId());
+  /* 주소(해시)가 화면 상태의 정본 — 새로고침·공유·뒤로가기가 모두 같은 화면을 연다 */
+  const [route, setRoute] = useState(() => {
+    const r = parseRoute();
+    const id = (r.domainId && getDomain(r.domainId)) ? r.domainId : getActiveDomainId();
+    return { ...r, domainId: id };
+  });
+  /* 브라우저 뒤로/앞으로처럼 외부에서 주소가 바뀐 경우에만 하위 앱을 새로 마운트한다 */
+  const [extNonce, setExtNonce] = useState(0);
+
+  const domainId = route.domainId;
   // 커스텀 팩(스튜디오)이 삭제된 직후에도 안전하도록 REB 폴백
   const domain = getDomain(domainId) || DOMAINS.reb;
+  const view = route.view;
 
   useEffect(() => {
     document.title = `${domain.platformTitle} · ${domain.orgShort} GenOS`;
   }, [domain]);
 
+  // 상태 → 주소
+  useEffect(() => { syncHash(route); }, [route]);
+
+  // 주소 → 상태 (뒤로/앞으로·직접 입력)
+  useEffect(() => {
+    const onHash = () => {
+      const next = parseRoute();
+      setRoute(prev => {
+        const merged = { ...next, domainId: (next.domainId && getDomain(next.domainId)) ? next.domainId : prev.domainId };
+        if (sameRoute(prev, merged)) return prev;
+        setExtNonce(n => n + 1);
+        if (merged.domainId !== prev.domainId) setActiveDomainId(merged.domainId);
+        return merged;
+      });
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
   const handleChangeDomain = (id) => {
-    setDomainId(id);
+    setDomainId2(id);
     setActiveDomainId(id);
   };
+  const setDomainId2 = (id) => setRoute(r => ({ ...r, domainId: id }));
+  const go = (patch) => setRoute(r => ({ ...r, ...patch }));
+  const mountKey = `${domainId}-${extNonce}`;
 
   if (view === "USER") {
     return (
       <Suspense fallback={<LoadingFallback domain={domain} />}>
-        <UserApp key={domainId} domain={domain} onSwitchToAdmin={() => setView("ADMIN")} onExitPortal={() => setView("SELECTOR")} />
+        <UserApp key={mountKey} domain={domain}
+          initialTab={route.tab} initialAgentId={route.agentId}
+          onRouteChange={(tab, agentId) => go({ tab, agentId })}
+          onSwitchToAdmin={() => go({ view: "ADMIN", adminId: route.adminId || DEFAULT_ADMIN_ID })}
+          onExitPortal={() => go({ view: "SELECTOR" })} />
       </Suspense>
     );
   }
@@ -240,7 +275,11 @@ const RootApp = () => {
   if (view === "ADMIN") {
     return (
       <Suspense fallback={<LoadingFallback domain={domain} />}>
-        <GenOSAdmin key={domainId} domain={domain} onSwitchToUser={() => setView("USER")} onExitPortal={() => setView("SELECTOR")} />
+        <GenOSAdmin key={mountKey} domain={domain}
+          initialMenuId={route.adminId}
+          onRouteChange={(adminId) => go({ adminId })}
+          onSwitchToUser={() => go({ view: "USER" })}
+          onExitPortal={() => go({ view: "SELECTOR" })} />
       </Suspense>
     );
   }
@@ -249,8 +288,8 @@ const RootApp = () => {
     <PortalSelector
       domain={domain}
       onChangeDomain={handleChangeDomain}
-      onSelectUser={() => setView("USER")}
-      onSelectAdmin={() => setView("ADMIN")}
+      onSelectUser={() => go({ view: "USER" })}
+      onSelectAdmin={() => go({ view: "ADMIN" })}
     />
   );
 };

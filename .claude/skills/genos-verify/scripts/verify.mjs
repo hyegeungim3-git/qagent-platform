@@ -45,6 +45,17 @@ const DOMAINS = [
   },
 ];
 
+/* 에이전트 13종 — 내부 화면(허브 안쪽)까지 자동 판정한다.
+   해시 라우팅(#/<domain>/user/agent/<id>) 덕분에 클릭 없이 직접 진입 가능. */
+const AGENT_IDS = [
+  "agent-chatbot", "agent-report", "agent-meeting", "agent-knowledge", "agent-internalreg",
+  "agent-ocr", "agent-dbquery", "agent-address", "agent-dataanalysis", "agent-summary",
+  "agent-translate", "agent-review", "agent-safety",
+];
+/* 내부 화면에 다른 에이전트/타 도메인 기본값이 새는지 잡는 공통 금칙어
+   (팩이 headerTitle을 생략하면 코어 REB 기본 문구가 노출되던 사고를 자동 판정) */
+const CORE_DEFAULT_LEAKS = ["부동산 대장 조회", "주소 표준화 에이전트", "지식 검색 에이전트"];
+
 function findChrome() {
   const cands = [
     process.env.CHROME_PATH,
@@ -114,6 +125,27 @@ async function scanDomain(browser, d) {
   for (const m of d.hubMarkers) if (!hub.text.includes(m)) fails.push(`허브 마커 누락: "${m}"`);
   if (hub.cards !== d.orchCards) fails.push(`시나리오 카드 ${hub.cards}장 (기대 ${d.orchCards})`);
 
+  /* 에이전트 13종 내부 화면 — 주소로 직접 진입해 제목·금칙어 판정
+     (허브 카탈로그 이름과 안쪽 제목이 일치해야 한다) */
+  for (const id of AGENT_IDS) {
+    await page.goto(`${BASE}/#/${d.id}/user/agent/${id}`, { waitUntil: "networkidle2", timeout: 30000 });
+    await sleep(900); // lazy 청크 + 진입 애니메이션
+    const info = await page.evaluate(() => {
+      const main = document.querySelector("main") || document.body;
+      const lines = main.innerText.split("\n").map(s => s.trim()).filter(Boolean);
+      return { title: lines[0] || "", text: document.body.innerText };
+    });
+    if (!info.title) { fails.push(`${id}: 내부 화면이 열리지 않음`); continue; }
+    for (const w of d.banned) if (info.text.includes(w)) fails.push(`${id} 내부 금칙어: "${w}"`);
+    // 도메인이 REB가 아닌데 코어 기본 제목이 보이면 팩 누락(=다른 에이전트 이름 노출)
+    // 제목이 코어 기본값과 '정확히' 같을 때만 누락으로 본다
+    // (부분 일치로 보면 '행정 지식 검색 에이전트'처럼 정상 도메인 이름까지 걸린다)
+    if (d.id !== "reb" && CORE_DEFAULT_LEAKS.includes(info.title.trim())) {
+      fails.push(`${id} 내부 제목이 코어 기본값: "${info.title}"`);
+    }
+  }
+  await page.setViewport({ width: 1366, height: 900 });
+
   // 모바일(375) 회귀 — 신규 로드 기준: 가로 스크롤 금지 + 포털 진입 가능
   await page.setViewport({ width: 375, height: 812 });
   await page.goto(BASE, { waitUntil: "networkidle2" });
@@ -144,7 +176,7 @@ try {
     console.log(`\n[${ok ? "PASS" : "FAIL"}] ${d.label} (${d.id})`);
     fails.forEach(f => console.log(`  ✗ ${f}`));
     errs.forEach(e => console.log(`  ✗ 콘솔: ${e}`));
-    if (ok) console.log("  ✓ 금칙어 0 · 마커 전부 존재 · 카드 수 일치 · 콘솔 에러 0");
+    if (ok) console.log(`  ✓ 금칙어 0 · 마커 전부 존재 · 카드 수 일치 · 에이전트 내부 ${AGENT_IDS.length}종 정상 · 콘솔 에러 0`);
   }
 } finally {
   await browser.close();

@@ -83,7 +83,7 @@ const AgentLoadingFallback = () => (
 /* ================================================================== */
 /* MAIN USER APP COMPONENT — 상태·핸들러·조립만 담당 (2-C 분해 후)      */
 /* ================================================================== */
-const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain }) => {
+const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain, initialTab, initialAgentId, onRouteChange }) => {
   // ── 도메인 팩 주입: 조직·사용자·워크스페이스·LLM·에이전트 카탈로그는 팩에서 공급 ──
   const USER_INFO = domain.user;
   const WORKSPACES = domain.workspaces;
@@ -107,7 +107,7 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain }) => {
   const initConvoRef = useRef(null);
   if (initConvoRef.current === null) initConvoRef.current = loadInitialConvoState(domain.id);
 
-  const [chatTab, setChatTab] = useState("GENERAL");   // GENERAL | AGENT | SECURE
+  const [chatTab, setChatTab] = useState(initialTab || "GENERAL");   // GENERAL | AGENT | SECURE
   const [mode, setMode] = useState(initConvoRef.current.mode);   // GENERAL 탭 서브모드
   // 반응형 초기값: 모바일(<768)은 사이드바 접힘, <1280은 우측 패널 접힘
   const [sidebarOpen, setSidebarOpen] = useState(() => typeof window === "undefined" || window.matchMedia("(min-width: 768px)").matches);
@@ -127,7 +127,9 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain }) => {
   const [activeLLM, setActiveLLM] = useState(LLM_MODELS[0]);
   const [showLLMDropdown, setShowLLMDropdown] = useState(false);
   // 에이전트 탭 전용 state
-  const [activeAgentId, setActiveAgentId] = useState(null);
+  const [activeAgentId, setActiveAgentId] = useState(initialAgentId || null);
+  // 현재 탭·에이전트를 주소에 반영 (새로고침 시 같은 화면으로 복귀)
+  useEffect(() => { onRouteChange && onRouteChange(chatTab, activeAgentId); }, [chatTab, activeAgentId]);
   const [selectedAgent, setSelectedAgent] = useState(AGENT_TEAMS[0]);
   const [showBuilderModal, setShowBuilderModal] = useState(false);
   const [builderTab, setBuilderTab] = useState("WORKFLOW");

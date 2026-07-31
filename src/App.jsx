@@ -17,12 +17,14 @@ import { SystemMonitorPage, AdminPage, UserPage, ConnectedMonitorPage } from './
 import { LlmTraining, VlmTraining, EmbeddingPage, RerankingPage, LeaderboardPage, EvalMetricsPage } from './admin/pages/training.jsx';
 import { ApprovalPage, QuotaPage, UserManagementPage, AccessLogPage, AccessSecurityPage, WorkLogPage, UsageMonitorPage, HrSyncPage } from './admin/pages/users.jsx';
 
-const App = ({ onSwitchToUser, onExitPortal, domain }) => {
+const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChange }) => {
   // 도메인 리졸버: 하위 페이지들이 import하는 mocks.js 상수를 팩 adminContent로 교체 (렌더 최상단에서 호출 — 페이지 렌더보다 먼저)
   applyAdminDomain(domain);
   const orgName = domain?.orgName || '한국부동산원';
   const admin = ADMIN_PERSONA;
-  const [activeId,setActiveId]=useState('dashboard.system');
+  const [activeId,setActiveId]=useState(initialMenuId||'dashboard.system');
+  // 현재 메뉴를 주소에 반영 (새로고침 시 같은 페이지로 복귀)
+  React.useEffect(()=>{ onRouteChange&&onRouteChange(activeId); },[activeId]);
   const [sidebarOpen,setSidebarOpen]=useState(true);   // 상단바 Columns 버튼으로 접기/펼치기
   const [notifOpen,setNotifOpen]=useState(false);      // 상단바 알림 드롭다운
   const [notifRead,setNotifRead]=useState(false);
