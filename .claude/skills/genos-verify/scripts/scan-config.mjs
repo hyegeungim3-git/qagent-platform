@@ -53,6 +53,52 @@ export const DOMAINS = [
   },
 ];
 
+/* 관리자 화면 판정 — adminscan.mjs 전용.
+ * verify·deepscan은 사용자 포털만 본다. 관리자 45+ 페이지는 mocks.js 기본값을
+ * 팩 adminContent가 덮는 구조라, 팩이 키를 빠뜨리면 '중립 기본값' 또는 '타 도메인
+ * 콘텐츠'가 조용히 노출된다 — 화면은 멀쩡해 보이므로 사람 눈으로는 잘 안 잡힌다.
+ *
+ * pages: [메뉴 id, 기본 탭에서 반드시 보여야 할 마커[]]
+ *   ⚠️ 마커는 '첫 화면에 실제로 렌더되는 문자열'이어야 한다.
+ *      탭·아코디언 안쪽 문자열을 넣으면 정상인데 FAIL이 난다(실제로 겪음).
+ * adminBanned: 그 도메인 관리자에 나오면 안 되는 타 도메인 용어.
+ */
+export const ADMIN_PAGES = {
+  reb: [
+    ["security.arch",  ["공시 지침·업무 매뉴얼 RAG 검색", "실거래 신고 자료 조회"]],
+    ["eval.predops",   ["실거래 이상거래 탐지 모델", "공시가격 변동률 예측 모델"]],
+    ["data.catalog",   ["공시 조사지침", "실거래 신고 자료", "표준지 조사표"]],
+    ["admin.augment",  ["공시기준일", "이의신청 기간"]],
+    ["safetyact",      ["현장조사 위험성평가 이력", "부동산평가처"]],
+    ["repro",          ["표준지 공시기준일이 언제인가요"]],
+  ],
+  manufacturing: [
+    ["security.arch", []], ["eval.predops", []], ["data.catalog", []],
+    ["admin.augment", []], ["safetyact", []], ["repro", []],
+  ],
+  civic: [
+    ["security.arch",  ["자치법규·민원사무편람 RAG 검색", "재난 상황 데이터 수집"]],
+    ["eval.predops",   ["민원 접수량 예측 모델", "침수 위험 예측 모델"]],
+    ["data.catalog",   ["자치법규·민원사무편람", "재난 관측 자료"]],
+    ["admin.augment",  ["구비서류", "민원 접수·처리 이력"]],
+    ["safetyact",      ["공사·행사 위험성평가 이력", "안전총괄과"]],
+    ["repro",          ["긴급 여권 발급 구비서류"]],
+  ],
+  // 의료는 adminContent 미이관 — 중립 기본값이 정상이므로 누수만 본다(마커 없음)
+  hospital: [
+    ["security.arch", []], ["eval.predops", []], ["data.catalog", []],
+    ["admin.augment", []], ["safetyact", []], ["repro", []],
+  ],
+};
+
+/* 관리자 누수 판정어 — 사용자 포털 banned와 달리 '중립 기본값'은 통과시킨다 */
+export const ADMIN_BANNED = {
+  reb:           ["한빛정밀", "침탄", "포스프레임", "한성시", "새빛대학교"],
+  manufacturing: ["한국부동산원", "공시지가", "표준지", "한성시", "새빛대학교"],
+  civic:         ["한빛정밀", "침탄", "포스프레임", "한국부동산원", "공시지가", "표준지", "새빛대학교"],
+  hospital:      ["한빛정밀", "침탄", "포스프레임", "한국부동산원", "공시지가", "표준지", "RTMS", "한성시"],
+};
+
 export const AGENT_IDS = [
   "agent-chatbot", "agent-report", "agent-meeting", "agent-knowledge", "agent-internalreg",
   "agent-ocr", "agent-dbquery", "agent-address", "agent-dataanalysis", "agent-summary",
