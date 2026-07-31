@@ -29,6 +29,9 @@ import AgentBuilderModal from "./user/components/modals/AgentBuilderModal.jsx";
 import SatisfactionModal from "./user/components/modals/SatisfactionModal.jsx";
 import TutorialModal from "./user/components/modals/TutorialModal.jsx";
 import ShiftHandoverModal from "./user/components/ShiftHandoverModal.jsx";
+import ScanModal from "./user/components/ScanModal.jsx";
+import WorkOrderModal from "./user/components/WorkOrderModal.jsx";
+import { seedOrders, readOrders, summarize } from "./user/workOrders.js";
 import { buildDraft, readIncoming } from "./user/shiftHandover.js";
 import ErrorReportModal from "./user/components/modals/ErrorReportModal.jsx";
 import QnaModal from "./user/components/modals/QnaModal.jsx";
@@ -145,6 +148,9 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
   // 튜토리얼
   const [showTutorial, setShowTutorial] = useState(false);
   const [showHandover, setShowHandover] = useState(false);
+  const [showScan, setShowScan] = useState(false);
+  const [showWorkOrders, setShowWorkOrders] = useState(false);
+  const [woTick, setWoTick] = useState(0); // 지시 상태 변경 후 카드 갱신용
   const [handoverTick, setHandoverTick] = useState(0); // 인수인계 확정 후 카드 갱신용
   // 오류 신고
   const [showErrReport, setShowErrReport] = useState(false);
@@ -443,6 +449,14 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
     [liveNotifs, domain.notifications]
   );
 
+  /* 작업지시 요약 — 팩 시드를 최초 1회 주입한 뒤 요약한다.
+     woTick은 상태 전이(작업 착수·완료·검증) 후 카드를 다시 읽기 위한 것. */
+  const woSummary = useMemo(() => {
+    if (!domain.workOrderSeed?.length && !readOrders(domain.id).length) return null;
+    seedOrders(domain);
+    return summarize(readOrders(domain.id));
+  }, [domain, woTick]);
+
   /* 교대 인수인계 카드 — 팩이 shiftHandover를 주지 않으면 null(카드 비노출).
      handoverTick은 확정 저장 후 '받은 인수인계' 건수를 다시 읽기 위한 것. */
   const handoverCard = useMemo(() => {
@@ -632,6 +646,7 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
               onNavigateAgent={(agentId) => { setChatTab("AGENT"); setActiveAgentId(agentId); }}
               liveCfg={liveCfg} liveState={liveState} liveSpeed={liveSpeed} setLiveSpeed={setLiveSpeed}
               handover={handoverCard} onOpenHandover={() => setShowHandover(true)} domainColor={domain.brandColor}
+              workOrders={woSummary} onOpenWorkOrders={() => setShowWorkOrders(true)}
               L={L}
             />
           )}
@@ -647,6 +662,7 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
               showLLMDropdown={showLLMDropdown} setShowLLMDropdown={setShowLLMDropdown}
               setLlmDropdownPos={setLlmDropdownPos}
               activeLLM={activeLLM} setShowBuilderModal={setShowBuilderModal}
+              onOpenScan={domain.scanRegistry?.length ? () => setShowScan(true) : undefined}
             />
           )}
         </main>
@@ -727,6 +743,24 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
           userName={USER_INFO?.name}
           onClose={() => setShowHandover(false)}
           onSaved={() => { setHandoverTick(t => t + 1); setToast({ message: "인수인계를 확정했습니다. 다음 조가 이어받습니다." }); }}
+        />
+      )}
+      {showWorkOrders && (
+        <WorkOrderModal domain={domain} userName={USER_INFO?.name}
+          onClose={() => setShowWorkOrders(false)} onChanged={() => setWoTick(t => t + 1)} />
+      )}
+      {showScan && (
+        <ScanModal
+          registry={domain.scanRegistry || []}
+          brandColor={domain.brandColor}
+          onClose={() => setShowScan(false)}
+          onPick={(hit) => {
+            setShowScan(false);
+            // 코드가 가리키는 곳으로 바로 들어간다 — 에이전트/시나리오면 이동, 아니면 질의 실행
+            if (hit.agentId) { setChatTab("AGENT"); setActiveAgentId(hit.agentId); }
+            else if (hit.query) { setChatTab("GENERAL"); handleSend(hit.query); }
+            setToast({ message: `${hit.code} · ${hit.label}` });
+          }}
         />
       )}
       {showTutorial && <TutorialModal onClose={() => setShowTutorial(false)} />}

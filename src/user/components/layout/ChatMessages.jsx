@@ -4,7 +4,7 @@ import {
   FileCheck, Languages, FileText, Search, Sparkles, Clock, Star,
   Shield, User, CheckCircle2, AlertTriangle, Copy, ThumbsUp, ThumbsDown,
   BookOpen, ExternalLink, Paperclip, Eye, FileDown, Loader2, Briefcase,
-  Bell, ChevronRight, ArrowRightLeft,
+  Bell, ChevronRight, ArrowRightLeft, ClipboardList,
 } from "lucide-react";
 import { cn, SecurityBadge } from "../../utils.jsx";
 import { SECURE_SUGGESTIONS as BASE_SECURE_SUGGESTIONS } from "../../data/constants.js";
@@ -31,6 +31,7 @@ const ChatMessages = ({
   briefingItems = [], onNavigateAgent,
   liveCfg = null, liveState = null, liveSpeed = 1, setLiveSpeed,
   handover = null, onOpenHandover, domainColor = '#334155',
+  workOrders = null, onOpenWorkOrders,
   L = { suggested: "추천 질문", recent: "최근 대화", briefing: "오늘의 업무 브리핑", pending: (n) => `처리 대기 ${n}건` },
 }) => {
   const ModeIcon = mc.icon;
@@ -227,6 +228,38 @@ const ChatMessages = ({
                         )}
                         <p className="text-[10px] text-slate-400 mt-0.5">
                           알람·조치·미결을 자동으로 모아 다음 조에 넘깁니다
+                        </p>
+                      </div>
+                      <span className="flex items-center gap-0.5 text-[11px] font-black shrink-0 group-hover:gap-1.5 transition-all"
+                        style={{ color: domainColor }}>
+                        열기 <ChevronRight className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                  </button>
+                )}
+                {/* ── 작업지시 추적 (발행 → 조치 → 검증 닫힌 루프) ── */}
+                {mode === "GENERAL" && workOrders && workOrders.total > 0 && (
+                  <button onClick={onOpenWorkOrders}
+                    className="w-full max-w-2xl mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all text-left overflow-hidden group">
+                    <div className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-100 flex items-center gap-2">
+                      <ClipboardList className="w-3.5 h-3.5" style={{ color: domainColor }} />
+                      <span className="text-[12px] font-black text-slate-800">작업지시 추적</span>
+                      <span className="ml-auto text-[10px] font-bold text-slate-400">
+                        진행 중 {workOrders.open}건 / 전체 {workOrders.total}건
+                      </span>
+                    </div>
+                    <div className="px-4 py-3 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        {workOrders.head ? (
+                          <p className="text-[12px] text-slate-700 font-medium truncate">
+                            <b>{workOrders.head.status}</b> · {workOrders.head.title}
+                            <span className="text-slate-400 font-mono ml-1.5">{workOrders.head.docNo}</span>
+                          </p>
+                        ) : (
+                          <p className="text-[12px] text-slate-700 font-medium">발행된 작업지시가 모두 검증 완료됐습니다</p>
+                        )}
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          시나리오가 발행한 지시가 실제로 조치·검증됐는지 추적합니다
                         </p>
                       </div>
                       <span className="flex items-center gap-0.5 text-[11px] font-black shrink-0 group-hover:gap-1.5 transition-all"

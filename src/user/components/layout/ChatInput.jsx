@@ -1,5 +1,6 @@
-import React from "react";
-import { Paperclip, Mic, Database, Cpu, ChevronDown, Workflow, Send } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Paperclip, Mic, Database, Cpu, ChevronDown, Workflow, Send, ScanLine, Square } from "lucide-react";
+import { isVoiceSupported, startVoice } from "../../voiceInput.js";
 import { cn } from "../../utils.jsx";
 
 /* ================================================================== */
@@ -12,7 +13,31 @@ const ChatInput = ({
   ragMode, setRagMode,
   llmDropdownRef, llmButtonRef, showLLMDropdown, setShowLLMDropdown, setLlmDropdownPos,
   activeLLM, setShowBuilderModal,
-}) => (
+  onOpenScan,
+}) => {
+  const [listening, setListening] = useState(false);
+  const recRef = useRef(null);
+  const baseRef = useRef("");   // 녹음 시작 시점의 입력값 — 인식 결과를 뒤에 붙인다
+
+  /* 인식 결과는 곧바로 보내지 않고 입력창에 채워 검토받는다.
+     소음 환경 오인식을 사람이 걸러내는 단계 (voiceInput.js 주석 참조) */
+  const toggleVoice = () => {
+    if (listening) { recRef.current?.stop(); return; }
+    if (!isVoiceSupported()) {
+      setToast({ message: "이 브라우저는 음성 입력을 지원하지 않습니다. 크롬 계열에서 사용하세요." });
+      return;
+    }
+    baseRef.current = input ? input + " " : "";
+    const rec = startVoice(
+      (text) => setInput(baseRef.current + text),
+      (reason) => { setListening(false); recRef.current = null; if (reason) setToast({ message: reason }); }
+    );
+    if (rec) { recRef.current = rec; setListening(true); }
+  };
+
+  useEffect(() => () => recRef.current?.stop(), []);
+
+  return (
   <div className={cn("shrink-0 px-4 sm:px-12 pb-7 pt-5 border-t transition-colors", isSecure ? "bg-[#0a0f1c]/85 backdrop-blur-sm border-slate-800" : "bg-white/85 backdrop-blur-sm border-slate-200")}>
     <div className="max-w-3xl mx-auto">
       {/* Unified Input Box */}
@@ -33,11 +58,19 @@ const ChatInput = ({
           <button onClick={() => fileInputRef.current?.click()} title="파일 첨부" aria-label="파일 첨부" className={cn("h-8 w-8 rounded-lg flex items-center justify-center transition-colors", isSecure ? "text-slate-500 hover:text-blue-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100")}>
             <Paperclip className="w-4 h-4" />
           </button>
-          <button title="음성 입력" aria-label="음성 입력"
-            onClick={() => setToast({ message: '음성 입력은 시연 환경에서 제공되지 않습니다. 텍스트로 입력해 주세요.' })}
-            className={cn("h-8 w-8 rounded-lg flex items-center justify-center transition-colors", isSecure ? "text-slate-500 hover:text-blue-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100")}>
-            <Mic className="w-4 h-4" />
+          <button title={listening ? "음성 입력 중지" : "음성 입력"} aria-label={listening ? "음성 입력 중지" : "음성 입력"}
+            aria-pressed={listening} onClick={toggleVoice}
+            className={cn("h-8 w-8 rounded-lg flex items-center justify-center transition-colors",
+              listening ? "bg-rose-500 text-white animate-pulse"
+              : isSecure ? "text-slate-500 hover:text-blue-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100")}>
+            {listening ? <Square className="w-3.5 h-3.5 fill-current" /> : <Mic className="w-4 h-4" />}
           </button>
+          {onOpenScan && (
+            <button title="설비·로트 코드 스캔" aria-label="설비·로트 코드 스캔" onClick={onOpenScan}
+              className={cn("h-8 w-8 rounded-lg flex items-center justify-center transition-colors", isSecure ? "text-slate-500 hover:text-blue-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100")}>
+              <ScanLine className="w-4 h-4" />
+            </button>
+          )}
 
           <div className="flex-1" />
 
@@ -90,6 +123,7 @@ const ChatInput = ({
       </p>
     </div>
   </div>
-);
+  );
+};
 
 export default ChatInput;

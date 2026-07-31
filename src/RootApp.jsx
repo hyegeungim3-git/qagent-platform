@@ -236,6 +236,13 @@ const RootApp = () => {
   // 상태 → 주소
   useEffect(() => { syncHash(route); }, [route]);
 
+  /* 활성 도메인은 '주소'가 정본이다.
+     예전엔 hashchange 때만 동기화해서, 주소로 바로 진입하면(첫 로드·링크 공유)
+     localStorage의 활성 도메인이 이전 값으로 남았다. 그러면 감사 로그·작업지시가
+     화면과 다른 도메인 버킷에 쌓인다 — 실제로 제조 기록이 병원 버킷에 저장됐다.
+     최초 로드까지 포함해 항상 맞춘다. */
+  useEffect(() => { if (domainId) setActiveDomainId(domainId); }, [domainId]);
+
   // 주소 → 상태 (뒤로/앞으로·직접 입력)
   useEffect(() => {
     const onHash = () => {

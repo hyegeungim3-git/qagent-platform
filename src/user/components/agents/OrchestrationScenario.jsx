@@ -6,6 +6,7 @@ import {
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
 import { cn, downloadTextFile, buildDocHtml } from "../../utils.jsx";
 import { logAudit } from "../../auditLog.js";
+import { registerOrder } from "../../workOrders.js";
 
 /* 에이전트 강조색 — AgentHub COLOR_MAP과 동일 팔레트 (표시용 부분집합) */
 const COLOR_MAP = {
@@ -87,6 +88,18 @@ const OrchestrationScenario = ({ scenario, agents, user, onBack }) => {
         hitl: stages.filter(s => s.review).map(s => `${s.agent?.shortName || s.agentId}: ${s.review.slice(0, 40)}`),
         docNo: scenario.result?.docNo || null,
       });
+      /* 문서를 발행했으면 작업지시로 등록해 조치·검증까지 추적한다.
+         (문서 생성에서 끝나면 "그래서 처리됐나?"에 답할 수 없다)
+         registerOrder는 같은 문서번호를 중복 등록하지 않는다. */
+      if (scenario.result?.docNo) {
+        registerOrder({
+          docNo: scenario.result.docNo,
+          title: scenario.title,
+          source: "자동화 시나리오",
+          owner: scenario.result?.owner || "",
+          due: scenario.result?.due || "",
+        });
+      }
     }
   }, [finished]);
 
