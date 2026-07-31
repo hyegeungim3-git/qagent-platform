@@ -8,6 +8,7 @@ const reb = {
   id: "reb",
   orgName: "한국부동산원",
   orgShort: "REB",
+  sectorLabel: "공공",                  // 화면 표시용 분야명 (탭·로고·타이틀). 본문 조직명은 orgName 유지
   platformTitle: "한국부동산원 AgentQ",
   brandColor: "#003087",
   welcome: "한국부동산원 생성형 AI 플랫폼에 오신 것을 환영합니다.",

@@ -32,7 +32,7 @@ const DomainSwitcher = ({ domain, onChange }) => (
           )}
           style={domain.id === d.id ? { backgroundColor: d.brandColor } : undefined}
         >
-          {d.orgName}
+          {d.sectorLabel || d.orgName}
         </button>
       ))}
     </div>
@@ -79,7 +79,7 @@ const PortalSelector = ({ domain, onChangeDomain, onSelectUser, onSelectAdmin })
           <div className="flex items-baseline gap-3 mb-3">
             {/* 솔루션명 고정 + 조직명 — 어느 분야에나 적용되는 제품임을 첫 화면에서 드러낸다 */}
             <span className="text-4xl font-black tracking-[0.15em]" style={{ color: domain.brandColor }}>AgentQ</span>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">{domain.orgName}</h1>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">{domain.sectorLabel || domain.orgName}</h1>
           </div>
           <p className="text-[16px] text-slate-500 font-medium max-w-md leading-relaxed">
             {domain.welcome}<br />
@@ -231,7 +231,7 @@ const RootApp = () => {
   const view = route.view;
 
   useEffect(() => {
-    document.title = `${domain.platformTitle} · ${domain.orgShort} AgentQ`;
+    document.title = `AgentQ · ${domain.sectorLabel || domain.orgName}`;
   }, [domain]);
 
   // 상태 → 주소

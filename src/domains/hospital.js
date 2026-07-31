@@ -13,6 +13,7 @@ const hospital = {
   id: "hospital",
   orgName: "새빛대학교병원",
   orgShort: "SUH",
+  sectorLabel: "의료",                  // 화면 표시용 분야명 (탭·로고·타이틀). 본문 조직명은 orgName 유지
   platformTitle: "새빛대학교병원 AgentQ",
   brandColor: "#0369A1",
   welcome: "새빛대학교병원 의료 생성형 AI 플랫폼에 오신 것을 환영합니다.",

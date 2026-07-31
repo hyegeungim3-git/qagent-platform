@@ -68,7 +68,7 @@ const Sidebar = ({
           <div className="flex items-baseline gap-1.5">
             <span className={cn("text-[13px] font-black tracking-[0.12em]", isSecure && "text-white")}
               style={isSecure ? undefined : { color: domain.brandColor }}>AgentQ</span>
-            <span className={cn("text-[12px] font-bold tracking-tight leading-tight truncate", th.text)}>{domain.orgName}</span>
+            <span className={cn("text-[12px] font-bold tracking-tight leading-tight truncate", th.text)}>{domain.sectorLabel || domain.orgName}</span>
           </div>
           <div className={cn("text-[10px] font-bold tracking-widest uppercase", isSecure ? "text-blue-400" : isAgent && "text-indigo-500")}
             style={isSecure || isAgent ? undefined : { color: domain.brandColor, opacity: 0.7 }}>

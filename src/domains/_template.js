@@ -11,6 +11,7 @@ const template = {
   id: "template",                       // 영소문자 고유값. localStorage·React key
   orgName: "조직명",
   orgShort: "ORG",                      // 영문 약칭 2~4자
+  sectorLabel: "분야",                  // 화면 표시용 분야명 (탭·로고·타이틀). 본문 조직명은 orgName 유지
   platformTitle: "조직명 AgentQ",
   brandColor: "#334155",                // 기존 팩(#003087/#0F766E/#166534)과 다르게
   welcome: "조직명 생성형 AI 플랫폼에 오신 것을 환영합니다.",

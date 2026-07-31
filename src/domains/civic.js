@@ -11,6 +11,7 @@ const civic = {
   id: "civic",
   orgName: "한성시청",
   orgShort: "HSC",
+  sectorLabel: "행정",                  // 화면 표시용 분야명 (탭·로고·타이틀). 본문 조직명은 orgName 유지
   platformTitle: "한성시 AgentQ",
   brandColor: "#166534",
   welcome: "한성시 스마트행정 생성형 AI 플랫폼에 오신 것을 환영합니다.",
