@@ -627,6 +627,7 @@ const manufacturing = {
   agentContent: {
     /* ── 수출문서 번역 에이전트 ── */
     "agent-translate": {
+      headerDesc: '수출문서 입력 → 용어집 기반 번역 → 역번역 검증',
       sourceText: `CNC 정밀가공 부품 수출 사양서(HBP-EXP-2026-014)에 따라 2026년 2분기 북미향 브래킷 어셈블리 24,000EA의 공급 조건을 다음과 같이 확정하였습니다.
 
 주요 관리 치수는 전장 84.50±0.10mm, 홀 피치 42.00±0.05mm이며, 전 로트에 대해 공정능력지수(Cpk) 1.33 이상을 보증합니다. 검사성적서는 KS Q ISO 2859-1 발췌 기준에 따라 로트별로 첨부합니다.
@@ -664,6 +665,7 @@ Delivery is due on the 25th of each month on a shipment basis, and nonconforming
     },
     /* ── 기안문 사전 검토 에이전트 ── */
     "agent-review": {
+      headerDesc: '기안문 업로드 → 사규·품질·안전 규정 대조 → 위반 소지 검토',
       apvLine: [
         { name: '박태윤', dept: '생산기술팀', title: '책임',   role: '작성자' },
         { name: '정재호', dept: '생산기술팀', title: '팀장',   role: '검토자' },
@@ -727,6 +729,7 @@ Delivery is due on the 25th of each month on a shipment basis, and nonconforming
     },
     /* ── 작업 위험성평가 에이전트 ── */
     "agent-safety": {
+      headerDesc: '작업 정보 입력 → 위험요소 평가 → 안전관리계획서 생성',
       agents: [
         { icon: FileText,      label: '작업 분석 에이전트',   sub: '작업 특성 파악 및 위험 유형 분류',          color: 'bg-orange-600',  ms: 2400 },
         { icon: Database,      label: 'RAG 검색 에이전트',    sub: '관련 법령·사내 규정·재해 사례 벡터 검색',   color: 'bg-blue-600',    ms: 3500 },
@@ -867,6 +870,7 @@ Delivery is due on the 25th of each month on a shipment basis, and nonconforming
     },
     /* ── 공정회의록 에이전트 ── */
     "agent-meeting": {
+      headerDesc: '회의 녹음 업로드 → 발언자 구분 → 공정회의록·액션 아이템',
       defaultTitle: '프레스 라인 표면 결함 개선 대책 회의',
       defaultDate: '2026-03-14',
       defaultPlace: '아산공장 2층 회의실 (201호)',
@@ -1018,6 +1022,7 @@ Delivery is due on the 25th of each month on a shipment basis, and nonconforming
     },
     /* ── 도면·성적서 OCR 에이전트 ── */
     "agent-ocr": {
+      headerDesc: '도면·성적서 업로드 → 치수·공차 인식 → 구조화 데이터 변환',
       sampleFiles: [
         { name: '수입검사_성적서_스캔.pdf', size: '2.1MB', pages: 3, type: 'pdf' },
         { name: '부품_도면_HB-4521.jpg',    size: '1.3MB', pages: 1, type: 'img' },
@@ -1593,6 +1598,7 @@ LIMIT 50;`,
     },
     /* ── 기술문서 요약 에이전트 ── */
     "agent-summary": {
+      headerDesc: '기술문서 업로드 → 유형별 요약 → 개정본 비교',
       docAName: '프레스_작업표준서_SOP-PR-011.pdf',
       docBName: '프레스_작업표준서_SOP-PR-011_개정안.pdf',
       resultDocLabel: '프레스_작업표준서_SOP-PR-011.pdf',
@@ -1789,6 +1795,7 @@ LIMIT 50;`,
     },
     /* ── 사규·안전규정 조회 에이전트 ── */
     "agent-internalreg": {
+      headerDesc: '사규·산업안전 규정 조항 검색 + 개정 이력 추적',
       regCategories: ['취업규칙','복무규정','안전보건관리규정','품질경영매뉴얼','설비관리규정','구매·계약 규정','보안정책','회계규정'],
       defaultCategories: ['취업규칙','안전보건관리규정'],
       suggestions: ['연차 사용 기준','출장비 정산','보호구 지급 기준','부적합품 처리 절차','도면·공정조건 반출 기준'],
@@ -1857,6 +1864,7 @@ LIMIT 50;`,
     },
     /* ── 공정 데이터 분석 에이전트 — 열공정(침탄 열처리)·예지보전 진단 (sampleAnswers·오케스트레이션과 같은 세계관) ── */
     "agent-dataanalysis": {
+      headerDesc: '공정·품질 데이터 선택 → 예측·최적화 분석 → 조치 근거 제시',
       sampleFiles: [
         { id: 'f1', name: '침탄로3호기_온도프로파일_2026Q1.csv', rows: 12960, cols: 8,  size: '3.1MB' },
         { id: 'f2', name: '경도검사_공정조건연계_로트별_2026.xlsx', rows: 486, cols: 24, size: '2.4MB' },
@@ -1906,6 +1914,97 @@ LIMIT 50;`,
       outlierSummary: '31건 (3호기 야간 로트 집중 · 예측 오분류 4건)',
       docStandard: 'HBP 표준 형식',
       docStandardNote: '리포트 형식을 선택하면 HBP 표준 양식으로 자동 생성됩니다',
+      /* 분석 유형 — 선택이 결과 구획을 실제로 바꾼다(첫 항목이 기본값) */
+      analysisTypes: [
+        { id: 'comprehensive', label: '종합 진단',      desc: '품질 예측 + 공정 최적화 + 예지보전 + 투자 검토 전체',
+          sections: ['stats', 'predict', 'optim', 'rul', 'invest', 'charts', 'report'] },
+        { id: 'quality',       label: '품질·불량 예측',  desc: '공정조건에 따른 경도 규격미달 사전 예측',
+          sections: ['predict', 'stats', 'charts', 'report'] },
+        { id: 'optimize',      label: '공정 최적화',     desc: '양품 생산을 위한 최적 공정변수·설비조건 도출',
+          sections: ['optim', 'charts', 'report'] },
+        { id: 'pdm',           label: '설비 예지보전',   desc: '설비 이상 징후와 유지보수 시점 예측',
+          sections: ['rul', 'charts', 'report'] },
+        { id: 'invest',        label: '설비 투자 검토',  desc: '품질 수준을 고려한 설비 투자·선정 적정성 판단',
+          sections: ['invest', 'stats', 'report'] },
+      ],
+      /* ① 공정조건에 따른 품질·불량 가능성 사전 예측 */
+      predictPanel: {
+        title: '품질·불량 사전 예측 모델',
+        modelName: '이진분류(LightGBM) · 경도 규격미달(58.0 HRC 미만) 예측',
+        metrics: [
+          { label: '판별 성능 (AUC)', value: '0.91' },
+          { label: '정밀도 (Precision)', value: '0.86' },
+          { label: '재현율 (Recall)', value: '0.79' },
+          { label: '학습 로트', value: '486로트' },
+        ],
+        features: [
+          { name: '후단존 평균온도', weight: 0.34 },
+          { name: '유지시간', weight: 0.24 },
+          { name: '장입 위치(후단 집중)', weight: 0.15 },
+          { name: '소재 로트 경도 편차', weight: 0.11 },
+          { name: '침탄가스 유량', weight: 0.09 },
+          { name: '냉각유 온도', weight: 0.07 },
+        ],
+        matrix: [
+          { label: '불량 예측 → 실제 불량 (적중)', count: '19건', note: '경도 전수검사 전환으로 출하 전 차단' },
+          { label: '불량 예측 → 실제 양품 (오탐)', count: '3건',  note: '불필요한 재검사 3회 발생' },
+          { label: '양품 예측 → 실제 불량 (미탐)', count: '5건',  note: '고객 클레임 1건 포함 — 미탐 저감이 우선 과제' },
+          { label: '양품 예측 → 실제 양품',        count: '459건', note: '—' },
+        ],
+        note: '이 예측은 전체 로트의 71%에만 적용됩니다 — MES 생산실적과 SCADA 공정조건을 잇는 로트 키가 발행되지 않은 29%는 공정조건을 결합할 수 없어 학습·추론 대상에서 제외됩니다. 또한 미매칭 설비 태그 1,834개가 정제되면 진동·유압 등 설비 상태 변수를 입력에 추가할 수 있습니다. 적용 범위 확대는 기준정보 표준화 완료가 선행 조건입니다.',
+      },
+      /* ② 양품 생산을 위한 최적 공정변수·설비조건 도출 */
+      optimPanel: {
+        title: '최적 공정변수·설비조건 도출',
+        target: '침탄로 3호기 · 브래킷 소재(SCM415) 열처리 레시피',
+        params: [
+          { name: '후단존 설정온도', current: '920℃',      recommended: '928℃',      delta: '+8℃' },
+          { name: '유지시간',       current: '42분',       recommended: '48분',       delta: '+6분' },
+          { name: '침탄가스 유량',   current: '18.0 N㎥/h', recommended: '19.5 N㎥/h', delta: '+1.5' },
+          { name: '냉각유 온도',     current: '80℃',       recommended: '75℃',       delta: '-5℃' },
+          { name: '로트 장입량',     current: '240kg',      recommended: '220kg',      delta: '-20kg' },
+        ],
+        effects: [
+          { label: '3호기 평균 경도',   before: '58.6 HRC', after: '60.1 HRC' },
+          { label: '규격 여유(하한 58.0)', before: '0.6 HRC', after: '2.1 HRC' },
+          { label: '공정능력지수 Cpk',  before: '1.12',     after: '1.45' },
+        ],
+        tradeoffs: [
+          '사이클 타임 6분 증가 → 3호기 일 처리량 12로트 → 11.6로트(약 3.2% 감소)',
+          '장입량 20kg 축소로 로트당 처리 중량 8.3% 감소 — 수주 집중 시 2호기 분산 편성 필요',
+          '가스 유량 증가로 로당 에너지비 월 약 42만원 추가 — 재작업 절감액으로 상쇄되는 범위',
+        ],
+        validation: '권장값은 486개 로트의 공정조건–경도 실적을 학습한 모델의 탐색 결과입니다. 바로 적용하지 말고 3개 로트 시험 열처리(로트당 경도 5점 측정·조직 검사)로 검증한 뒤 확대하십시오. 후단존 히터 열화가 원인일 경우 설정온도 상향은 증상 보정에 그치므로, 히터 저항 측정 결과와 함께 판단해야 합니다. 최종 적용은 생산기술팀 책임자 승인이 필요합니다.',
+      },
+      /* ③ 설비 이상 및 유지보수 시점 예측 */
+      rulPanel: {
+        title: '설비 이상·유지보수 시점 예측',
+        asOf: '기준 2026-03-31 · 예측 지평 90일',
+        horizonDays: 90,
+        items: [
+          { equip: 'PRS-C03 크랭크축 (창원본사 3번 프레스)', status: 'danger', verdict: '정비 시급', rulDays: 18,
+            basis: '진동 RMS 4.2mm/s로 관리 기준(3.5mm/s)을 연속 초과했고, 상승 기울기는 +0.11mm/s/일입니다. 스펙트럼에서 베어링 외륜 결함 주파수(BPFO) 성분이 탁월하며 하우징 온도 +8.2℃·모터 전류 리플 증가가 동반돼 기계적 이상으로 확정했습니다(신뢰구간 12~25일).',
+            action: '3/22 계획정지에 크랭크축 베어링 교체 편성 — 정비지시서 HBP-보전-2026-102' },
+          { equip: '침탄로 3호기 후단존 히터 뱅크', status: 'warn', verdict: '주의 관찰', rulDays: 45,
+            basis: '후단존 온도 편차가 9개월간 -1.2℃ → -7.8℃로 단조 확대돼 히터 소자 열화가 유력합니다. 현 추세가 유지되면 45일 내 경도 규격 이탈이 상시화됩니다. 열전대(TC) 드리프트 가능성도 남아 있어 교정 이력(전회 2025.09) 확인이 필요합니다.',
+            action: '차주 계획정지에 히터 저항 측정 + TC 교정 편성, 조치 완료 전까지 3호기 로트 경도 전수 검사' },
+          { equip: 'PRS-203 서보 프레스 (아산 프레스동)', status: 'normal', verdict: '정상', rulDays: 82,
+            basis: '진동·전류·유압 지표가 모두 관리 범위 내이며 90일간 추세 변화가 없습니다.',
+            action: '정기 점검 주기(3개월) 유지' },
+        ],
+        note: '잔여수명은 진동·온도·전류 추세의 외삽 추정이므로 급격한 부하 변동이나 소재 이상은 반영되지 않습니다. 3/20 진동 임계치 하향(4.5 → 3.5mm/s) 이후 조기 감지 건수가 늘었으며, 오탐 3건도 함께 증가했습니다. 예측 알람은 정비 담당자 확인을 거쳐 작업지시로 전환됩니다.',
+      },
+      /* ④ 품질 수준을 고려한 설비 투자·선정 적정성 판단 */
+      investPanel: {
+        title: '품질 수준을 고려한 설비 투자 적정성',
+        options: [
+          { name: '침탄로 3호기 히터 뱅크·존별 제어기 전면 교체', capex: '1.8억원',  quality: 'Cpk 1.12 → 1.52', saving: '연 2.4억원', payback: '9개월',     verdict: '추천' },
+          { name: '후단존 온도 제어기만 증설 (히터 유지)',        capex: '0.6억원',  quality: 'Cpk 1.12 → 1.31', saving: '연 1.1억원', payback: '7개월',     verdict: '조건부' },
+          { name: '침탄로 신규 라인 1기 도입',                    capex: '12.5억원', quality: 'Cpk 1.12 → 1.55', saving: '연 3.0억원', payback: '4년 2개월', verdict: '보류' },
+        ],
+        rationale: '전면 교체안은 경도 규격 이탈의 직접 원인인 후단존 온도 편차(-7.8℃)를 해소하면서 회수기간이 1년 미만입니다. 제어기 증설안은 투자비가 3분의 1이지만 열화된 히터 소자를 그대로 두어 Cpk가 전사 목표(1.33) 아래인 1.31에 머물고, 2년 내 히터 교체가 다시 필요해 이중 투자가 됩니다. 신규 라인은 품질 개선폭이 전면 교체안과 사실상 같은 데 비해 투자비가 7배이므로, 생산능력 증설 수요가 별도로 발생하기 전까지는 보류가 타당합니다.',
+        note: '절감액은 2025년 경도 재작업·폐기 비용과 클레임 처리 비용 실적을 기준으로 산출한 추정치이며, 수주량 변동과 에너지 단가 변동은 반영되지 않았습니다. 투자 의사결정은 재무 검토와 경영진 승인을 거쳐야 하며, 이 화면은 판단 근거 제공까지를 범위로 합니다.',
+      },
     },
     /* ── 현장 Q&A 챗봇 ── */
     "agent-chatbot": {
@@ -2086,6 +2185,7 @@ LIMIT 50;`,
      * buildPressHtml/buildReportHtml 키 생략 = 정상 (2026-07-06 데이터 구동화 이후).
      * 기본 빌더가 아래 press·report 접두 키 + 도메인 org(조직명·브랜드색)로 인쇄 HTML을 생성한다. */
     "agent-report": {
+      headerDesc: 'MES 실적 집계 → 표준 양식 자동 작성 → 결재 상신',
       apvLine: [
         { name: '박태윤', dept: '생산기술팀', title: '책임',   role: '작성자' },
         { name: '정재호', dept: '생산기술팀', title: '팀장',   role: '검토자' },
