@@ -14,6 +14,7 @@ import { AiActCompliancePage } from './admin/pages/compliance.jsx';
 import { PackStudioPage } from './admin/pages/packstudio.jsx';
 import { ScenarioBuilderPage } from './admin/pages/scenariobuilder.jsx';
 import { SecurityArchPage } from './admin/pages/security.jsx';
+import { PredictionOpsPage } from './admin/pages/predops.jsx';
 import { SystemMonitorPage, AdminPage, UserPage, ConnectedMonitorPage } from './admin/pages/system.jsx';
 import { LlmTraining, VlmTraining, EmbeddingPage, RerankingPage, LeaderboardPage, EvalMetricsPage } from './admin/pages/training.jsx';
 import { ApprovalPage, QuotaPage, UserManagementPage, AccessLogPage, AccessSecurityPage, WorkLogPage, UsageMonitorPage, HrSyncPage } from './admin/pages/users.jsx';
@@ -71,6 +72,7 @@ const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChang
     {id:'eval', label:'모델 평가', icon:BarChart2, children:[
       {id:'eval.leaderboard', label:'리더보드'},
       {id:'eval.metrics',     label:'평가 지표'},
+      {id:'eval.predops',     label:'예측 모델 운영'},
     ]},
 
     /* ════════════════════════════════════
@@ -158,7 +160,7 @@ const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChang
     'dev.codespace':<CodespacePage/>,'dev.volume':<SharedVolumePage/>,
     'model.registry':<ModelRegistry/>,
     'trainer.llm':<LlmTraining/>,'trainer.vlm':<VlmTraining/>,'trainer.embedding':<EmbeddingPage/>,'trainer.reranking':<RerankingPage/>,
-    'eval.leaderboard':<LeaderboardPage/>,'eval.metrics':<EvalMetricsPage/>,
+    'eval.leaderboard':<LeaderboardPage/>,'eval.metrics':<EvalMetricsPage/>,'eval.predops':<PredictionOpsPage/>,
     'guardrail.filter':<GuardrailFilterPage/>,'guardrail.log':<GuardrailLogPage/>,
     'security.arch':<SecurityArchPage/>,
     'aiact':<AiActCompliancePage/>,

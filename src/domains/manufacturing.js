@@ -2569,6 +2569,39 @@ LIMIT 50;`,
   adminContent: {
     ADMIN_PERSONA: { name: '서동현', role: '관리자', dept: '스마트팩토리 혁신 TF', email: 'seo@hbp.co.kr' },
 
+    /* ── 예측 모델 운영 — 이 사업의 핵심 가치가 품질 예측(AUC 0.91)인데,
+       금형 마모·소재 로트 변경이 누적되면 모델은 반드시 열화한다.
+       기존 세계관(AUC 0.91, 불량률 0.42%, 침탄로 3호기, PRS-C03)을 승계한다. */
+    MOCK_PRED_MODELS: [
+      {id:'pm-1',name:'프레스 품질 예측 모델',task:'이진분류(치수 불량)',version:'v0.9',deployed:'2026-01-20',
+       metricName:'AUC',baseline:0.91,current:0.87,threshold:0.85,status:'주의',
+       samples:'월 8,412로트',owner:'생산기술팀',nextRetrain:'재학습 검토 중'},
+      {id:'pm-2',name:'경도 규격미달 예측 모델',task:'이진분류(열처리)',version:'v1.2',deployed:'2026-02-10',
+       metricName:'AUC',baseline:0.91,current:0.90,threshold:0.85,status:'정상',
+       samples:'월 486로트',owner:'품질관리부',nextRetrain:'2026-05-10'},
+      {id:'pm-3',name:'설비 잔여수명 예측(PdM)',task:'회귀(잔여일)',version:'v0.7',deployed:'2026-03-01',
+       metricName:'MAE',baseline:3.2,current:3.6,threshold:5.0,status:'정상',
+       samples:'설비 42대 상시',owner:'설비보전팀',nextRetrain:'2026-06-01'},
+    ],
+    MOCK_PRED_TREND: [
+      {month:'2026.01','프레스 품질 예측 모델':0.91,'경도 규격미달 예측 모델':0.91},
+      {month:'2026.02','프레스 품질 예측 모델':0.90,'경도 규격미달 예측 모델':0.91},
+      {month:'2026.03','프레스 품질 예측 모델':0.88,'경도 규격미달 예측 모델':0.90},
+      {month:'2026.04','프레스 품질 예측 모델':0.87,'경도 규격미달 예측 모델':0.90},
+    ],
+    MOCK_PRED_DRIFT: [
+      {feature:'슬라이드 하사점 편차',psi:0.31,level:'경고',note:'금형 M-204 교체(2/18) 이후 분포가 이동 — 학습 시점 조건과 달라짐'},
+      {feature:'소재 코일 온도',psi:0.19,level:'주의',note:'동절기 입고 로트 비중 증가로 저온 구간이 두꺼워짐'},
+      {feature:'윤활유 도포량',psi:0.22,level:'주의',note:'자동 도포 장치 시범 적용 구간이 섞여 이중 분포 형성'},
+      {feature:'프레스 SPM',psi:0.06,level:'정상',note:'유의미한 변화 없음'},
+    ],
+    MOCK_RETRAIN_RUNS: [
+      {id:'rt-1',model:'프레스 품질 예측 모델',trigger:'드리프트 경고(하사점 PSI 0.31)',started:'2026-03-29 02:00',
+       champion:0.87,challenger:0.92,verdict:'승격 대기',note:'금형 교체 이후 데이터로 재학습 — 생산기술팀 승인 후 배포'},
+      {id:'rt-2',model:'경도 규격미달 예측 모델',trigger:'정기(분기)',started:'2026-02-10 02:00',
+       champion:0.88,challenger:0.91,verdict:'승격 완료',note:'v1.2로 배포됨 — 침탄로 3호기 편차 반영'},
+    ],
+
     /* ── 보안 아키텍처 — 제조는 OT(공장 제어망)와 IT(사무망)가 분리돼 있고
        그 경계를 넘는 지점이 발주처 최대 우려다. 흐름을 실제 설비 기준으로 기술한다. */
     MOCK_DATA_FLOWS: [

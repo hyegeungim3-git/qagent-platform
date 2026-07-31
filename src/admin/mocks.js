@@ -104,6 +104,39 @@ export let MOCK_EXTERNAL_ACCESS = [
   {id:'ex-4',org:'협력사 C',user:'외부 담당자 3',scope:'납품 이력 조회',grade:'내부',expires:'2026-02-28',mfa:false,lastAccess:'2026-02-27 14:05',status:'만료'},
 ];
 
+/* ==================== 예측 모델 운영(MLOps) ====================
+   LLM과 별개로, 업무 예측 모델(품질·수요·이상탐지)은 시간이 지나면 반드시
+   열화한다. 입력 분포가 변하기 때문이다. 그 감시·재학습을 다루는 데이터.
+   코어 기본값은 도메인 중립이고 팩이 자기 모델을 공급한다. */
+export let MOCK_PRED_MODELS = [
+  {id:'pm-1',name:'업무량 예측 모델',task:'회귀',version:'v2.3',deployed:'2026-01-15',
+   metricName:'MAE',baseline:8.4,current:9.1,threshold:11.0,status:'정상',
+   samples:'월 1,240건',owner:'데이터분석팀',nextRetrain:'2026-04-15'},
+  {id:'pm-2',name:'문서 분류 모델',task:'다중분류',version:'v1.8',deployed:'2025-11-02',
+   metricName:'F1',baseline:0.91,current:0.86,threshold:0.85,status:'주의',
+   samples:'월 3,600건',owner:'데이터분석팀',nextRetrain:'재학습 검토 중'},
+];
+// 성능 추이 — 배포 후 월별 (드리프트를 눈으로 보여주는 재료)
+export let MOCK_PRED_TREND = [
+  {month:'2025.10','업무량 예측 모델':8.4,'문서 분류 모델':0.91},
+  {month:'2025.12','업무량 예측 모델':8.6,'문서 분류 모델':0.90},
+  {month:'2026.02','업무량 예측 모델':8.9,'문서 분류 모델':0.88},
+  {month:'2026.03','업무량 예측 모델':9.1,'문서 분류 모델':0.86},
+];
+// 입력 데이터 드리프트 — 성능이 왜 떨어지는지의 원인 후보
+export let MOCK_PRED_DRIFT = [
+  {feature:'요청 유형 분포',psi:0.28,level:'주의',note:'신규 유형 유입으로 분포 이동'},
+  {feature:'문서 길이',psi:0.11,level:'정상',note:'유의미한 변화 없음'},
+  {feature:'접수 시간대',psi:0.07,level:'정상',note:'유의미한 변화 없음'},
+];
+// 재학습 이력 — 챔피언/챌린저 비교와 승격 여부
+export let MOCK_RETRAIN_RUNS = [
+  {id:'rt-1',model:'문서 분류 모델',trigger:'성능 임계 근접',started:'2026-03-28 02:00',
+   champion:0.86,challenger:0.90,verdict:'승격 대기',note:'검증셋 개선 확인, 담당자 승인 후 배포'},
+  {id:'rt-2',model:'업무량 예측 모델',trigger:'정기(분기)',started:'2026-01-15 02:00',
+   champion:8.9,challenger:8.4,verdict:'승격 완료',note:'v2.3으로 배포됨'},
+];
+
 // ==================== LLM ADMIN MOCK DATA ====================
 export let MOCK_LLM_ADMIN_MODELS = [
   {id:'m-001',name:'GPT-OSS-120B',baseModel:'Meta-Llama-3-405B-Instruct',version:'v2.4.1',
@@ -823,6 +856,7 @@ export let ADMIN_MCP_SERVERS = [
    ════════════════════════════════════════════════════════════════ */
 // __RESOLVER_START__
 const __REB_DEFAULTS = {
+  MOCK_PRED_MODELS, MOCK_PRED_TREND, MOCK_PRED_DRIFT, MOCK_RETRAIN_RUNS,
   MOCK_DATA_FLOWS, MOCK_BOUNDARY_POLICY, MOCK_EXTERNAL_ACCESS,
   ADMIN_PERSONA,
   ADMIN_MCP_SERVERS,
@@ -907,6 +941,10 @@ const __REB_DEFAULTS = {
 
 export function applyAdminDomain(domain) {
   const o = (domain && domain.adminContent) || {};
+  MOCK_PRED_MODELS = o.MOCK_PRED_MODELS !== undefined ? o.MOCK_PRED_MODELS : __REB_DEFAULTS.MOCK_PRED_MODELS;
+  MOCK_PRED_TREND = o.MOCK_PRED_TREND !== undefined ? o.MOCK_PRED_TREND : __REB_DEFAULTS.MOCK_PRED_TREND;
+  MOCK_PRED_DRIFT = o.MOCK_PRED_DRIFT !== undefined ? o.MOCK_PRED_DRIFT : __REB_DEFAULTS.MOCK_PRED_DRIFT;
+  MOCK_RETRAIN_RUNS = o.MOCK_RETRAIN_RUNS !== undefined ? o.MOCK_RETRAIN_RUNS : __REB_DEFAULTS.MOCK_RETRAIN_RUNS;
   MOCK_DATA_FLOWS = o.MOCK_DATA_FLOWS !== undefined ? o.MOCK_DATA_FLOWS : __REB_DEFAULTS.MOCK_DATA_FLOWS;
   MOCK_BOUNDARY_POLICY = o.MOCK_BOUNDARY_POLICY !== undefined ? o.MOCK_BOUNDARY_POLICY : __REB_DEFAULTS.MOCK_BOUNDARY_POLICY;
   MOCK_EXTERNAL_ACCESS = o.MOCK_EXTERNAL_ACCESS !== undefined ? o.MOCK_EXTERNAL_ACCESS : __REB_DEFAULTS.MOCK_EXTERNAL_ACCESS;
