@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
-import { cn, downloadTextFile } from "../../utils.jsx";
+import { cn, downloadTextFile, buildDocHtml, agentHeader } from "../../utils.jsx";
 
 
 const AGENTS=[
@@ -67,9 +67,36 @@ const STATS_TABLE=[
 const STATUS_COLORS={normal:'text-slate-600',high:'text-rose-600',warning:'text-amber-600'};
 const STATUS_BG   ={normal:'bg-slate-50',   high:'bg-rose-50',    warning:'bg-amber-50'};
 
+/* 자동 생성 리포트 3종 — 화면에 실제로 있는 값만 문서에 담는다 */
+const REPORT_KINDS=[
+  {kind:'summary', label:'요약 리포트',     desc:'1페이지 핵심 요약',     icon:'📄'},
+  {kind:'detail',  label:'상세 분석 보고서', desc:'통계+차트+인사이트',   icon:'📊'},
+  {kind:'outlier', label:'이상치 보고서',   desc:'이상치 및 데이터 품질', icon:'⚠️'},
+];
+
+/* 기본(REB) 분석 유형 — 선택에 따라 결과 구획이 달라진다 */
+const ANALYSIS_TYPES=[
+  {id:'comprehensive',label:'종합 분석',  desc:'기술통계 + 분포 + 이상치 + 시각화 전체', sections:['stats','charts','report']},
+  {id:'stats',        label:'기술통계',   desc:'평균·분산·분위수·상관관계',             sections:['stats','report']},
+  {id:'trend',        label:'추세 분석',  desc:'시계열 트렌드·계절성 분석',             sections:['charts','report']},
+  {id:'outlier',      label:'이상치 탐지',desc:'Z-score·IQR 기반 이상치 검출',           sections:['stats','charts','report']},
+];
+
 /* 도메인 이관: REB 기본 콘텐츠 — 도메인 팩 agentContent["agent-dataanalysis"]로 키 단위 오버라이드 */
 export const CONTENT_DEFAULTS={
+  headerTitle:'데이터 분석 에이전트',                // string — 화면 헤더 제목(미제공 시 허브 카탈로그 이름 승계)
+  headerDesc:'Excel/CSV 업로드 → 통계 분석 → 자동 시각화', // string — 헤더 설명(작업 흐름)
   sampleFiles: SAMPLE_FILES,                       // {id,name,rows,cols,size}[3]
+  /* 분석 유형 — 선택 결과가 결과 화면 구성(sections)을 실제로 바꾼다.
+     sections 생략 시 전 구획 노출(하위 호환). 사용 가능한 키:
+     stats(기술통계 표) · charts(시각화) · predict(품질 예측 모델)
+     · optim(최적 공정조건) · rul(설비 잔여수명) · invest(설비 투자 적정성) · report(리포트 생성) */
+  analysisTypes: ANALYSIS_TYPES,                   // {id,label,desc,sections?}[]
+  /* 아래 4종은 전부 선택 필드 — 팩이 공급할 때만 해당 구획이 렌더된다 */
+  predictPanel: null,                              // 품질·불량 사전 예측 모델 (아래 스키마 주석 참조)
+  optimPanel: null,                                // 최적 공정변수·설비조건 도출
+  rulPanel: null,                                  // 설비 이상·유지보수 시점 예측(잔여수명)
+  investPanel: null,                               // 품질 수준을 고려한 설비 투자 적정성 판단
   trendCaption:'주택가격지수 추세 (2025.7 ~ 2026.3) · 기준: 2021년 6월=100',
   trendData: PRICE_TREND,                          // {month,...seriesKey}[9]
   trendSeries:[{key:'매매',color:'#f97316'},{key:'전세',color:'#3b82f6'},{key:'월세',color:'#10b981'}],
@@ -88,14 +115,17 @@ export const CONTENT_DEFAULTS={
 
 const DataAnalysisAgent=({onBack,domain})=>{
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-dataanalysis"]||{})};
+  const H=agentHeader(domain,'agent-dataanalysis',C,AGENT_TEAMS);
+  const TYPES=C.analysisTypes?.length?C.analysisTypes:ANALYSIS_TYPES;
   const [step,setStep]=useState(1);
-  const [selectedFile,setSelectedFile]=useState('f1');
-  const [analysisType,setAnalysisType]=useState('comprehensive');
+  const [selectedFile,setSelectedFile]=useState(()=>C.sampleFiles?.[0]?.id||'f1');
+  const [analysisType,setAnalysisType]=useState(()=>TYPES[0].id); // 팩이 정렬한 첫 유형이 기본
   const [agentIdx,setAgentIdx]=useState(-1);
   const [doneIdx,setDoneIdx]=useState([]);
   const [chartTab,setChartTab]=useState('trend');
   const [bulkMode,setBulkMode]=useState(false);
   const [downloaded,setDownloaded]=useState(false);
+  const [madeReport,setMadeReport]=useState(null);
 
   /* 통계 요약 + 현재 보고 있는 차트의 원본 데이터를 엑셀(TSV)로 — 화면에 없는 값은 넣지 않는다 */
   const downloadResult=()=>{
@@ -115,6 +145,57 @@ const DataAnalysisAgent=({onBack,domain})=>{
     setTimeout(()=>setDownloaded(false),2000);
   };
 
+  /* 리포트 3종을 워드(.doc)로 실제 생성 — 종류별로 담는 구획이 다르다 */
+  const downloadReport=(r)=>{
+    const L=[`분석 대상: ${file?.name} (${file?.rows.toLocaleString()}행 × ${file?.cols}열)`,
+      `분석 유형: ${typeInfo.label}${bulkMode?' · 대량 데이터 모드':''}`,
+      `이상치: ${C.outlierSummary}`,''];
+    if(r.kind!=='outlier'){
+      L.push('[기술 통계 요약]');
+      C.statsTable.forEach(s=>L.push(`- ${s.metric}: ${s.value} (전기 대비 ${s.change})`));
+      L.push('');
+    }
+    if(r.kind==='outlier'){
+      L.push('[이상치 및 데이터 품질]',`- 이상치 건수: ${C.outlierSummary}`,'- 결측치: 0건');
+      C.statsTable.filter(s=>s.status!=='normal')
+        .forEach(s=>L.push(`- 주의 지표 ${s.metric}: ${s.value} (${s.change})`));
+      L.push('');
+    }
+    if(r.kind==='detail'){
+      if(predict){
+        L.push(`[${predict.title}]`,`모델: ${predict.modelName||'-'}`);
+        (predict.metrics||[]).forEach(m=>L.push(`- ${m.label}: ${m.value}`));
+        (predict.features||[]).forEach(f=>L.push(`- 기여도 ${f.name}: ${(f.weight*100).toFixed(0)}%`));
+        if(predict.note)L.push(`※ ${predict.note}`);
+        L.push('');
+      }
+      if(optim){
+        L.push(`[${optim.title}]`);
+        (optim.params||[]).forEach(p=>L.push(`- ${p.name}: ${p.current} → ${p.recommended} (${p.delta})`));
+        (optim.effects||[]).forEach(e=>L.push(`- 기대효과 ${e.label}: ${e.before} → ${e.after}`));
+        (optim.tradeoffs||[]).forEach(t=>L.push(`- 트레이드오프: ${t}`));
+        L.push('');
+      }
+      if(rul){
+        L.push(`[${rul.title}]`);
+        (rul.items||[]).forEach(it=>L.push(`- ${it.equip}: ${it.verdict} · 잔여 ${it.rulDays}일 — ${it.basis}`));
+        L.push('');
+      }
+      if(invest){
+        L.push(`[${invest.title}]`);
+        (invest.options||[]).forEach(o=>L.push(`- ${o.name}: 투자비 ${o.capex} · 예상 품질 ${o.quality} · 연 절감 ${o.saving} · 회수 ${o.payback} → ${o.verdict}`));
+        if(invest.rationale)L.push(`판단 근거: ${invest.rationale}`);
+        L.push('');
+      }
+      L.push(`[${C.trendCaption}]`);
+      C.trendData.forEach(d=>L.push('- '+Object.entries(d).map(([k,v])=>`${k}: ${v}`).join(' · ')));
+    }
+    downloadTextFile(`${r.label}.doc`,buildDocHtml(`${r.label} — ${file?.name}`,L.join('\n')),
+      'application/msword;charset=utf-8');
+    setMadeReport(r.kind);
+    setTimeout(()=>setMadeReport(null),2000);
+  };
+
   const startAnalysis=()=>{
     setStep(2);setAgentIdx(0);setDoneIdx([]);
     let delay=0;
@@ -131,6 +212,15 @@ const DataAnalysisAgent=({onBack,domain})=>{
   const reset=()=>{setStep(1);setAgentIdx(-1);setDoneIdx([]);setChartTab('trend');};
 
   const file=C.sampleFiles.find(f=>f.id===selectedFile);
+  const typeInfo=TYPES.find(t=>t.id===analysisType)||TYPES[0];
+  /* 분석 유형이 결과 구획을 결정한다 — sections 미지정 유형은 전 구획 노출(하위 호환) */
+  const shows=key=>!typeInfo.sections||typeInfo.sections.includes(key);
+  const predict=shows('predict')?C.predictPanel:null;
+  const optim  =shows('optim')  ?C.optimPanel  :null;
+  const rul    =shows('rul')    ?C.rulPanel    :null;
+  const invest =shows('invest') ?C.investPanel :null;
+  /* 대량 데이터 모드는 청크 분할 처리 — 소요 시간이 달라진다 */
+  const elapsed=bulkMode?'12.8초':'4.4초';
 
   if(step===1)return(
     <div className="flex-1 overflow-y-auto px-6 py-8 bg-white">
@@ -143,8 +233,8 @@ const DataAnalysisAgent=({onBack,domain})=>{
             <BarChart2 className="w-5 h-5 text-white"/>
           </div>
           <div>
-            <div className="text-[15px] font-black text-slate-800">데이터 분석 에이전트</div>
-            <div className="text-xs text-slate-400">Excel/CSV 업로드 → 통계 분석 → 자동 시각화</div>
+            <div className="text-[15px] font-black text-slate-800">{H.title}</div>
+            <div className="text-xs text-slate-400">{H.desc}</div>
           </div>
         </div>
 
@@ -191,12 +281,7 @@ const DataAnalysisAgent=({onBack,domain})=>{
         <div className="space-y-1.5">
           <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">2 · 분석 유형</label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {[
-              {id:'comprehensive', label:'종합 분석', desc:'기술통계 + 분포 + 이상치 + 시각화 전체'},
-              {id:'stats',         label:'기술통계',  desc:'평균·분산·분위수·상관관계'},
-              {id:'trend',         label:'추세 분석', desc:'시계열 트렌드·계절성 분석'},
-              {id:'outlier',       label:'이상치 탐지',desc:'Z-score·IQR 기반 이상치 검출'},
-            ].map(t=>(
+            {TYPES.map(t=>(
               <label key={t.id} className={cn(
                 'flex flex-col px-4 py-3 border rounded-xl cursor-pointer transition-all select-none',
                 analysisType===t.id?'bg-orange-50 border-orange-300':'border-slate-200 hover:bg-slate-50'
@@ -285,9 +370,11 @@ const DataAnalysisAgent=({onBack,domain})=>{
           <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0"><CheckCircle className="w-3.5 h-3.5 text-white"/></div>
           <div className="min-w-0">
             <div className="text-[13px] font-black text-slate-800 truncate">분석 완료 · {file?.rows.toLocaleString()}행</div>
-            <div className="text-[10px] text-slate-400">{file?.name} · 분석 시간 4.4초</div>
+            <div className="text-[10px] text-slate-400 truncate">{file?.name} · 분석 시간 {elapsed}</div>
           </div>
         </div>
+        <span className="text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-1 rounded-full shrink-0">{typeInfo.label}</span>
+        {bulkMode&&<span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-full shrink-0">대량 모드 · 10,000행 청크 분할</span>}
         <button onClick={reset} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[11px] font-bold text-slate-500 hover:bg-slate-50 transition-colors">
           <RotateCcw className="w-3 h-3"/>새 분석
         </button>
@@ -315,7 +402,7 @@ const DataAnalysisAgent=({onBack,domain})=>{
         </div>
 
         {/* 기술 통계 테이블 */}
-        <div className="bg-white border rounded-2xl overflow-hidden">
+        {shows('stats')&&<div className="bg-white border rounded-2xl overflow-hidden">
           <div className="px-5 py-3.5 border-b flex items-center gap-2">
             <Table2 className="w-4 h-4 text-orange-600"/>
             <span className="text-[13px] font-black text-slate-800">기술 통계 요약</span>
@@ -345,10 +432,10 @@ const DataAnalysisAgent=({onBack,domain})=>{
               </tbody>
             </table>
           </div>
-        </div>
+        </div>}
 
         {/* 차트 탭 */}
-        <div className="bg-white border rounded-2xl overflow-hidden">
+        {shows('charts')&&<div className="bg-white border rounded-2xl overflow-hidden">
           <div className="px-5 py-3.5 border-b flex items-center gap-3">
             <BarChart2 className="w-4 h-4 text-orange-600"/>
             <span className="text-[13px] font-black text-slate-800">시각화</span>
@@ -435,10 +522,214 @@ const DataAnalysisAgent=({onBack,domain})=>{
               </>
             )}
           </div>
-        </div>
+        </div>}
+
+        {/* ── 품질·불량 사전 예측 모델 ── */}
+        {predict&&(
+          <div className="bg-white border rounded-2xl overflow-hidden">
+            <div className="px-5 py-3.5 border-b flex items-center gap-2 flex-wrap">
+              <Zap className="w-4 h-4 text-orange-600"/>
+              <span className="text-[13px] font-black text-slate-800">{predict.title}</span>
+              {predict.modelName&&<span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">{predict.modelName}</span>}
+            </div>
+            <div className="p-5 space-y-4">
+              {!!predict.metrics?.length&&(
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {predict.metrics.map((m,i)=>(
+                    <div key={i} className="border rounded-xl px-3 py-2.5 text-center bg-slate-50">
+                      <div className="text-[15px] font-black text-slate-800">{m.value}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">{m.label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!!predict.features?.length&&(
+                <div>
+                  <p className="text-[11px] font-black text-slate-500 mb-2">공정변수 기여도 (모델 판단 근거)</p>
+                  <div className="space-y-1.5">
+                    {predict.features.map((f,i)=>(
+                      <div key={i} className="flex items-center gap-3">
+                        <span className="text-[11px] text-slate-600 w-40 shrink-0 truncate">{f.name}</span>
+                        <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden min-w-0">
+                          <div className="h-2.5 bg-orange-500 rounded-full" style={{width:`${Math.round(f.weight*100)}%`}}/>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-slate-700 w-12 text-right shrink-0">{(f.weight*100).toFixed(0)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {!!predict.matrix?.length&&(
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[12px] border rounded-xl overflow-hidden">
+                    <thead><tr className="bg-slate-50 border-b">
+                      {['구분','건수','비고'].map(h=><th key={h} className="px-4 py-2 text-left font-black text-slate-500">{h}</th>)}
+                    </tr></thead>
+                    <tbody>
+                      {predict.matrix.map((m,i)=>(
+                        <tr key={i} className="border-b last:border-0">
+                          <td className="px-4 py-2 font-medium text-slate-700">{m.label}</td>
+                          <td className="px-4 py-2 font-mono font-bold text-slate-800">{m.count}</td>
+                          <td className="px-4 py-2 text-slate-500">{m.note}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {predict.note&&(
+                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5"/>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">{predict.note}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── 최적 공정변수·설비조건 도출 ── */}
+        {optim&&(
+          <div className="bg-white border rounded-2xl overflow-hidden">
+            <div className="px-5 py-3.5 border-b flex items-center gap-2">
+              <Filter className="w-4 h-4 text-orange-600"/>
+              <span className="text-[13px] font-black text-slate-800">{optim.title}</span>
+              {optim.target&&<span className="ml-auto text-[10px] text-slate-400 truncate">{optim.target}</span>}
+            </div>
+            <div className="p-5 space-y-4">
+              {!!optim.params?.length&&(
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[12px]">
+                    <thead><tr className="bg-slate-50 border-b">
+                      {['공정변수','현재 설정','AI 권장','변화'].map(h=><th key={h} className="px-4 py-2 text-left font-black text-slate-500">{h}</th>)}
+                    </tr></thead>
+                    <tbody>
+                      {optim.params.map((p,i)=>(
+                        <tr key={i} className="border-b last:border-0">
+                          <td className="px-4 py-2 font-medium text-slate-700">{p.name}</td>
+                          <td className="px-4 py-2 font-mono text-slate-500">{p.current}</td>
+                          <td className="px-4 py-2 font-mono font-bold text-emerald-700">{p.recommended}</td>
+                          <td className="px-4 py-2 font-mono text-[11px] text-orange-600">{p.delta}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {!!optim.effects?.length&&(
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {optim.effects.map((e,i)=>(
+                    <div key={i} className="border border-emerald-200 bg-emerald-50 rounded-xl px-4 py-3">
+                      <div className="text-[10px] text-emerald-700 font-bold">{e.label}</div>
+                      <div className="text-[13px] font-black text-slate-800 mt-1">
+                        <span className="text-slate-400 font-bold">{e.before}</span>
+                        <ArrowUpDown className="w-3 h-3 inline mx-1 text-emerald-600 rotate-90"/>
+                        {e.after}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!!optim.tradeoffs?.length&&(
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                  <p className="text-[11px] font-black text-amber-800 mb-1.5">함께 감수해야 할 영향 (트레이드오프)</p>
+                  <ul className="space-y-1">
+                    {optim.tradeoffs.map((t,i)=>(
+                      <li key={i} className="text-[11px] text-amber-800 leading-relaxed">· {t}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {optim.validation&&(
+                <p className="text-[11px] text-slate-500 leading-relaxed border-l-2 border-slate-200 pl-3">{optim.validation}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── 설비 이상·유지보수 시점 예측 ── */}
+        {rul&&(
+          <div className="bg-white border rounded-2xl overflow-hidden">
+            <div className="px-5 py-3.5 border-b flex items-center gap-2">
+              <Activity className="w-4 h-4 text-orange-600"/>
+              <span className="text-[13px] font-black text-slate-800">{rul.title}</span>
+              {rul.asOf&&<span className="ml-auto text-[10px] text-slate-400">{rul.asOf}</span>}
+            </div>
+            <div className="p-5 space-y-2.5">
+              {(rul.items||[]).map((it,i)=>{
+                const tone=it.status==='danger'?{b:'border-rose-200',bg:'bg-rose-50',t:'text-rose-700',bar:'bg-rose-500'}
+                  :it.status==='warn'?{b:'border-amber-200',bg:'bg-amber-50',t:'text-amber-700',bar:'bg-amber-500'}
+                  :{b:'border-slate-200',bg:'bg-white',t:'text-emerald-700',bar:'bg-emerald-500'};
+                return(
+                  <div key={i} className={cn('border rounded-xl px-4 py-3',tone.b,tone.bg)}>
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                      <span className="text-[12px] font-black text-slate-800">{it.equip}</span>
+                      <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border',tone.t,tone.b)}>{it.verdict}</span>
+                      <span className="ml-auto text-[11px] font-mono font-bold text-slate-700">잔여 {it.rulDays}일</span>
+                    </div>
+                    <div className="h-2 bg-white border border-slate-200 rounded-full overflow-hidden mb-2">
+                      <div className={cn('h-full rounded-full',tone.bar)} style={{width:`${Math.max(3,Math.min(100,Math.round((it.rulDays/(rul.horizonDays||90))*100)))}%`}}/>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">{it.basis}</p>
+                    {it.action&&<p className="text-[11px] font-bold text-slate-700 mt-1">권장 조치 · {it.action}</p>}
+                  </div>
+                );
+              })}
+              {rul.note&&<p className="text-[11px] text-slate-500 leading-relaxed border-l-2 border-slate-200 pl-3">{rul.note}</p>}
+            </div>
+          </div>
+        )}
+
+        {/* ── 품질 수준을 고려한 설비 투자 적정성 ── */}
+        {invest&&(
+          <div className="bg-white border rounded-2xl overflow-hidden">
+            <div className="px-5 py-3.5 border-b flex items-center gap-2">
+              <Cpu className="w-4 h-4 text-orange-600"/>
+              <span className="text-[13px] font-black text-slate-800">{invest.title}</span>
+            </div>
+            <div className="p-5 space-y-3">
+              <div className="overflow-x-auto">
+                <table className="w-full text-[12px]">
+                  <thead><tr className="bg-slate-50 border-b">
+                    {['투자안','투자비','예상 품질','연 절감액','회수기간','판정'].map(h=>(
+                      <th key={h} className="px-3 py-2 text-left font-black text-slate-500 whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr></thead>
+                  <tbody>
+                    {(invest.options||[]).map((o,i)=>(
+                      <tr key={i} className={cn('border-b last:border-0',o.verdict==='추천'&&'bg-emerald-50')}>
+                        <td className="px-3 py-2.5 font-medium text-slate-700">{o.name}</td>
+                        <td className="px-3 py-2.5 font-mono text-slate-600 whitespace-nowrap">{o.capex}</td>
+                        <td className="px-3 py-2.5 font-mono text-slate-600 whitespace-nowrap">{o.quality}</td>
+                        <td className="px-3 py-2.5 font-mono text-slate-600 whitespace-nowrap">{o.saving}</td>
+                        <td className="px-3 py-2.5 font-mono text-slate-600 whitespace-nowrap">{o.payback}</td>
+                        <td className="px-3 py-2.5">
+                          <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap',
+                            o.verdict==='추천'?'bg-emerald-100 text-emerald-700'
+                            :o.verdict==='보류'?'bg-amber-100 text-amber-700':'bg-slate-100 text-slate-600')}>{o.verdict}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {invest.rationale&&(
+                <div className="bg-slate-50 border rounded-xl px-4 py-3">
+                  <p className="text-[11px] font-black text-slate-600 mb-1">판단 근거</p>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">{invest.rationale}</p>
+                </div>
+              )}
+              {invest.note&&(
+                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5"/>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">{invest.note}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 표준화 분석 리포트 자동 생성 */}
-        <div className="bg-white border rounded-2xl overflow-hidden">
+        {shows('report')&&<div className="bg-white border rounded-2xl overflow-hidden">
           <div className="px-5 py-3.5 border-b flex items-center gap-2">
             <FileText className="w-4 h-4 text-orange-600"/>
             <span className="text-[13px] font-black text-slate-800">표준화 분석 리포트 자동 생성</span>
@@ -446,23 +737,19 @@ const DataAnalysisAgent=({onBack,domain})=>{
           </div>
           <div className="p-5">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-              {[
-                {label:'요약 리포트',    desc:'1페이지 핵심 요약',    icon:'📄'},
-                {label:'상세 분석 보고서',desc:'통계+차트+인사이트', icon:'📊'},
-                {label:'이상치 보고서',  desc:'이상치 및 데이터 품질',icon:'⚠️'},
-              ].map((r,i)=>(
-                <button key={i}
-                  onClick={()=>alert(`${r.label} 생성 준비 중...`)}
+              {REPORT_KINDS.map(r=>(
+                <button key={r.kind}
+                  onClick={()=>downloadReport(r)}
                   className="border-2 border-dashed border-orange-200 rounded-xl p-4 text-center hover:bg-orange-50 hover:border-orange-400 transition-all">
                   <div className="text-2xl mb-1">{r.icon}</div>
-                  <div className="text-[12px] font-black text-slate-700">{r.label}</div>
+                  <div className="text-[12px] font-black text-slate-700">{madeReport===r.kind?'생성 완료':r.label}</div>
                   <div className="text-[10px] text-slate-400 mt-0.5">{r.desc}</div>
                 </button>
               ))}
             </div>
             <p className="text-[11px] text-slate-400 text-center">{C.docStandardNote}</p>
           </div>
-        </div>
+        </div>}
 
         <div className="text-center py-2">
           <button onClick={reset} className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-500 text-white rounded-xl text-[13px] font-black hover:bg-orange-600 transition-colors shadow-md shadow-orange-100">

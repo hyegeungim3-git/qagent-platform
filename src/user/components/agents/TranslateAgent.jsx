@@ -7,7 +7,7 @@ import {
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { cn } from "../../utils.jsx";
+import { cn, agentHeader } from "../../utils.jsx";
 
 
 const LANG_PAIRS=[
@@ -66,6 +66,8 @@ const DEFAULT_GLOSSARY=[
 
 /* 도메인 이관: REB 기본 콘텐츠 — 도메인 팩 agentContent["agent-translate"]로 키 단위 오버라이드 */
 export const CONTENT_DEFAULTS={
+  headerTitle:'다국어 번역·요약 에이전트',                        // string — 미제공 시 허브 카탈로그 이름 승계
+  headerDesc:'입력 → 청킹·번역·검수 에이전트 → 번역문 및 요약 생성', // string — 헤더 설명(작업 흐름)
   sourceText: SOURCE_TEXT,         // string — 샘플 원문. '\n\n' 구분 문단 3개 (좌측 원문 패널·역번역 대조에 사용)
   translatedText: TRANSLATED_TEXT, // string — 번역 결과. '\n\n' 구분 문단 3개 (sourceText와 문단 수 일치 권장)
   chunks: CHUNKS,                  // {id:number,text:string}[5] — 청킹 결과(원문을 의미 단위 분할). 배열 통째 교체
@@ -77,6 +79,7 @@ export const CONTENT_DEFAULTS={
 
 const TranslateAgent=({onBack,domain})=>{
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-translate"]||{})};
+  const H=agentHeader(domain,'agent-translate',C,AGENT_TEAMS);
   const {step,setStep,agentIdx,doneIdx,start:startSim,resetSim}=useAgentSimulation(AGENTS,{
     // 번역 단계(i=1) 동안 청크 진행 티커
     onStepStart:(i,prev)=>{
@@ -130,8 +133,8 @@ const TranslateAgent=({onBack,domain})=>{
           {onBack&&<button onClick={onBack} aria-label="뒤로 가기" className="text-slate-400 hover:text-violet-600 transition-colors mr-1"><ChevronRight className="w-4 h-4 rotate-180"/></button>}
           <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center shadow-md"><Languages className="w-5 h-5 text-white"/></div>
           <div>
-            <div className="text-[15px] font-black text-slate-800">다국어 번역·요약 에이전트</div>
-            <div className="text-xs text-slate-400">입력 → 청킹·번역·검수 에이전트 → 번역문 및 요약 생성</div>
+            <div className="text-[15px] font-black text-slate-800">{H.title}</div>
+            <div className="text-xs text-slate-400">{H.desc}</div>
           </div>
         </div>
 

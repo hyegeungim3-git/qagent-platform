@@ -9,7 +9,7 @@ import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
 import { REB_LOGO } from "../../data/logos.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { cn } from "../../utils.jsx";
+import { cn, agentHeader } from "../../utils.jsx";
 
 
 const APV_LINE=[
@@ -85,6 +85,8 @@ const HIGHLIGHT_SEGS=[
 
 /* 도메인 이관: REB 기본 콘텐츠 — 도메인 팩 agentContent["agent-review"]로 키 단위 오버라이드 */
 export const CONTENT_DEFAULTS={
+  headerTitle:'사규 기반 문서 사전 검토 에이전트',      // string — 미제공 시 허브 카탈로그 이름 승계
+  headerDesc:'문서 업로드 → 멀티 에이전트 분석 → 위반 소지 검토 보고서 생성',// string — 헤더 설명(작업 흐름)
   apvLine: APV_LINE,             // {name,dept,title,role}[3] — 결재선(작성자→검토자→승인자 순서 고정). 배열 통째 교체
   ragDocs: RAG_DOCS,             // string[7] — RAG 검색 티커에 노출되는 규정 조항명. 배열 통째 교체
   violations: VIOLATIONS,        // {clause,type,severity:'high'|'medium'|'low',content,action}[3] — 위반 소지 3건(심각도별 1건씩, highlightSegs와 순서 대응). 배열 통째 교체
@@ -102,6 +104,7 @@ export const CONTENT_DEFAULTS={
 
 const DocReviewAgent=({onBack,domain})=>{
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-review"]||{})};
+  const H=agentHeader(domain,'agent-review',C,AGENT_TEAMS);
   const compScore=(()=>{
     const h=C.violations.filter(v=>v.severity==='high').length;
     const m=C.violations.filter(v=>v.severity==='medium').length;
@@ -154,8 +157,8 @@ const DocReviewAgent=({onBack,domain})=>{
           {onBack&&<button onClick={onBack} aria-label="뒤로 가기" className="text-slate-400 hover:text-indigo-600 transition-colors mr-1"><ChevronRight className="w-4 h-4 rotate-180"/></button>}
           <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md"><FileSearch className="w-5 h-5 text-white"/></div>
           <div>
-            <div className="text-[15px] font-black text-slate-800">사규 기반 문서 사전 검토 에이전트</div>
-            <div className="text-xs text-slate-400">문서 업로드 → 멀티 에이전트 분석 → 위반 소지 검토 보고서 생성</div>
+            <div className="text-[15px] font-black text-slate-800">{H.title}</div>
+            <div className="text-xs text-slate-400">{H.desc}</div>
           </div>
         </div>
 

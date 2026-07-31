@@ -8,7 +8,14 @@ import {
 import { cn, SECURITY_LEVELS, SecurityBadge } from "../../utils.jsx";
 import {
   MCP_TOOLS, SECURE_SUGGESTIONS as BASE_SECURE_SUGGESTIONS, FILE_DATA, MY_RAG_INIT, MY_RAG_DOCS_INIT,
+  AGENT_TEAMS,
 } from "../../data/constants.js";
+
+/* 추천 카드 버튼에 쓸 에이전트 짧은 이름 — 도메인 카탈로그가 정본.
+   코어 이름을 하드코딩하면 발주처 화면에 남의 에이전트 이름이 뜬다(실제 사고 이력). */
+const shortAgentName = (domain, id) =>
+  domain?.agentCatalog?.[id]?.shortName || domain?.agentCatalog?.[id]?.name
+  || AGENT_TEAMS?.find(t => t.id === id)?.shortName || '에이전트';
 
 /* ================================================================== */
 /* 우측 패널 — 문서 목록/원문 뷰어/연동 도구/내 RAG + 에이전트 활동 피드 */
@@ -243,7 +250,8 @@ const RightPanel = ({
                 <button onClick={() => setActiveAgentId('agent-knowledge')}
                   className={cn("w-full flex items-center justify-center gap-1.5 h-7 rounded-lg text-[13px] font-bold transition-all",
                     isSecure ? "bg-indigo-800 text-indigo-200 hover:bg-indigo-700" : "bg-indigo-600 text-white hover:bg-indigo-700")}>
-                  <Bot className="w-3 h-3" /> 지식 검색 에이전트 시작 →
+                  <Bot className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{shortAgentName(domain,'agent-knowledge')} 시작 →</span>
                 </button>
               </div>
               <div className={cn("p-3 rounded-xl border",
@@ -255,7 +263,8 @@ const RightPanel = ({
                 <button onClick={() => setActiveAgentId('agent-meeting')}
                   className={cn("text-[13px] font-bold flex items-center gap-1 transition-colors",
                     isSecure ? "text-violet-400 hover:text-violet-300" : "text-violet-600 hover:text-violet-800")}>
-                  <Mic className="w-3 h-3" /> 회의록 작성 시작 →
+                  <Mic className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{shortAgentName(domain,'agent-meeting')} 시작 →</span>
                 </button>
               </div>
             </div>

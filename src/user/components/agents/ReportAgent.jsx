@@ -14,7 +14,7 @@ import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
 import { REB_LOGO } from "../../data/logos.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { cn } from "../../utils.jsx";
+import { cn, agentHeader, downloadTextFile, buildDocHtml } from "../../utils.jsx";
 
 
 const APV_LINE=[
@@ -49,10 +49,13 @@ const LENGTHS_REPORT=[
   {id:'long',   label:'장문 (6p+)',  desc:'종합 분석 보고'},
 ];
 
+/* 내보내기 형식 — 백엔드 없이 브라우저에서 실제로 만들 수 있는 것만 둔다.
+   한글(.hwpx)은 독점 바이너리라 클라이언트에서 생성 불가 → 메뉴 하단에 변환 경유를 명시하고,
+   한글이 그대로 열 수 있는 .html을 대신 제공한다. */
 const EXPORT_FORMATS=[
-  {label:'Word (.docx)', icon:'📄', ext:'docx', color:'text-blue-600'},
-  {label:'한글 (.hwpx)', icon:'📋', ext:'hwpx', color:'text-green-600'},
-  {label:'PDF (.pdf)',   icon:'📕', ext:'pdf',  color:'text-red-600'},
+  {label:'Word (.doc)',  icon:'📄', ext:'doc',  color:'text-blue-600'},
+  {label:'HTML (.html)', icon:'📋', ext:'html', color:'text-green-600'},
+  {label:'PDF (인쇄)',   icon:'📕', ext:'pdf',  color:'text-red-600'},
 ];
 
 const DOC_NUMS={
@@ -501,6 +504,8 @@ const buildReportHtml=({title,docNum,dept,period,mainWork,nextPlan,special,logo}
 
 /* 도메인 이관: REB 기본 콘텐츠 — 도메인 팩 agentContent["agent-report"]로 키 단위 오버라이드 */
 export const CONTENT_DEFAULTS={
+  headerTitle:'보고서 템플릿 자동 작성 에이전트',            // string — 미제공 시 허브 카탈로그 이름 승계
+  headerDesc:'표준 양식 선택 → 정보 입력 → AI 보고서 자동 생성', // string — 헤더 설명(작업 흐름)
   apvLine: APV_LINE,                        // {name,dept,title,role}[3] — 작성자→검토자→승인자 순. [0]이 작성자 서명에 쓰임
   reportTypes: REPORT_TYPES,                // {id,label,icon(이모지),desc}[5] — 첫 항목이 초기 선택값
   docNums: DOC_NUMS,                        // {[typeId]: 문서번호} — reportTypes 전 id 매핑 권장
@@ -549,6 +554,7 @@ export const CONTENT_DEFAULTS={
 
 const ReportAgent=({onBack,domain})=>{
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-report"]||{})};
+  const H=agentHeader(domain,'agent-report',C,AGENT_TEAMS);
   const initialDefaults=C.reportDefaults[C.reportTypes[0].id]||{};
   const {step,setStep,agentIdx,doneIdx,start:startSim,resetSim}=useAgentSimulation(AGENTS,{
     onComplete:()=>setEditResult(buildRawText()),
@@ -566,6 +572,7 @@ const ReportAgent=({onBack,domain})=>{
   const [tone,setTone]=useState('formal');
   const [length,setLength]=useState('medium');
   const [showExportMenu,setShowExportMenu]=useState(false);
+  const [exported,setExported]=useState(null);
 
   const DOC_NUM=C.docNums[reportType]||C.docNumFallback;
 
@@ -605,16 +612,37 @@ ${special||'(해당 없음)'}
 
   const selectedType=C.reportTypes.find(t=>t.id===reportType);
 
-  const downloadDoc=()=>{
+  /* 인쇄·내보내기가 같은 문서 HTML을 쓰도록 단일화 */
+  const buildHtml=()=>{
     const docTitle=selectedType?.label||C.reportTypes[0].label;
     const org={name:domain?.orgName||'한국부동산원',short:domain?.orgShort||'REB',color:domain?.brandColor||'#003087',en:domain?.orgEn||'KOREA REAL ESTATE BOARD'};
-    const html=reportType===C.pressTypeId
+    return {docTitle,html:reportType===C.pressTypeId
       ?C.buildPressHtml({title:docTitle,docNum:DOC_NUM,dept,period,mainWork,nextPlan,special,apvLine:C.apvLine,logo:C.logo},C,org)
-      :C.buildReportHtml({title:docTitle,docNum:DOC_NUM,dept,period,mainWork,nextPlan,special,logo:C.logo},C,org);
+      :C.buildReportHtml({title:docTitle,docNum:DOC_NUM,dept,period,mainWork,nextPlan,special,logo:C.logo},C,org)};
+  };
+
+  const downloadDoc=()=>{
+    const {html}=buildHtml();
     const w=window.open('','_blank','width=900,height=1200');
     w.document.write(html);
     w.document.close();
     w.focus();
+  };
+
+  /* 내보내기 — 형식별로 실제 파일을 만들거나 인쇄 대화상자를 띄운다 */
+  const exportAs=(ext)=>{
+    setShowExportMenu(false);
+    const {docTitle,html}=buildHtml();
+    if(ext==='pdf'){ // 브라우저 인쇄 → 'PDF로 저장'이 실제 경로
+      const w=window.open('','_blank','width=900,height=1200');
+      w.document.write(html); w.document.close(); w.focus();
+      setTimeout(()=>w.print(),400);
+      return;
+    }
+    downloadTextFile(`${docTitle}_${DOC_NUM}.${ext}`,html,
+      ext==='doc'?'application/msword;charset=utf-8':'text/html;charset=utf-8');
+    setExported(ext);
+    setTimeout(()=>setExported(null),2000);
   };
 
   if(step===1) return(
@@ -624,8 +652,8 @@ ${special||'(해당 없음)'}
           {onBack&&<button onClick={onBack} className="text-slate-400 hover:text-slate-600 text-[11px] font-bold flex items-center gap-1 shrink-0"><ChevronRight className="w-3.5 h-3.5 rotate-180"/>뒤로</button>}
           <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-md shrink-0"><FileText className="w-5 h-5 text-white"/></div>
           <div>
-            <div className="text-[15px] font-black text-slate-800">보고서 템플릿 자동 작성 에이전트</div>
-            <div className="text-xs text-slate-400">표준 양식 선택 → 정보 입력 → AI 보고서 자동 생성</div>
+            <div className="text-[15px] font-black text-slate-800">{H.title}</div>
+            <div className="text-xs text-slate-400">{H.desc}</div>
           </div>
         </div>
 
@@ -822,12 +850,17 @@ ${special||'(해당 없음)'}
             <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
               {EXPORT_FORMATS.map(fmt=>(
                 <button key={fmt.ext}
-                  onClick={()=>{setShowExportMenu(false);alert(`${fmt.label.replace(/\s*\(.*\)/,'')} 형식으로 내보내기 준비 중...`);}}
+                  onClick={()=>exportAs(fmt.ext)}
                   className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left">
                   <span className="text-base">{fmt.icon}</span>
-                  <span className={cn('text-[12px] font-bold',fmt.color)}>{fmt.label}</span>
+                  <span className={cn('text-[12px] font-bold',fmt.color)}>
+                    {exported===fmt.ext?'내려받음':fmt.label}
+                  </span>
                 </button>
               ))}
+              <p className="px-4 py-2 text-[10px] text-slate-400 border-t leading-relaxed">
+                한글(.hwpx) 변환은 실서비스에서 문서 변환 서버를 경유합니다
+              </p>
             </div>
           )}
         </div>

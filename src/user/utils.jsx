@@ -12,6 +12,22 @@ export function downloadTextFile(filename, text, mime = 'text/plain;charset=utf-
   URL.revokeObjectURL(url);
 }
 
+/* 에이전트 화면 제목·설명의 단일 승계 경로.
+   이름이 허브 카드(agentCatalog)와 안쪽 화면 두 곳에 따로 정의되면 반드시 어긋난다(실제 사고 이력).
+   제목 우선순위: 팩 agentContent.headerTitle > 팩 agentCatalog.name > 코어 AGENT_TEAMS.name > 컴포넌트 기본값.
+   설명은 카탈로그를 승계하지 않는다 — 카드 desc는 '무엇을 하는가'(홍보 문장),
+   내부 headerDesc는 '어떤 순서로 진행되는가'(작업 흐름)로 역할이 다르기 때문.
+   teams: 순환 import를 피하려고 호출부가 AGENT_TEAMS를 넘긴다. */
+export function agentHeader(domain, agentId, defaults = {}, teams = null) {
+  const pack = domain?.agentContent?.[agentId] || {};
+  const cat = domain?.agentCatalog?.[agentId] || {};
+  const core = teams?.find(t => t.id === agentId) || null;
+  return {
+    title: pack.headerTitle || cat.name || core?.name || defaults.headerTitle || '',
+    desc: pack.headerDesc || defaults.headerDesc || '',
+  };
+}
+
 /* 워드(.doc)로 열리는 최소 HTML 문서 — 제목 + 본문 문단 */
 export function buildDocHtml(title, body) {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

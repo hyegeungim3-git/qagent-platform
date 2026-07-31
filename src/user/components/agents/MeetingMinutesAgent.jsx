@@ -11,9 +11,12 @@ import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
 import { REB_LOGO } from "../../data/logos.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
+import { agentHeader } from "../../utils.jsx";
 
 /* 도메인 이관: REB 기본 콘텐츠 — 도메인 팩 agentContent["agent-meeting"]로 키 단위 오버라이드 */
 export const CONTENT_DEFAULTS = {
+  headerTitle: '회의록 자동 작성 에이전트',                        // string — 미제공 시 허브 카탈로그 이름 승계
+  headerDesc: '음성 파일 업로드 → 멀티 에이전트 처리 → 표준 회의록 생성', // string — 헤더 설명(작업 흐름)
   defaultTitle:'표준지공시지가 조사·평가 방법론 개선 회의',   // string — 회의명 초기값
   defaultDate:'2026-03-14',                                    // string — YYYY-MM-DD
   defaultPlace:'본사 9층 대회의실 (904호)',                    // string — 장소 초기값
@@ -104,6 +107,7 @@ export const CONTENT_DEFAULTS = {
 
 const MeetingMinutesAgent = ({ onBack, domain }) => {
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-meeting"]||{})};
+  const H=agentHeader(domain,'agent-meeting',C,AGENT_TEAMS);
   const {step,setStep,agentIdx,doneIdx,start:startSim,resetSim}=useAgentSimulation(MEET_AGENTS);
   const [title,setTitle]=useState(C.defaultTitle);
   const [meetDate,setMeetDate]=useState(C.defaultDate);
@@ -155,7 +159,7 @@ const MeetingMinutesAgent = ({ onBack, domain }) => {
         <div className="flex items-center gap-3 mb-2">
           {onBack && <button onClick={onBack} aria-label="뒤로 가기" className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"><ChevronLeft className="w-5 h-5"/></button>}
           <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center shadow-md"><ClipboardList className="w-5 h-5 text-white"/></div>
-          <div><div className="text-[15px] font-black text-slate-800">회의록 자동 작성 에이전트</div><div className="text-xs text-slate-400">음성 파일 업로드 → 멀티 에이전트 처리 → 표준 회의록 생성</div></div>
+          <div><div className="text-[15px] font-black text-slate-800">{H.title}</div><div className="text-xs text-slate-400">{H.desc}</div></div>
         </div>
 
         {/* 1. 회의 음성 파일 */}

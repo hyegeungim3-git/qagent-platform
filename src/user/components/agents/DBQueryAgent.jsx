@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
-import { cn } from "../../utils.jsx";
+import { cn, agentHeader } from "../../utils.jsx";
 
 
 /* ── 데이터 소스 아이콘 (key 고정: building | land | lup) ── */
@@ -191,9 +191,7 @@ export default function DBQueryAgent({ onBack, domain, onNavigate }) {
   const [sortDir, setSortDir] = useState('asc');
 
   const teamData = AGENT_TEAMS?.find(t => t.id === 'agent-dbquery') ?? null;
-  /* 화면 제목은 허브 카탈로그 이름 승계 (팩 headerTitle 미제공 시 REB 기본 문구 노출 방지) */
-  const headerTitle = domain?.agentContent?.["agent-dbquery"]?.headerTitle
-    || domain?.agentCatalog?.["agent-dbquery"]?.name || teamData?.name || C.headerTitle;
+  const H = agentHeader(domain,'agent-dbquery',C,AGENT_TEAMS);
   const permInfo = C.permissionLevels.find(p => p.id === permission);
   const sourceInfo = C.dbSources.find(s => s.key === source);
   const stats = (C.statsBySource[source] || []).map(s => ({ ...s, icon: STAT_ICONS[s.icon] || TableProperties }));
@@ -281,7 +279,7 @@ export default function DBQueryAgent({ onBack, domain, onNavigate }) {
           <Database className="w-3.5 h-3.5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[14px] font-black text-slate-800">{headerTitle}</div>
+          <div className="text-[14px] font-black text-slate-800">{H.title}</div>
           <div className="text-[10px] text-slate-400">{C.headerSubtitle}</div>
         </div>
         <div className="ml-auto flex items-center gap-1.5 text-[10px] text-slate-400 shrink-0">

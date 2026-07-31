@@ -11,6 +11,7 @@ import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
 import { REB_LOGO } from "../../data/logos.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
+import { agentHeader } from "../../utils.jsx";
 
 const RISK_DATA={
   '낙상·추락':{level:'높음',freq:'보통',sev:4,lkl:3,lvlColor:'bg-orange-100 text-orange-700 border-orange-200',measure:'미끄럼 방지 신발 착용, 현장 지면 상태 사전 확인'},
@@ -49,6 +50,8 @@ const PLAN_SECTIONS=[
 
 /* 도메인 이관: REB 기본 콘텐츠 — 도메인 팩 agentContent["agent-safety"]로 키 단위 오버라이드 */
 export const CONTENT_DEFAULTS={
+  headerTitle:'안전관리계획 수립 에이전트',                                    // string — 미제공 시 허브 카탈로그 이름 승계
+  headerDesc:'프로젝트 정보 입력 → RAG 법령 검색 → 맞춤형 안전관리계획서 자동 생성', // string — 헤더 설명(작업 흐름)
   agents: SAFE_AGENTS,             // {icon:LucideIcon,label,sub,color,ms}[4] — 시뮬레이션 단계 카드. 배열 통째 교체(아이콘·타이밍 포함)
   riskOptions: SAFE_RISK_OPTIONS,  // string[10] — 위험 요인 선택지. riskData의 키와 반드시 일치. 배열 통째 교체
   riskData: RISK_DATA,             // {[riskOption]:{level,freq,sev:1~5,lkl:1~5,lvlColor,measure}} — 위험요인별 평가(매트릭스·표에 사용). 객체 통째 교체
@@ -81,6 +84,7 @@ export const CONTENT_DEFAULTS={
 
 const SafetyPlanAgent = ({ onBack, domain }) => {
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-safety"]||{})};
+  const H=agentHeader(domain,'agent-safety',C,AGENT_TEAMS);
   const {step,setStep,agentIdx,doneIdx,start:startSim,resetSim}=useAgentSimulation(C.agents);
   const [projName,setProjName]=useState(C.defaultProjName);
   const [projType,setProjType]=useState(C.defaultProjType);
@@ -113,8 +117,8 @@ const SafetyPlanAgent = ({ onBack, domain }) => {
             <ClipboardList className="w-5 h-5 text-white"/>
           </div>
           <div>
-            <div className="text-[15px] font-black text-slate-800">안전관리계획 수립 에이전트</div>
-            <div className="text-xs text-slate-400">프로젝트 정보 입력 → RAG 법령 검색 → 맞춤형 안전관리계획서 자동 생성</div>
+            <div className="text-[15px] font-black text-slate-800">{H.title}</div>
+            <div className="text-xs text-slate-400">{H.desc}</div>
           </div>
         </div>
 

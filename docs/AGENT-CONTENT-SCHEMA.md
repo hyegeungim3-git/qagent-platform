@@ -47,6 +47,31 @@
 - statsTable: {metric,value,change,status:'normal'|'high'|'warning'}[6]
 - outlierSummary / docStandard / docStandardNote: string
 
+## agent-dataanalysis — 예측·최적화 확장 필드 (품질예측·설비보전·공정최적화)
+전부 **선택**(미제공 시 해당 구획 비노출 → REB 등 타 도메인 무영향).
+
+- `analysisTypes: {id,label,desc,sections?}[]` — 분석 유형. **배열 첫 항목이 기본 선택값.**
+  `sections`가 결과 화면 구성을 실제로 결정한다(생략 시 전 구획 노출 = 하위 호환).
+  사용 가능 키: `stats` 기술통계표 · `charts` 시각화 · `predict` · `optim` · `rul` · `invest` · `report` 리포트 생성
+- `predictPanel` — 공정조건에 따른 품질·불량 사전 예측
+  `{ title, modelName, metrics:{label,value}[], features:{name,weight(0~1)}[], matrix:{label,count,note}[], note }`
+  ※ `weight` 합이 1.0이 되게, `matrix`는 metrics의 정밀도·재현율과 산술적으로 맞을 것
+- `optimPanel` — 양품 생산을 위한 최적 공정변수·설비조건 도출
+  `{ title, target, params:{name,current,recommended,delta}[], effects:{label,before,after}[], tradeoffs:string[], validation }`
+  ※ `tradeoffs`(감수할 영향)와 `validation`(검증 절차·사람 승인 지점)은 생략하지 말 것 — 없으면 과장된 데모가 된다
+- `rulPanel` — 설비 이상·유지보수 시점 예측
+  `{ title, asOf, horizonDays, items:{equip,status:'danger'|'warn'|'normal',verdict,rulDays,basis,action}[], note }`
+  ※ 잔여수명 막대는 `rulDays / horizonDays` 비율로 그려진다
+- `investPanel` — 품질 수준을 고려한 설비 투자·선정 적정성
+  `{ title, options:{name,capex,quality,saving,payback,verdict:'추천'|'조건부'|'보류'}[], rationale, note }`
+  ※ `payback`은 `capex / saving`과 맞아야 한다(검수자가 가장 먼저 검산하는 값)
+
+## 모든 에이전트 공통 — 화면 헤더
+- `headerTitle: string` — **생략 권장.** 생략하면 `agentCatalog[id].name`을 승계한다(`utils.jsx agentHeader()`).
+  이름을 카탈로그와 여기 두 곳에 쓰면 반드시 어긋난다(실제 사고 이력).
+- `headerDesc: string` — 내부 화면 부제. **카탈로그 desc를 승계하지 않는다** —
+  카드 desc는 '무엇을 하는가'(홍보 문장), headerDesc는 '어떤 순서로 진행되는가'(작업 흐름)로 역할이 다르다.
+
 ## 코어 승격 필드 (agentContent 외 — 팩 최상위)
 - secureSuggestions: SECURE_SUGGESTIONS shape [4] (icon,iconBg,iconColor,title,query) — 선택
 - modeAnswers: { REVIEW, TRANSLATE, REPORT, SECURE_DEFAULT, SECURE_AIRGAP } — 각각 {content,citations:[],steps} answer 객체, REPORT는 document 필드 가능 — 선택

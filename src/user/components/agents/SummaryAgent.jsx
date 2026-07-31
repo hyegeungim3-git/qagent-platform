@@ -8,7 +8,7 @@ import {
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { cn, downloadTextFile } from "../../utils.jsx";
+import { cn, downloadTextFile, agentHeader } from "../../utils.jsx";
 
 
 const AGENTS=[
@@ -77,6 +77,8 @@ const SUMMARY_CONTENT=`**제1장 총칙**
 
 /* 도메인 이관: REB 기본 콘텐츠 — 도메인 팩 agentContent["agent-summary"]로 키 단위 오버라이드 */
 export const CONTENT_DEFAULTS={
+  headerTitle:'문서 요약 에이전트',                        // string — 미제공 시 허브 카탈로그 이름 승계
+  headerDesc:'문서 업로드 → 멀티 에이전트 분석 → 구조화 요약 생성', // string — 헤더 설명(작업 흐름)
   docAName:'표준지공시지가_조사업무_처리지침.pdf',           // 업로드 mock 문서 A 파일명
   docBName:'표준지공시지가_조사업무_처리지침_개정안.pdf',    // 업로드 mock 문서 B 파일명 (비교 모드)
   resultDocLabel:'표준지공시지가_조사업무_처리지침.pdf',     // 결과 헤더 문서명 (단일)
@@ -139,6 +141,7 @@ const SectionTree=({sections})=>{
 
 const SummaryAgent=({onBack,domain})=>{
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-summary"]||{})};
+  const H=agentHeader(domain,'agent-summary',C,AGENT_TEAMS);
   const {step,setStep,agentIdx,doneIdx,start:startSim,resetSim}=useAgentSimulation(AGENTS);
   const [inputMode,setInputMode]=useState('file');
   const [textInput,setTextInput]=useState('');
@@ -187,8 +190,8 @@ const SummaryAgent=({onBack,domain})=>{
             <BookOpen className="w-5 h-5 text-white"/>
           </div>
           <div>
-            <div className="text-[15px] font-black text-slate-800">문서 요약 에이전트</div>
-            <div className="text-xs text-slate-400">문서 업로드 → 멀티 에이전트 분석 → 구조화 요약 생성</div>
+            <div className="text-[15px] font-black text-slate-800">{H.title}</div>
+            <div className="text-xs text-slate-400">{H.desc}</div>
           </div>
         </div>
 

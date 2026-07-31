@@ -7,7 +7,7 @@ import {
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { cn, downloadTextFile, buildDocHtml } from "../../utils.jsx";
+import { cn, downloadTextFile, buildDocHtml, agentHeader } from "../../utils.jsx";
 
 
 const MOCK_FILES = [
@@ -131,6 +131,8 @@ const CONFIDENCE_MAP = [
 
 /* 도메인 이관: REB 기본 콘텐츠 — 도메인 팩 agentContent["agent-ocr"]로 키 단위 오버라이드 */
 export const CONTENT_DEFAULTS = {
+  headerTitle: 'OCR 문서 인식 에이전트',                     // string — 미제공 시 허브 카탈로그 이름 승계
+  headerDesc: '문서 업로드 → Vision OCR 인식 → 구조화 텍스트 출력', // string — 헤더 설명(작업 흐름)
   sampleFiles: MOCK_FILES,           // {name,size,pages,type:'pdf'|'img'}[2] — 초기 업로드 샘플
   docModeOptions: DOC_MODE_OPTIONS,  // {value,label,desc}[2] — value는 'standard'|'compensation' 고정('compensation'=도메인 특화 모드 슬롯)
   specialModeKeyword:'토지보상법',   // string — 특화 모드 안내의 강조 키워드
@@ -146,6 +148,7 @@ export const CONTENT_DEFAULTS = {
 
 const OCRAgent = ({ onBack, domain }) => {
   const C = {...CONTENT_DEFAULTS, ...(domain?.agentContent?.["agent-ocr"]||{})};
+  const H = agentHeader(domain,'agent-ocr',C,AGENT_TEAMS);
   const {step, setStep, agentIdx, doneIdx, start: startSim, resetSim} = useAgentSimulation(AGENTS, {
     // Vision OCR 단계(i=1) 동안 페이지 진행 티커
     onStepStart: (i, prev, ag) => {
@@ -213,8 +216,8 @@ const OCRAgent = ({ onBack, domain }) => {
             <ScanText className="w-5 h-5 text-white"/>
           </div>
           <div>
-            <div className="text-[15px] font-black text-slate-800">OCR 문서 인식 에이전트</div>
-            <div className="text-xs text-slate-400">문서 업로드 → Vision OCR 인식 → 구조화 텍스트 출력</div>
+            <div className="text-[15px] font-black text-slate-800">{H.title}</div>
+            <div className="text-xs text-slate-400">{H.desc}</div>
           </div>
         </div>
 

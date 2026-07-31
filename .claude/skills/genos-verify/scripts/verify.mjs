@@ -54,7 +54,17 @@ const AGENT_IDS = [
 ];
 /* 내부 화면에 다른 에이전트/타 도메인 기본값이 새는지 잡는 공통 금칙어
    (팩이 headerTitle을 생략하면 코어 REB 기본 문구가 노출되던 사고를 자동 판정) */
-const CORE_DEFAULT_LEAKS = ["부동산 대장 조회", "주소 표준화 에이전트", "지식 검색 에이전트"];
+/* 코어 기본 에이전트 이름 — constants.js에서 직접 뽑아 쓴다(하드코딩 목록은 코어 개명 시 표류한다).
+   여기에 더해 컴포넌트 CONTENT_DEFAULTS의 REB 전용 헤더 제목도 함께 본다. */
+const CORE_AGENT_NAMES = (() => {
+  const names = new Set(["부동산 대장 조회"]); // AGENT_TEAMS에 없는 DBQuery 화면 기본 제목
+  try {
+    const src = fs.readFileSync(new URL("../../../../src/user/data/constants.js", import.meta.url), "utf8");
+    const block = src.slice(src.indexOf("AGENT_TEAMS"));
+    for (const m of block.matchAll(/id:\s*"agent-[a-z]+",\s*name:\s*"([^"]+)"/g)) names.add(m[1]);
+  } catch { /* 읽기 실패 시 최소 목록으로 동작 */ }
+  return [...names];
+})();
 
 function findChrome() {
   const cands = [
@@ -120,7 +130,15 @@ async function scanDomain(browser, d) {
   const hub = await page.evaluate(() => ({
     text: document.body.innerText,
     cards: [...document.querySelectorAll("button")].filter(b => b.textContent.includes("시나리오 실행")).length,
+    // 이 도메인이 쓰는 에이전트 이름 집합 (허브 카드가 정본)
+    names: [...document.querySelectorAll("[data-agent-name]")].map(e => e.dataset.agentName),
   }));
+  if (!hub.names.length) fails.push("허브 카드에서 에이전트 이름을 읽지 못함(data-agent-name 누락)");
+  /* 이 도메인에서 '코어 기본 이름 노출'로 볼 이름만 남긴다.
+     팩 이름이 코어 이름을 포함하면(예: '공정 데이터 분석 에이전트' ⊃ '데이터 분석 에이전트',
+     civic처럼 같은 이름을 그대로 쓰는 경우) 부분 일치로 오탐이 나므로 제외한다.
+     대가로 그 이름에 한해 진짜 누수를 놓칠 수 있으나, 오탐으로 검증을 무력화하는 편이 더 나쁘다. */
+  const leakNames = CORE_AGENT_NAMES.filter(n => !hub.names.some(own => own.includes(n)));
   for (const w of d.banned) if (hub.text.includes(w)) fails.push(`허브 금칙어: "${w}"`);
   for (const m of d.hubMarkers) if (!hub.text.includes(m)) fails.push(`허브 마커 누락: "${m}"`);
   if (hub.cards !== d.orchCards) fails.push(`시나리오 카드 ${hub.cards}장 (기대 ${d.orchCards})`);
@@ -137,11 +155,17 @@ async function scanDomain(browser, d) {
     });
     if (!info.title) { fails.push(`${id}: 내부 화면이 열리지 않음`); continue; }
     for (const w of d.banned) if (info.text.includes(w)) fails.push(`${id} 내부 금칙어: "${w}"`);
-    // 도메인이 REB가 아닌데 코어 기본 제목이 보이면 팩 누락(=다른 에이전트 이름 노출)
-    // 제목이 코어 기본값과 '정확히' 같을 때만 누락으로 본다
-    // (부분 일치로 보면 '행정 지식 검색 에이전트'처럼 정상 도메인 이름까지 걸린다)
-    if (d.id !== "reb" && CORE_DEFAULT_LEAKS.includes(info.title.trim())) {
-      fails.push(`${id} 내부 제목이 코어 기본값: "${info.title}"`);
+    /* 이름 불일치 판정.
+       예전 판정은 main.innerText의 첫 줄(=챗 헤더)을 봤는데, 챗 헤더는 늘 카탈로그 이름을
+       쓰므로 '안쪽 화면이 코어 기본 이름을 그대로 노출'하는 실제 결함을 못 잡았다.
+       지금은 화면 어디든 '코어 기본 에이전트 이름'이 보이면서 그 이름이 이 도메인의
+       카탈로그 이름이 아닐 때 불일치로 본다(팩이 같은 이름을 의도적으로 쓰는 경우는 통과). */
+    if (d.id !== "reb") {
+      for (const n of leakNames) {
+        if (info.text.includes(n)) {
+          fails.push(`${id} 내부에 코어 기본 이름 노출: "${n}" (이 도메인 카탈로그에 없는 이름)`);
+        }
+      }
     }
   }
   await page.setViewport({ width: 1366, height: 900 });

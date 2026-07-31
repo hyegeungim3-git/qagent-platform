@@ -206,6 +206,10 @@ const AgentHub = ({ onLaunch, agents = AGENT_TEAMS, orgName = "한국부동산�
             return (
               <button
                 key={ag.id}
+                /* 검증용 훅 — 허브 카드 이름과 에이전트 내부 화면 제목이 일치하는지
+                   verify.mjs가 기계적으로 대조한다(이름 불일치는 실제 사고 이력) */
+                data-agent-id={ag.id}
+                data-agent-name={ag.name}
                 onClick={() => handleLaunch(ag.id)}
                 onMouseEnter={() => setHovered(ag.id)}
                 onMouseLeave={() => setHovered(null)}

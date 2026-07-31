@@ -11,7 +11,7 @@ import {
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { cn } from "../../utils.jsx";
+import { cn, agentHeader } from "../../utils.jsx";
 
 
 const AGENTS=[
@@ -225,11 +225,7 @@ const MatchStatusBadge=({status})=>{
 
 const AddressAgent=({onBack,domain})=>{
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-address"]||{})};
-  /* 화면 제목은 허브 카탈로그 이름을 승계한다 — 팩이 headerTitle을 주지 않아도
-     바깥(허브·챗 헤더)과 안쪽이 어긋나거나 REB 기본 문구가 노출되지 않게 하기 위함 */
-  const catalogName=domain?.agentCatalog?.["agent-address"]?.name
-    ||AGENT_TEAMS?.find(t=>t.id==='agent-address')?.name;
-  const headerTitle=domain?.agentContent?.["agent-address"]?.headerTitle||catalogName||C.headerTitle;
+  const H=agentHeader(domain,'agent-address',C,AGENT_TEAMS);
   const OCR_DOC_WORDS=C.ocrDocText.split(' ');
   const [mode,setMode]=useState(()=>C.modeTypes?.[0]?.m||'single'); // 팩이 정렬한 첫 유형이 기본
   const [inputTab,setInputTab]=useState('address'); // 'address' | 'apt'
@@ -241,9 +237,7 @@ const AddressAgent=({onBack,domain})=>{
   const [selectedHo,setSelectedHo]=useState(0);
   const [copiedField,setCopiedField]=useState(null);
   const [batchText,setBatchText]=useState(C.sampleBatch);
-  const [batchProcessed,setBatchProcessed]=useState(false);
   const [batchCopied,setBatchCopied]=useState(false);
-  const [mapOpen,setMapOpen]=useState(false);
   const [uploadedFile,setUploadedFile]=useState(null);
   // 역조회
   const [revCode,setRevCode]=useState('');
@@ -303,7 +297,7 @@ const AddressAgent=({onBack,domain})=>{
     startSim();
   };
 
-  const reset=()=>{resetSim();setCopiedField(null);setMapOpen(false);setAptResult(null);};
+  const reset=()=>{resetSim();setCopiedField(null);setAptResult(null);};
 
   const copyField=(key,val)=>{
     navigator.clipboard?.writeText(val);
@@ -311,7 +305,6 @@ const AddressAgent=({onBack,domain})=>{
     setTimeout(()=>setCopiedField(null),2000);
   };
 
-  const processBatch=()=>setBatchProcessed(true);
 
   const copyBatchCsv=()=>{
     const header='입력주소,도로명주소,지번주소,우편번호,법정동코드,법정동명,행정동코드,행정동명,매칭상태';
@@ -425,7 +418,7 @@ const AddressAgent=({onBack,domain})=>{
   );
 
   /* ── step helpers ── */
-  const startBatch=()=>{setBatchProcessed(true);setStep(3);};
+  const startBatch=()=>setStep(3);
   const startReverse=()=>{doReverseSearch();setStep(3);};
 
   /* 팩이 masterMapping 없이 master 카드만 넣은 경우를 방어 */
@@ -440,8 +433,8 @@ const AddressAgent=({onBack,domain})=>{
   };
 
   const resetAll=()=>{
-    resetSim();setCopiedField(null);setMapOpen(false);
-    setBatchProcessed(false);setRevCode('');setRevResult(null);setRevSearched(false);
+    resetSim();setCopiedField(null);
+    setRevCode('');setRevResult(null);setRevSearched(false);
     setRevCopied(null);setCopiedAll(false);resetOcr();resetMaster();setAptResult(null);
   };
 
@@ -460,8 +453,8 @@ const AddressAgent=({onBack,domain})=>{
             <MapPin className="w-5 h-5 text-white"/>
           </div>
           <div>
-            <div className="text-[15px] font-black text-slate-800">{headerTitle}</div>
-            <div className="text-xs text-slate-400">{C.headerDesc}</div>
+            <div className="text-[15px] font-black text-slate-800">{H.title}</div>
+            <div className="text-xs text-slate-400">{H.desc}</div>
           </div>
           <div className="ml-auto flex items-center gap-1.5 text-[10px] text-slate-400">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
@@ -573,7 +566,9 @@ const AddressAgent=({onBack,domain})=>{
           {mode==='batch'&&(
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-slate-400">{batchCount}건 입력됨</span>
+                <span className="text-[11px] text-slate-400 truncate">
+                  {batchCount}건 입력됨{uploadedFile&&` · ${uploadedFile}`}
+                </span>
                 <label className="flex items-center gap-1 text-[11px] text-slate-400 cursor-pointer hover:text-orange-600 transition-colors">
                   <Upload className="w-3.5 h-3.5"/><span>파일 업로드</span>
                   <input ref={fileRef} type="file" accept=".txt,.csv" className="hidden" onChange={handleFileChange}/>

@@ -7,7 +7,7 @@ import {
 import ApprovalModal from "../ApprovalModal.jsx";
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
-import { cn } from "../../utils.jsx";
+import { cn, agentHeader } from "../../utils.jsx";
 
 
 const REG_CATEGORIES = ['취업규칙','복무규정','업무처리지침','개인정보처리방침','보안정책','계약·조달 규정','조직·직제규정','회계규정'];
@@ -89,6 +89,8 @@ const REG_HISTORY = [
 
 /* 도메인 이관: REB 기본 콘텐츠 — 도메인 팩 agentContent["agent-internalreg"]로 키 단위 오버라이드 */
 export const CONTENT_DEFAULTS = {
+  headerTitle: '내규·규정 조회',              // string — 미제공 시 허브 카탈로그 이름 승계
+  headerDesc: 'RAG 검색 + EXAONE 3.0',       // string — 헤더 설명(작업 흐름)
   regCategories: REG_CATEGORIES,       // string[8] — 규정 범주 칩
   defaultCategories:['취업규칙','복무규정'], // string[2] — 초기 선택 범주(regCategories 항목과 일치)
   suggestions: SUGGESTIONS,            // string[5] — 자주 묻는 질문 버튼
@@ -108,6 +110,7 @@ export const CONTENT_DEFAULTS = {
 /* ────────────────────────────────────────────────────────────── */
 const InternalRegAgent = ({ onBack, domain }) => {
   const C = {...CONTENT_DEFAULTS, ...(domain?.agentContent?.["agent-internalreg"]||{})};
+  const H = agentHeader(domain,'agent-internalreg',C,AGENT_TEAMS);
   const [step, setStep]               = useState(1);   // 1=입력 2=처리중 3=결과
   const [query, setQuery]             = useState('');
   const [submittedQuery, setSubmitted]= useState('');
@@ -180,8 +183,8 @@ const InternalRegAgent = ({ onBack, domain }) => {
         <BookOpen className="w-3.5 h-3.5 text-white"/>
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-[14px] font-black text-slate-800 leading-tight">내규·규정 조회</div>
-        <div className="text-[10px] text-slate-400">RAG 검색 + EXAONE 3.0</div>
+        <div className="text-[14px] font-black text-slate-800 leading-tight">{H.title}</div>
+        <div className="text-[10px] text-slate-400">{H.desc}</div>
       </div>
       {showActions && (
         <div className="flex items-center gap-1.5 shrink-0">
