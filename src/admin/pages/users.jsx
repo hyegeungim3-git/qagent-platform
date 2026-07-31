@@ -88,12 +88,59 @@ export const QuotaPage = () => {
 };
 
 // ==================== ADMIN PAGES ====================
+const ROLE_OPTIONS=['시스템관리자','부서관리자','일반사용자'];
+
 export const UserManagementPage = () => {
+  const toast=useToast();
   const [selUser,setSelUser]=useState(null);
   const [tab,setTab]=useState('users');
+  const [users,setUsers]=useState(MOCK_USERS.map(u=>({...u})));
+  const [permReqs,setPermReqs]=useState(MOCK_PERMISSION_REQUESTS.map(p=>({...p})));
+  const [query,setQuery]=useState('');
+  const [roleFilter,setRoleFilter]=useState('전체 역할');
+  const [showAdd,setShowAdd]=useState(false);
+  const [newUser,setNewUser]=useState({name:'',dept:'',role:'일반사용자',email:''});
+  const [roleEdit,setRoleEdit]=useState(null);        // 역할 변경 중인 사용자
   const roleBadge=r=>r==='시스템관리자'?'bg-red-50 text-red-700':r==='부서관리자'?'bg-blue-50 text-blue-700':'bg-gray-100 text-gray-600';
+
+  const visibleUsers=users.filter(u=>{
+    const q=query.trim();
+    const hitQ=!q||[u.name,u.dept,u.email].some(v=>String(v).includes(q));
+    return hitQ&&(roleFilter==='전체 역할'||u.role===roleFilter);
+  });
+
+  const addUser=()=>{
+    if(!newUser.name.trim()||!newUser.dept.trim()){toast('이름과 부서를 입력하세요.','info');return;}
+    setUsers(p=>[{
+      id:`U-${String(p.length+1).padStart(3,'0')}`, name:newUser.name.trim(), dept:newUser.dept.trim(),
+      role:newUser.role, email:newUser.email.trim()||`${newUser.name.trim()}@example.com`,
+      lastLogin:'-', apiCalls:0, loginCount:0, status:'Running',
+    },...p]);
+    setShowAdd(false); setNewUser({name:'',dept:'',role:'일반사용자',email:''});
+    toast(`${newUser.name} 사용자를 추가했습니다`);
+  };
+
+  const decidePerm=(id,ok)=>{
+    setPermReqs(p=>p.map(x=>x.id===id?{...x,status:ok?'승인':'거부'}:x));
+    toast(`${id} ${ok?'승인':'거부'} 완료`,ok?'success':'info');
+  };
+
+  const applyRole=(role)=>{
+    setUsers(p=>p.map(u=>u.id===roleEdit.id?{...u,role}:u));
+    setSelUser(s=>s&&s.id===roleEdit.id?{...s,role}:s);
+    setRoleEdit(null);
+    toast(`${roleEdit.name}의 역할을 ${role}(으)로 변경했습니다`);
+  };
+
+  const toggleActive=(u)=>{
+    const next=u.status==='Running'?'Stopped':'Running';
+    setUsers(p=>p.map(x=>x.id===u.id?{...x,status:next}:x));
+    setSelUser(s=>s&&s.id===u.id?{...s,status:next}:s);
+    toast(`${u.name} 계정을 ${next==='Running'?'활성화':'비활성화'}했습니다`,next==='Running'?'success':'info');
+  };
+
   return (
-    <PageShell breadcrumb={['관리자 전용','사용자 관리']} title="사용자 및 권한 관리" action={<button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center"><UserPlus size={16} className="mr-1.5"/>사용자 추가</button>}>
+    <PageShell breadcrumb={['관리자 전용','사용자 관리']} title="사용자 및 권한 관리" action={<button onClick={()=>setShowAdd(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center hover:bg-blue-700"><UserPlus size={16} className="mr-1.5"/>사용자 추가</button>}>
       <div className="flex space-x-1 mb-5 border-b">
         {[['users','사용자 목록'],['permissions','권한 요청'],['roles','역할 관리']].map(([k,l])=>(
           <button key={k} onClick={()=>setTab(k)} className={`px-5 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab===k?'border-blue-600 text-blue-600':'border-transparent text-gray-500 hover:text-gray-800'}`}>{l}</button>
@@ -101,8 +148,9 @@ export const UserManagementPage = () => {
       </div>
       {tab==='users'&&<>
         <div className="flex items-center space-x-3 mb-4">
-          <div className="relative flex-1 max-w-sm"><input placeholder="이름, 부서, 이메일 검색..." className="w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"/><Search size={16} className="absolute left-3 top-3 text-gray-400"/></div>
-          <select className="px-3 py-2.5 border rounded-lg text-sm bg-white"><option>전체 역할</option><option>시스템관리자</option><option>부서관리자</option><option>일반사용자</option></select>
+          <div className="relative flex-1 max-w-sm"><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="이름, 부서, 이메일 검색..." className="w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"/><Search size={16} className="absolute left-3 top-3 text-gray-400"/></div>
+          <select value={roleFilter} onChange={e=>setRoleFilter(e.target.value)} className="px-3 py-2.5 border rounded-lg text-sm bg-white">{['전체 역할',...ROLE_OPTIONS].map(r=><option key={r}>{r}</option>)}</select>
+          <span className="text-xs text-gray-400">{visibleUsers.length}명</span>
         </div>
         <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
           <table className="w-full text-sm"><thead className="bg-gray-50/80"><tr>
@@ -114,7 +162,7 @@ export const UserManagementPage = () => {
             <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500">최근 로그인</th>
             <th className="px-5 py-3.5 text-right text-xs font-medium text-gray-500">API 호출</th>
             <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500">상태</th>
-          </tr></thead><tbody className="divide-y divide-gray-100">{MOCK_USERS.map(u=>(
+          </tr></thead><tbody className="divide-y divide-gray-100">{visibleUsers.map(u=>(
             <tr key={u.id} className="hover:bg-gray-50/50 cursor-pointer" onClick={()=>setSelUser(u)}>
               <td className="px-5 py-3.5 font-mono text-xs text-gray-400">{u.id}</td>
               <td className="px-5 py-3.5 font-medium">{u.name}</td>
@@ -138,7 +186,7 @@ export const UserManagementPage = () => {
           <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500">요청일</th>
           <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500">상태</th>
           <th className="px-5 py-3.5 text-center text-xs font-medium text-gray-500">처리</th>
-        </tr></thead><tbody className="divide-y divide-gray-100">{MOCK_PERMISSION_REQUESTS.map(p=>(
+        </tr></thead><tbody className="divide-y divide-gray-100">{permReqs.map(p=>(
           <tr key={p.id} className="hover:bg-gray-50/50">
             <td className="px-5 py-3.5 font-mono text-xs text-gray-400">{p.id}</td>
             <td className="px-5 py-3.5 font-medium">{p.user}</td>
@@ -148,8 +196,8 @@ export const UserManagementPage = () => {
             <td className="px-5 py-3.5 text-gray-400">{p.date}</td>
             <td className="px-5 py-3.5"><StatusBadge status={p.status}/></td>
             <td className="px-5 py-3.5 text-center">{p.status==='대기 중'&&<div className="flex space-x-1 justify-center">
-              <button className="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700">승인</button>
-              <button className="px-3 py-1 border border-red-200 text-red-600 rounded text-xs font-medium hover:bg-red-50">거부</button>
+              <button onClick={()=>decidePerm(p.id,true)} className="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700">승인</button>
+              <button onClick={()=>decidePerm(p.id,false)} className="px-3 py-1 border border-red-200 text-red-600 rounded text-xs font-medium hover:bg-red-50">거부</button>
             </div>}</td>
           </tr>
         ))}</tbody></table>
@@ -183,9 +231,34 @@ export const UserManagementPage = () => {
             <div className="bg-purple-50 rounded-lg p-3 text-center"><div className="text-xl font-bold text-purple-700">{selUser.lastLogin.split(' ')[1]}</div><div className="text-xs text-purple-500">최근 접속</div></div>
           </div>
           <div className="flex space-x-2 pt-2">
-            <button className="flex-1 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50">역할 변경</button>
-            <button className="flex-1 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50">{selUser.status==='Running'?'비활성화':'활성화'}</button>
+            <button onClick={()=>setRoleEdit(selUser)} className="flex-1 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50">역할 변경</button>
+            <button onClick={()=>toggleActive(selUser)} className="flex-1 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50">{selUser.status==='Running'?'비활성화':'활성화'}</button>
           </div>
+        </div>}
+      </Modal>
+
+      {/* 사용자 추가 */}
+      <Modal isOpen={showAdd} onClose={()=>setShowAdd(false)} title="사용자 추가" size="md">
+        <div className="space-y-3">
+          {[{k:'name',l:'이름',ph:'홍길동'},{k:'dept',l:'부서',ph:'부동산공시처'},{k:'email',l:'이메일 (선택)',ph:'user@example.com'}].map(f=>(
+            <div key={f.k}><label className="block text-sm font-medium mb-1">{f.l}</label>
+              <input value={newUser[f.k]} onChange={e=>setNewUser(p=>({...p,[f.k]:e.target.value}))} placeholder={f.ph} className="w-full border rounded-lg px-3 py-2 text-sm"/></div>
+          ))}
+          <div><label className="block text-sm font-medium mb-1">역할</label>
+            <select value={newUser.role} onChange={e=>setNewUser(p=>({...p,role:e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm bg-white">{ROLE_OPTIONS.map(r=><option key={r}>{r}</option>)}</select></div>
+          <button onClick={addUser} className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-blue-700">추가</button>
+        </div>
+      </Modal>
+
+      {/* 역할 변경 */}
+      <Modal isOpen={!!roleEdit} onClose={()=>setRoleEdit(null)} title={`${roleEdit?.name} 역할 변경`} size="sm">
+        {roleEdit&&<div className="space-y-2">
+          {ROLE_OPTIONS.map(r=>(
+            <button key={r} onClick={()=>applyRole(r)}
+              className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${roleEdit.role===r?'border-blue-500 bg-blue-50 text-blue-700':'hover:bg-gray-50'}`}>
+              {r}{roleEdit.role===r&&<Check size={14}/>}
+            </button>
+          ))}
         </div>}
       </Modal>
     </PageShell>
@@ -227,7 +300,7 @@ export const AccessSecurityPage = () => {
   const [blocks, setBlocks] = useState(MOCK_IP_BLOCKS.map(b=>({...b})));
   const [showAdd, setShowAdd] = useState(false);
   const [newBlock, setNewBlock] = useState({target:'',type:'IP',reason:'',action:'차단'});
-  const { setToast } = useToast();
+  const toast = useToast();
   const TABS = [{id:'permission',label:'🔐 사용자/그룹별 권한'},{id:'block',label:'🚫 ID·IP 차단·허용'}];
   return (
     <PageShell breadcrumb={['운영·관리','접근권한·차단']} title="접근권한 · 차단 관리" sub="지식영역별 사용자/그룹 권한 및 ID·IP 접근 제어">
@@ -237,7 +310,7 @@ export const AccessSecurityPage = () => {
       {tab==='permission' && (
         <div className="space-y-5">
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm overflow-x-auto">
-            <div className="flex items-center justify-between mb-4"><h4 className="font-black text-[14px] text-gray-700">지식영역별 부서 접근 권한 매트릭스</h4><button onClick={()=>setToast({message:'권한 변경 사항이 저장되었습니다.'})} className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700">저장</button></div>
+            <div className="flex items-center justify-between mb-4"><h4 className="font-black text-[14px] text-gray-700">지식영역별 부서 접근 권한 매트릭스</h4><button onClick={()=>toast('권한 변경 사항이 저장되었습니다.')} className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700">저장</button></div>
             <table className="w-full text-[12px]">
               <thead><tr className="border-b border-gray-100 bg-gray-50">
                 <th className="text-left font-bold text-gray-500 py-2 px-3 text-[11px]">부서/그룹</th>
@@ -248,7 +321,7 @@ export const AccessSecurityPage = () => {
                   <td className="py-2.5 px-3 font-bold text-gray-800">{r.dept}</td>
                   {r.perm.map((p,i)=>(
                     <td key={i} className="py-2.5 px-2 text-center">
-                      <button onClick={()=>setToast({message:`권한이 ${p?'해제':'부여'}되었습니다.`})} className={`w-6 h-6 rounded-md border-2 flex items-center justify-center mx-auto transition-colors ${p?'bg-blue-600 border-blue-600 text-white':'border-gray-200 hover:border-blue-300'}`}>{p&&<Check className="w-3.5 h-3.5"/>}</button>
+                      <button onClick={()=>toast(`권한이 ${p?'해제':'부여'}되었습니다.`)} className={`w-6 h-6 rounded-md border-2 flex items-center justify-center mx-auto transition-colors ${p?'bg-blue-600 border-blue-600 text-white':'border-gray-200 hover:border-blue-300'}`}>{p&&<Check className="w-3.5 h-3.5"/>}</button>
                     </td>
                   ))}
                 </tr>
@@ -276,7 +349,7 @@ export const AccessSecurityPage = () => {
                   <td className="py-3 px-4 text-gray-500">{b.appliedBy}</td>
                   <td className="py-3 px-4 text-gray-500">{b.date}</td>
                   <td className="py-3 px-4"><span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[11px] font-bold">{b.status}</span></td>
-                  <td className="py-3 px-4"><button onClick={()=>{setBlocks(bs=>bs.filter(x=>x.id!==b.id));setToast({message:`${b.target} 규칙이 해제되었습니다.`});}} className="px-2.5 py-1 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50">해제</button></td>
+                  <td className="py-3 px-4"><button onClick={()=>{setBlocks(bs=>bs.filter(x=>x.id!==b.id));toast(`${b.target} 규칙이 해제되었습니다.`);}} className="px-2.5 py-1 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50">해제</button></td>
                 </tr>
               ))}</tbody>
             </table>
@@ -296,7 +369,7 @@ export const AccessSecurityPage = () => {
                 <input value={newBlock.target} onChange={e=>setNewBlock(p=>({...p,target:e.target.value}))} placeholder="IP 주소 또는 사용자 ID" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-[13px] focus:outline-none focus:border-blue-400"/>
                 <input value={newBlock.reason} onChange={e=>setNewBlock(p=>({...p,reason:e.target.value}))} placeholder="사유" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-[13px] focus:outline-none focus:border-blue-400"/>
               </div>
-              <div className="flex gap-3 mt-5"><button onClick={()=>setShowAdd(false)} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-bold text-[13px]">취소</button><button onClick={()=>{if(!newBlock.target||!newBlock.reason){setToast({message:'대상과 사유를 입력하세요.'});return;}setBlocks(bs=>[{id:`ib-${Date.now()}`,target:newBlock.target,type:newBlock.type,reason:newBlock.reason,action:newBlock.action,appliedBy:ADMIN_PERSONA.name,date:new Date().toISOString().slice(0,10),status:'활성'},...bs]);setShowAdd(false);setNewBlock({target:'',type:'IP',reason:'',action:'차단'});setToast({message:'규칙이 추가되었습니다.'});}} className={`flex-1 py-2.5 rounded-xl font-black text-[13px] text-white ${newBlock.action==='차단'?'bg-red-600 hover:bg-red-700':'bg-green-600 hover:bg-green-700'}`}>추가</button></div>
+              <div className="flex gap-3 mt-5"><button onClick={()=>setShowAdd(false)} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-bold text-[13px]">취소</button><button onClick={()=>{if(!newBlock.target||!newBlock.reason){toast('대상과 사유를 입력하세요.');return;}setBlocks(bs=>[{id:`ib-${Date.now()}`,target:newBlock.target,type:newBlock.type,reason:newBlock.reason,action:newBlock.action,appliedBy:ADMIN_PERSONA.name,date:new Date().toISOString().slice(0,10),status:'활성'},...bs]);setShowAdd(false);setNewBlock({target:'',type:'IP',reason:'',action:'차단'});toast('규칙이 추가되었습니다.');}} className={`flex-1 py-2.5 rounded-xl font-black text-[13px] text-white ${newBlock.action==='차단'?'bg-red-600 hover:bg-red-700':'bg-green-600 hover:bg-green-700'}`}>추가</button></div>
             </div></div>
           )}
         </div>
@@ -309,7 +382,9 @@ export const AccessSecurityPage = () => {
 export const WorkLogPage = () => {
   const [tab, setTab] = useState('access');
   const [q, setQ] = useState('');
-  const { setToast } = useToast();
+  const [qMode, setQMode] = useState('전체');   // 질의 이력 모드 필터
+  const [qText, setQText] = useState('');       // 질의 이력 검색어
+  const toast = useToast();
   const TABS = [{id:'access',label:'🔑 접속 로그'},{id:'work',label:'⚙️ 작업 로그'},{id:'query',label:'💬 질의 이력'},{id:'extract',label:'📥 추출·출력 로그'}];
   const LogTable = ({cols,rows}) => (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -318,7 +393,7 @@ export const WorkLogPage = () => {
         <div className="flex gap-2 shrink-0">
           <input type="date" defaultValue="2026-02-01" className="border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] focus:outline-none"/>
           <input type="date" defaultValue="2026-02-25" className="border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] focus:outline-none"/>
-          <button onClick={()=>setToast({message:'CSV로 내보냅니다.'})} className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><Download className="w-3.5 h-3.5"/> CSV</button>
+          <button onClick={()=>toast('CSV로 내보냅니다.')} className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><Download className="w-3.5 h-3.5"/> CSV</button>
         </div>
       </div>
       <div className="overflow-x-auto"><table className="w-full text-[12px]">
@@ -340,15 +415,15 @@ export const WorkLogPage = () => {
       {tab==='query' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 flex-1"><Search className="w-4 h-4 text-gray-400"/><input placeholder="질의 내용·사용자 검색..." className="flex-1 text-[13px] outline-none"/></div>
+            <div className="flex items-center gap-2 flex-1"><Search className="w-4 h-4 text-gray-400"/><input value={qText} onChange={e=>setQText(e.target.value)} placeholder="질의 내용·사용자 검색..." className="flex-1 text-[13px] outline-none"/></div>
             <div className="flex gap-2">
-              {['전체','GENERAL','REVIEW','TRANSLATE','REPORT','AGENT'].map(m=><button key={m} className="px-2.5 py-1 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50">{m}</button>)}
-              <button onClick={()=>setToast({message:'질의이력을 CSV로 내보냅니다.'})} className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><Download className="w-3.5 h-3.5"/> CSV</button>
+              {['전체','GENERAL','REVIEW','TRANSLATE','REPORT','AGENT'].map(m=><button key={m} onClick={()=>setQMode(m)} className={`px-2.5 py-1 border rounded-lg text-[11px] font-bold transition-colors ${qMode===m?'border-blue-500 bg-blue-50 text-blue-700':'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>{m}</button>)}
+              <button onClick={()=>toast('질의이력을 CSV로 내보냅니다.')} className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><Download className="w-3.5 h-3.5"/> CSV</button>
             </div>
           </div>
           <table className="w-full text-[12px]">
             <thead><tr className="border-b border-gray-100 bg-gray-50">{['일시','사용자','부서','모드','질문 요약','토큰','별점','오류신고'].map(h=><th key={h} className="text-left font-bold text-gray-500 py-2.5 px-3 text-[11px] uppercase whitespace-nowrap">{h}</th>)}</tr></thead>
-            <tbody>{MOCK_USAGE_HISTORY.map(r=>(
+            <tbody>{MOCK_USAGE_HISTORY.filter(r=>(qMode==='전체'||r.mode===qMode)&&(!qText.trim()||[r.user,r.dept,r.query].some(v=>String(v).includes(qText.trim())))).map(r=>(
               <tr key={r.id} className={`border-b border-gray-50 hover:bg-gray-50 ${r.errReport?'bg-red-50/30':''}`}>
                 <td className="py-2.5 px-3 text-gray-400 whitespace-nowrap">{r.time}</td>
                 <td className="py-2.5 px-3 font-bold text-gray-800">{r.user}</td>
@@ -371,7 +446,7 @@ export const WorkLogPage = () => {
 // ==================== 사용량 모니터링 ====================
 export const UsageMonitorPage = () => {
   const [tab, setTab] = useState('dept');
-  const { setToast } = useToast();
+  const toast = useToast();
   const TABS = [{id:'dept',label:'🏢 부서별 현황'},{id:'pattern',label:'📈 API 패턴 분석'},{id:'abuse',label:'🚨 오남용 탐지'}];
   const maxQ = Math.max(...MOCK_USAGE_BY_DEPT.map(d=>d.queries));
   const sevCls = {위험:'bg-red-100 text-red-700 border-red-200',주의:'bg-yellow-100 text-yellow-700 border-yellow-200',정보:'bg-gray-100 text-gray-600 border-gray-200'};
@@ -390,7 +465,7 @@ export const UsageMonitorPage = () => {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
               <h4 className="font-black text-[14px] text-gray-700">부서별 사용 현황</h4>
-              <button onClick={()=>setToast({message:'부서별 사용 현황을 엑셀로 내보냅니다.'})} className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><Download className="w-3.5 h-3.5"/> 엑셀</button>
+              <button onClick={()=>toast('부서별 사용 현황을 엑셀로 내보냅니다.')} className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><Download className="w-3.5 h-3.5"/> 엑셀</button>
             </div>
             <table className="w-full text-[12px]">
               <thead><tr className="border-b border-gray-100 bg-gray-50">{['부서','사용자수','질의 건수','질의 추이','평균 대화길이','토큰 사용','피크 시간'].map(h=><th key={h} className="text-left font-bold text-gray-500 py-2.5 px-4 text-[11px] uppercase whitespace-nowrap">{h}</th>)}</tr></thead>
@@ -462,7 +537,7 @@ export const UsageMonitorPage = () => {
                   </div>
                   <div className="flex items-center gap-2 ml-4 shrink-0">
                     <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${a.status==='차단됨'?'bg-red-100 text-red-700':a.status==='경고발송'?'bg-yellow-100 text-yellow-700':'bg-blue-100 text-blue-700'}`}>{a.status}</span>
-                    {a.status!=='차단됨'&&<button onClick={()=>setToast({message:`${a.user} IP를 차단했습니다.`})} className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-[11px] font-bold hover:bg-red-700">즉시 차단</button>}
+                    {a.status!=='차단됨'&&<button onClick={()=>toast(`${a.user} IP를 차단했습니다.`)} className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-[11px] font-bold hover:bg-red-700">즉시 차단</button>}
                   </div>
                 </div>
               </div>
@@ -475,7 +550,7 @@ export const UsageMonitorPage = () => {
                 <div key={s.label}><label className="text-[12px] font-bold text-gray-600 block mb-1.5">{s.label}</label><div className="flex items-center gap-2"><input defaultValue={s.val} className="flex-1 border-2 border-gray-200 rounded-lg px-3 py-1.5 text-[13px] font-mono focus:outline-none focus:border-blue-400"/><span className="text-[11px] text-gray-400 whitespace-nowrap">{s.unit}</span></div></div>
               ))}
             </div>
-            <button onClick={()=>setToast({message:'오남용 방지 설정이 저장되었습니다.'})} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700">저장</button>
+            <button onClick={()=>toast('오남용 방지 설정이 저장되었습니다.')} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700">저장</button>
           </div>
         </div>
       )}
@@ -484,9 +559,25 @@ export const UsageMonitorPage = () => {
 };
 
 // ==================== API · 프롬프트 관리 ====================
+const GROUP_PERM_OPTIONS=['읽기','읽기·쓰기','전체'];
+
 export const HrSyncPage = () => {
   const [tab, setTab] = useState('hrsync');
-  const { setToast } = useToast();
+  const toast = useToast();
+  const [groups,setGroups]=useState(ADMIN_USER_GROUPS.map(g=>({...g,areas:[...g.areas]})));
+  const [editGroup,setEditGroup]=useState(null);   // 편집 중인 그룹(사본)
+  const [newGroup,setNewGroup]=useState(null);     // 생성 중인 그룹
+  const saveGroup=()=>{
+    if(!editGroup.name.trim()){toast('그룹명을 입력하세요.','info');return;}
+    setGroups(p=>p.map(g=>g.name===editGroup._orig?{...editGroup,name:editGroup.name.trim()}:g));
+    toast(`${editGroup.name} 그룹을 수정했습니다`); setEditGroup(null);
+  };
+  const createGroup=()=>{
+    if(!newGroup.name.trim()){toast('그룹명을 입력하세요.','info');return;}
+    if(groups.some(g=>g.name===newGroup.name.trim())){toast('같은 이름의 그룹이 이미 있습니다.','info');return;}
+    setGroups(p=>[...p,{name:newGroup.name.trim(),type:newGroup.type,members:0,areas:newGroup.areas.split(',').map(s=>s.trim()).filter(Boolean),perms:newGroup.perms}]);
+    toast(`${newGroup.name} 그룹을 생성했습니다`); setNewGroup(null);
+  };
   const TABS = [{id:'hrsync',label:'🔄 인사정보 연계'},{id:'group',label:'👥 그룹 관리'}];
   const typeCls = {신규입사:'bg-green-100 text-green-700',퇴직:'bg-red-100 text-red-700',부서이동:'bg-blue-100 text-blue-700',겸직:'bg-purple-100 text-purple-700',부재설정:'bg-yellow-100 text-yellow-700'};
   return (
@@ -502,7 +593,7 @@ export const HrSyncPage = () => {
                 <div className="flex items-center gap-2 mb-1"><div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_6px_#22c55e]"/><span className="font-black text-[15px] text-gray-800">인사정보 DB 연계 상태: <span className="text-green-600">{MOCK_HR_SYNC.status}</span></span></div>
                 <div className="text-[12px] text-gray-500">마지막 동기화: {MOCK_HR_SYNC.lastSync} · 다음 예정: {MOCK_HR_SYNC.nextSync}</div>
               </div>
-              <button onClick={()=>setToast({message:'수동 동기화가 시작되었습니다. 완료 시 알림이 발송됩니다.'})} className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-xl text-[13px] font-bold hover:bg-green-700 shadow-sm"><RotateCcw className="w-4 h-4"/> 수동 동기화</button>
+              <button onClick={()=>toast('수동 동기화가 시작되었습니다. 완료 시 알림이 발송됩니다.')} className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-xl text-[13px] font-bold hover:bg-green-700 shadow-sm"><RotateCcw className="w-4 h-4"/> 수동 동기화</button>
             </div>
           </div>
           <div className="grid grid-cols-6 gap-4">
@@ -533,16 +624,42 @@ export const HrSyncPage = () => {
       )}
       {tab==='group' && (
         <div className="space-y-4">
-          <div className="flex justify-end"><button onClick={()=>setToast({message:'그룹 생성 다이얼로그가 열립니다.'})} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[13px] font-bold hover:bg-indigo-700 shadow-sm"><Plus className="w-4 h-4"/> 그룹 생성</button></div>
+          <div className="flex justify-end"><button onClick={()=>setNewGroup({name:'',type:'수동 그룹',areas:'',perms:'읽기'})} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[13px] font-bold hover:bg-indigo-700 shadow-sm"><Plus className="w-4 h-4"/> 그룹 생성</button></div>
           <div className="grid grid-cols-2 gap-4">
-            {ADMIN_USER_GROUPS.map(g=>(
+            {groups.map(g=>(
               <div key={g.name} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-3"><div><span className="font-black text-[14px] text-gray-800 block">{g.name}</span><span className="text-[11px] text-gray-500">{g.type}</span></div><span className="text-[12px] font-bold text-gray-600">{g.members}명</span></div>
                 <div className="text-[12px] text-gray-600 mb-2"><span className="font-medium text-gray-500">접근 영역: </span>{g.areas.join(', ')}</div>
-                <div className="flex items-center justify-between"><span className={`text-[11px] px-2 py-0.5 rounded font-bold ${g.perms.includes('전체')?'bg-red-100 text-red-700':g.perms.includes('쓰기')?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-600'}`}>{g.perms}</span><div className="flex gap-2"><button className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-600"><Edit3 className="w-3.5 h-3.5"/></button><button onClick={()=>setToast({message:'그룹이 삭제되었습니다.'})} className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5"/></button></div></div>
+                <div className="flex items-center justify-between"><span className={`text-[11px] px-2 py-0.5 rounded font-bold ${g.perms.includes('전체')?'bg-red-100 text-red-700':g.perms.includes('쓰기')?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-600'}`}>{g.perms}</span><div className="flex gap-2"><button aria-label={`${g.name} 수정`} onClick={()=>setEditGroup({...g,areas:[...g.areas],_orig:g.name})} className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-600"><Edit3 className="w-3.5 h-3.5"/></button><button aria-label={`${g.name} 삭제`} onClick={()=>{setGroups(p=>p.filter(x=>x.name!==g.name));toast(`${g.name} 그룹을 삭제했습니다`,'info');}} className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5"/></button></div></div>
               </div>
             ))}
           </div>
+
+          {/* 그룹 수정 */}
+          <Modal isOpen={!!editGroup} onClose={()=>setEditGroup(null)} title={`${editGroup?._orig} 수정`} size="md">
+            {editGroup&&<div className="space-y-3">
+              <div><label className="block text-sm font-medium mb-1">그룹명</label>
+                <input value={editGroup.name} onChange={e=>setEditGroup(p=>({...p,name:e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm"/></div>
+              <div><label className="block text-sm font-medium mb-1">접근 영역 (쉼표 구분)</label>
+                <input value={editGroup.areas.join(', ')} onChange={e=>setEditGroup(p=>({...p,areas:e.target.value.split(',').map(s=>s.trim()).filter(Boolean)}))} className="w-full border rounded-lg px-3 py-2 text-sm"/></div>
+              <div><label className="block text-sm font-medium mb-1">권한</label>
+                <select value={editGroup.perms} onChange={e=>setEditGroup(p=>({...p,perms:e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm bg-white">{GROUP_PERM_OPTIONS.map(o=><option key={o}>{o}</option>)}</select></div>
+              <button onClick={saveGroup} className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-blue-700">저장</button>
+            </div>}
+          </Modal>
+
+          {/* 그룹 생성 */}
+          <Modal isOpen={!!newGroup} onClose={()=>setNewGroup(null)} title="그룹 생성" size="md">
+            {newGroup&&<div className="space-y-3">
+              <div><label className="block text-sm font-medium mb-1">그룹명</label>
+                <input value={newGroup.name} onChange={e=>setNewGroup(p=>({...p,name:e.target.value}))} placeholder="예: 공시가격 조사 TF" className="w-full border rounded-lg px-3 py-2 text-sm"/></div>
+              <div><label className="block text-sm font-medium mb-1">접근 영역 (쉼표 구분)</label>
+                <input value={newGroup.areas} onChange={e=>setNewGroup(p=>({...p,areas:e.target.value}))} placeholder="예: 사규, 업무 매뉴얼" className="w-full border rounded-lg px-3 py-2 text-sm"/></div>
+              <div><label className="block text-sm font-medium mb-1">권한</label>
+                <select value={newGroup.perms} onChange={e=>setNewGroup(p=>({...p,perms:e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm bg-white">{GROUP_PERM_OPTIONS.map(o=><option key={o}>{o}</option>)}</select></div>
+              <button onClick={createGroup} className="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-indigo-700">생성</button>
+            </div>}
+          </Modal>
         </div>
       )}
     </PageShell>

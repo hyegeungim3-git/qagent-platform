@@ -999,7 +999,29 @@ export const TrustManagePage = () => {
 
 // ==================== SIDEBAR ====================
 export const QualityManagementPage = () => {
+  const toast=useToast();
   const [selReview,setSelReview]=useState(null);
+  const [goldenCount,setGoldenCount]=useState(247);
+  const [goldenIds,setGoldenIds]=useState([]);      // 이번 세션에 등록한 검토 건
+  const [editAnswer,setEditAnswer]=useState(null);   // 답변 수정 중 {id, text}
+  const [newGolden,setNewGolden]=useState(null);     // 직접 등록 폼 {q,a}
+
+  const registerGolden=(review)=>{
+    if(goldenIds.includes(review.id)){toast('이미 골든 데이터로 등록된 건입니다.','info');return;}
+    setGoldenIds(p=>[...p,review.id]);
+    setGoldenCount(c=>c+1);
+    toast('골든 데이터로 등록했습니다');
+  };
+  const saveGolden=()=>{
+    if(!newGolden.q.trim()||!newGolden.a.trim()){toast('질문과 답변을 모두 입력하세요.','info');return;}
+    setGoldenCount(c=>c+1); setNewGolden(null);
+    toast('골든 데이터를 등록했습니다');
+  };
+  const saveAnswer=()=>{
+    setSelReview(p=>p&&({...p,answer:editAnswer.text}));
+    setEditAnswer(null);
+    toast('답변을 수정했습니다 (검토 이력에 반영)');
+  };
   // 사용자 포털 답변 피드백(👍👎, localStorage) 병합 — 전문가 검토 목록 앞에 표시 (피드백 루프)
   const userRows=(()=>{try{
     const dom=localStorage.getItem('genos.activeDomain')||'reb';
@@ -1068,8 +1090,8 @@ export const QualityManagementPage = () => {
           <div className="bg-white rounded-xl border shadow-sm p-5">
             <h3 className="font-bold text-sm mb-3">Golden Data 관리</h3>
             <p className="text-xs text-gray-500 mb-3">검증된 Q&A 쌍을 골든 데이터로 등록하여 답변 품질을 개선합니다.</p>
-            <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3 mb-2"><span className="text-sm font-medium text-blue-700">등록된 골든 데이터</span><span className="text-lg font-bold text-blue-700">247<span className="text-xs font-normal text-blue-500 ml-1">건</span></span></div>
-            <button className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600">+ 골든 데이터 등록</button>
+            <div className="flex items-center justify-between bg-blue-50 rounded-lg p-3 mb-2"><span className="text-sm font-medium text-blue-700">등록된 골든 데이터</span><span className="text-lg font-bold text-blue-700">{goldenCount}<span className="text-xs font-normal text-blue-500 ml-1">건</span></span></div>
+            <button onClick={()=>setNewGolden({q:'',a:''})} className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600">+ 골든 데이터 등록</button>
           </div>
         </div>
       </div>
@@ -1084,9 +1106,32 @@ export const QualityManagementPage = () => {
           <div className="bg-gray-50 rounded-lg p-4"><div className="text-xs text-gray-500 font-bold mb-1">AI 답변 (신뢰도: {(selReview.confidence*100).toFixed(0)}%)</div><div className="text-sm">{selReview.answer}</div></div>
           {selReview.feedback&&<div className="bg-orange-50 rounded-lg p-4"><div className="text-xs text-orange-600 font-bold mb-1">전문가 피드백</div><div className="text-sm text-orange-800">{selReview.feedback}</div></div>}
           <div className="flex space-x-2 justify-end pt-2">
-            <button className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center"><ThumbsUp size={14} className="mr-1.5"/>골든 데이터 등록</button>
-            <button className="px-4 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50">답변 수정</button>
+            <button onClick={()=>registerGolden(selReview)} disabled={goldenIds.includes(selReview.id)}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center disabled:opacity-50 disabled:cursor-default">
+              <ThumbsUp size={14} className="mr-1.5"/>{goldenIds.includes(selReview.id)?'등록됨':'골든 데이터 등록'}</button>
+            <button onClick={()=>setEditAnswer({id:selReview.id,text:selReview.answer})} className="px-4 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50">답변 수정</button>
           </div>
+        </div>}
+      </Modal>
+
+      {/* 답변 수정 */}
+      <Modal isOpen={!!editAnswer} onClose={()=>setEditAnswer(null)} title="답변 수정" size="lg">
+        {editAnswer&&<div className="space-y-3">
+          <textarea value={editAnswer.text} onChange={e=>setEditAnswer(p=>({...p,text:e.target.value}))} rows={8}
+            className="w-full border rounded-lg px-3 py-2 text-sm leading-relaxed"/>
+          <p className="text-xs text-gray-400">수정한 답변은 검토 이력에 반영되며, 골든 데이터로 등록하면 이후 답변 품질 개선에 사용됩니다.</p>
+          <button onClick={saveAnswer} className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-blue-700">저장</button>
+        </div>}
+      </Modal>
+
+      {/* 골든 데이터 직접 등록 */}
+      <Modal isOpen={!!newGolden} onClose={()=>setNewGolden(null)} title="골든 데이터 등록" size="md">
+        {newGolden&&<div className="space-y-3">
+          <div><label className="block text-sm font-medium mb-1">질문</label>
+            <input value={newGolden.q} onChange={e=>setNewGolden(p=>({...p,q:e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm"/></div>
+          <div><label className="block text-sm font-medium mb-1">검증된 답변</label>
+            <textarea value={newGolden.a} onChange={e=>setNewGolden(p=>({...p,a:e.target.value}))} rows={5} className="w-full border rounded-lg px-3 py-2 text-sm"/></div>
+          <button onClick={saveGolden} className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-blue-700">등록</button>
         </div>}
       </Modal>
     </PageShell>

@@ -18,6 +18,37 @@ export const KnowledgeManagementPage = () => {
   const [showPrep,setShowPrep]=useState(false);
   const [prepDoc,setPrepDoc]=useState(null);
   const [upFile,setUpFile]=useState({name:'',pii:false,scanning:false,scanned:false});
+  const toast=useToast();
+  // ── 배치 스케줄 추가 / 동기화 로그 새로고침 / 에이전트 폴더 연결 ──
+  const [newBatch,setNewBatch]=useState(null);
+  const [syncedAt,setSyncedAt]=useState(null);
+  const [agentLinks,setAgentLinks]=useState(ADMIN_AGENT_FOLDER_LINKS.map(a=>({...a,folders:[...a.folders]})));
+  const [linkTarget,setLinkTarget]=useState(null);   // 폴더 연결 추가 대상 에이전트 인덱스
+
+  /* 원문 파일은 시연 환경에 없으므로 등록된 메타데이터를 내려받는다 */
+  const downloadDocMeta=(d)=>{
+    const body=[
+      ['파일명',d.name],['크기',d.size],['청크 수',d.chunks],['상태',d.status],
+      ['개인정보 마스킹',d.pii?'적용':'해당 없음'],['업로드일',d.uploaded],['지식 폴더',sel?.name||'-'],
+    ].map(r=>r.join('\t')).join('\n');
+    const url=URL.createObjectURL(new Blob(['﻿'+body],{type:'text/tab-separated-values;charset=utf-8'}));
+    const a=document.createElement('a'); a.href=url; a.download=`${d.name.replace(/\.[^.]+$/,'')}_메타데이터.xls`; a.click();
+    URL.revokeObjectURL(url);
+    toast(`${d.name} 메타데이터를 내려받았습니다`);
+  };
+
+  const addBatch=()=>{
+    if(!newBatch.src.trim()||!newBatch.target.trim()){toast('소스와 대상 폴더를 입력하세요.','info');return;}
+    setBatches(p=>[...p,{id:`b-${p.length+1}`,src:newBatch.src.trim(),target:newBatch.target.trim(),schedule:newBatch.schedule,
+      lastRun:'-',lastResult:'대기',addedDocs:0,updatedDocs:0,deletedDocs:0,enabled:true}]);
+    toast(`${newBatch.src} 배치 스케줄을 추가했습니다`); setNewBatch(null);
+  };
+
+  const addFolderLink=(folderName)=>{
+    setAgentLinks(p=>p.map((a,i)=>i===linkTarget&&!a.folders.includes(folderName)?{...a,folders:[...a.folders,folderName]}:a));
+    toast(`${folderName} 폴더를 연결했습니다`); setLinkTarget(null);
+  };
+
   // ── 수동 전처리 상태 ──
   const [prepTab,setPrepTab]=useState('parse');           // 'ocr' | 'parse'
   const [ocrState,setOcrState]=useState('idle');          // idle | processing | done
@@ -113,7 +144,7 @@ export const KnowledgeManagementPage = () => {
                 <td className="px-4 py-2.5 text-[10px] text-gray-400">{d.uploaded}</td>
                 <td className="px-4 py-2.5"><div className="flex items-center gap-1">
                   <button onClick={()=>{setPrepDoc(d);setShowPrep(true)}} className="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded" title="전처리 설정"><SlidersHorizontal size={13}/></button>
-                  <button className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="다운로드"><Download size={13}/></button>
+                  <button onClick={()=>downloadDocMeta(d)} className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="메타데이터 다운로드"><Download size={13}/></button>
                   <button onClick={()=>delDoc(d.id)} className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded" title="삭제"><Trash2 size={13}/></button>
                 </div></td>
               </tr>)}
@@ -137,7 +168,7 @@ export const KnowledgeManagementPage = () => {
       </div>
       <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
         <div className="p-4 border-b flex items-center justify-between"><h3 className="font-bold text-sm">배치 스케줄 관리</h3>
-          <button className="text-sm text-blue-600 font-medium flex items-center hover:text-blue-700"><Plus size={14} className="mr-1"/>추가</button></div>
+          <button onClick={()=>setNewBatch({src:'',target:'',schedule:'0 2 * * *'})} className="text-sm text-blue-600 font-medium flex items-center hover:text-blue-700"><Plus size={14} className="mr-1"/>추가</button></div>
         <table className="w-full text-sm"><thead><tr className="bg-gray-50 text-xs text-gray-500">
           {['소스','대상 폴더','스케줄','마지막 실행','결과','문서 변경','활성'].map((h,i)=><th key={i} className="text-left px-4 py-2.5 font-semibold">{h}</th>)}
         </tr></thead><tbody className="divide-y divide-gray-50">
@@ -154,7 +185,10 @@ export const KnowledgeManagementPage = () => {
       </div>
       <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
         <div className="p-4 border-b flex items-center justify-between"><h3 className="font-bold text-sm">동기화 로그</h3>
-          <button className="text-xs text-gray-500 flex items-center gap-1"><RefreshCw size={12}/>새로고침</button></div>
+          <div className="flex items-center gap-2">
+            {syncedAt&&<span className="text-[11px] text-gray-400">마지막 갱신 {syncedAt}</span>}
+            <button onClick={()=>{const n=new Date();setSyncedAt(`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`);toast(`동기화 로그 ${MOCK_SYNC_LOGS.length}건을 다시 불러왔습니다`);}} className="text-xs text-gray-500 flex items-center gap-1 hover:text-blue-600"><RefreshCw size={12}/>새로고침</button>
+          </div></div>
         <table className="w-full text-sm"><thead><tr className="bg-gray-50 text-xs text-gray-500">
           {['시각','소스','폴더','파일명','액션','PII','상태'].map((h,i)=><th key={i} className="text-left px-4 py-2 font-semibold">{h}</th>)}
         </tr></thead><tbody className="divide-y divide-gray-50">
@@ -172,16 +206,48 @@ export const KnowledgeManagementPage = () => {
     </div>}
     {/* Tab 3: 에이전트 연동 */}
     {kbTab==='agent'&&<div className="grid grid-cols-3 gap-4">
-      {ADMIN_AGENT_FOLDER_LINKS.map((a,i)=>({...a,...AGENT_LINK_META[i%AGENT_LINK_META.length]})).map((ag,i)=><div key={i} className="bg-white rounded-xl border shadow-sm p-5">
+      {agentLinks.map((a,i)=>({...a,...AGENT_LINK_META[i%AGENT_LINK_META.length]})).map((ag,i)=><div key={i} className="bg-white rounded-xl border shadow-sm p-5">
         <div className={`w-10 h-10 rounded-xl ${ag.color.split(' ')[0]} flex items-center justify-center mb-3`}><ag.icon size={20} className={ag.color.split(' ')[1]}/></div>
         <h3 className="font-bold text-sm mb-1">{ag.agent}</h3>
         <p className="text-xs text-gray-500 mb-3">연결된 지식 폴더</p>
         <div className="flex flex-wrap gap-1.5 mb-4">
           {ag.folders.map((f,j)=><span key={j} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-lg flex items-center gap-1"><Folder size={10}/>{f}</span>)}
         </div>
-        <button className="w-full text-xs text-blue-600 border border-blue-200 rounded-lg py-2 hover:bg-blue-50 flex items-center justify-center gap-1"><Plus size={12}/>폴더 연결 추가</button>
+        <button onClick={()=>setLinkTarget(i)} className="w-full text-xs text-blue-600 border border-blue-200 rounded-lg py-2 hover:bg-blue-50 flex items-center justify-center gap-1"><Plus size={12}/>폴더 연결 추가</button>
       </div>)}
     </div>}
+
+    {/* 배치 스케줄 추가 */}
+    <Modal isOpen={!!newBatch} onClose={()=>setNewBatch(null)} title="배치 스케줄 추가" size="md">
+      {newBatch&&<div className="space-y-3">
+        <div><label className="block text-sm font-medium mb-1">소스</label>
+          <select value={newBatch.src} onChange={e=>setNewBatch(p=>({...p,src:e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+            <option value="">선택하세요</option>{['그룹웨어','ERP','DMS'].map(s=><option key={s}>{s}</option>)}</select></div>
+        <div><label className="block text-sm font-medium mb-1">대상 폴더</label>
+          <select value={newBatch.target} onChange={e=>setNewBatch(p=>({...p,target:e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+            <option value="">선택하세요</option>{flds.map(f=><option key={f.id}>{f.name}</option>)}</select></div>
+        <div><label className="block text-sm font-medium mb-1">스케줄 (cron)</label>
+          <input value={newBatch.schedule} onChange={e=>setNewBatch(p=>({...p,schedule:e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm font-mono"/>
+          <p className="text-xs text-gray-400 mt-1">기본값은 매일 02:00 실행입니다.</p></div>
+        <button onClick={addBatch} className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-blue-700">추가</button>
+      </div>}
+    </Modal>
+
+    {/* 에이전트 폴더 연결 추가 */}
+    <Modal isOpen={linkTarget!==null} onClose={()=>setLinkTarget(null)} title={`${linkTarget!==null?agentLinks[linkTarget]?.agent:''} 폴더 연결`} size="sm">
+      {linkTarget!==null&&<div className="space-y-2">
+        {flds.map(f=>{
+          const linked=agentLinks[linkTarget].folders.includes(f.name);
+          return (
+            <button key={f.id} disabled={linked} onClick={()=>addFolderLink(f.name)}
+              className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${linked?'bg-gray-50 text-gray-400 cursor-default':'hover:bg-blue-50 hover:border-blue-300'}`}>
+              <span className="flex items-center gap-2"><Folder size={13}/>{f.name}</span>
+              {linked&&<span className="text-xs">연결됨</span>}
+            </button>
+          );
+        })}
+      </div>}
+    </Modal>
     {/* 업로드 모달 */}
     <Modal isOpen={showUp} onClose={()=>{setShowUp(false);setUpFile({name:'',pii:false,scanning:false,scanned:false})}} title="문서 업로드" size="md">
       <div className="space-y-4">
@@ -521,7 +587,7 @@ export const RagPipelinePage = () => {
   const [tab, setTab] = useState('sources');
   const [selChunk, setSelChunk] = useState(null);
   const [rpQueue, setRpQueue] = useState(MOCK_REPROCESS_QUEUE.map(r=>({...r})));
-  const { setToast } = useToast();
+  const toast = useToast();
 
   const SBadge = ({v}) => {
     const m = {정상:'green',양호:'green',완료:'blue',대기중:'yellow',처리중:'blue',오류:'red',실패:'red',경고:'yellow',주의:'yellow',수동처리필요:'red',검토중:'yellow',미처리:'red',신규:'purple'};
@@ -557,7 +623,7 @@ export const RagPipelinePage = () => {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-black text-[15px] text-gray-800 flex items-center gap-2"><Database className="w-4 h-4 text-blue-600"/> 내부 시스템 연계</h3>
-              <button onClick={()=>setToast({message:'소스 추가 다이얼로그가 열립니다.'})} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-sm"><Plus className="w-3.5 h-3.5"/> 소스 추가</button>
+              <button onClick={()=>toast('소스 추가 다이얼로그가 열립니다.')} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-sm"><Plus className="w-3.5 h-3.5"/> 소스 추가</button>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {MOCK_DATA_SOURCES_INT.map(src=>(
@@ -577,8 +643,8 @@ export const RagPipelinePage = () => {
                     <div><div className="text-gray-400 font-medium">마지막 동기화</div><div className="font-bold text-gray-700">{src.lastSync}</div></div>
                   </div>
                   <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
-                    <button onClick={()=>setToast({message:`${src.name} 수동 동기화가 시작되었습니다.`})} className="flex items-center gap-1 px-2.5 py-1 bg-gray-800 text-white rounded-lg text-[11px] font-bold hover:bg-gray-700"><RotateCcw className="w-3 h-3"/> 즉시 동기화</button>
-                    <button onClick={()=>setToast({message:`${src.name} 설정 편집창이 열립니다.`})} className="flex items-center gap-1 px-2.5 py-1 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50"><Settings className="w-3 h-3"/> 설정</button>
+                    <button onClick={()=>toast(`${src.name} 수동 동기화가 시작되었습니다.`)} className="flex items-center gap-1 px-2.5 py-1 bg-gray-800 text-white rounded-lg text-[11px] font-bold hover:bg-gray-700"><RotateCcw className="w-3 h-3"/> 즉시 동기화</button>
+                    <button onClick={()=>toast(`${src.name} 설정 편집창이 열립니다.`)} className="flex items-center gap-1 px-2.5 py-1 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50"><Settings className="w-3 h-3"/> 설정</button>
                   </div>
                 </div>
               ))}
@@ -588,7 +654,7 @@ export const RagPipelinePage = () => {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-black text-[15px] text-gray-800 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600"/> 외부 연계 (Open API / 크롤링)</h3>
-              <button onClick={()=>setToast({message:'외부 소스 추가 다이얼로그가 열립니다.'})} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-[12px] font-bold hover:bg-purple-700 shadow-sm"><Plus className="w-3.5 h-3.5"/> 외부 소스 추가</button>
+              <button onClick={()=>toast('외부 소스 추가 다이얼로그가 열립니다.')} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-[12px] font-bold hover:bg-purple-700 shadow-sm"><Plus className="w-3.5 h-3.5"/> 외부 소스 추가</button>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <table className="w-full text-[13px]">
@@ -602,7 +668,7 @@ export const RagPipelinePage = () => {
                     <td className="py-3 px-4 text-gray-500 text-[12px]">{src.lastSync}</td>
                     <td className="py-3 px-4 font-bold text-gray-800">{src.docCount.toLocaleString()} <span className="text-green-600 text-[11px] font-bold">+{src.newToday}</span></td>
                     <td className="py-3 px-4"><SBadge v={src.status}/></td>
-                    <td className="py-3 px-4"><button onClick={()=>setToast({message:`${src.name} 즉시 수집이 시작되었습니다.`})} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600 transition-colors"><RotateCcw className="w-3.5 h-3.5"/></button></td>
+                    <td className="py-3 px-4"><button onClick={()=>toast(`${src.name} 즉시 수집이 시작되었습니다.`)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-blue-600 transition-colors"><RotateCcw className="w-3.5 h-3.5"/></button></td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -713,7 +779,7 @@ export const RagPipelinePage = () => {
                       </div>
                     </td>
                     <td className="py-2.5 px-3"><SBadge v={d.status}/></td>
-                    <td className="py-2.5 px-3"><button onClick={e=>{e.stopPropagation();setToast({message:`${d.name} 청킹 재적용이 시작되었습니다.`});}} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-600"><RotateCcw className="w-3.5 h-3.5"/></button></td>
+                    <td className="py-2.5 px-3"><button onClick={e=>{e.stopPropagation();toast(`${d.name} 청킹 재적용이 시작되었습니다.`);}} className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-600"><RotateCcw className="w-3.5 h-3.5"/></button></td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -738,7 +804,7 @@ export const RagPipelinePage = () => {
                       </div>
                     ))}
                   </div>
-                  <button onClick={()=>setToast({message:'청킹 규칙 재적용이 시작되었습니다.'})} className="w-full mt-3 py-2 rounded-xl bg-blue-600 text-white text-[12px] font-bold hover:bg-blue-700 transition-colors">청킹 규칙 재적용</button>
+                  <button onClick={()=>toast('청킹 규칙 재적용이 시작되었습니다.')} className="w-full mt-3 py-2 rounded-xl bg-blue-600 text-white text-[12px] font-bold hover:bg-blue-700 transition-colors">청킹 규칙 재적용</button>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-52 text-gray-400">
@@ -770,7 +836,7 @@ export const RagPipelinePage = () => {
                   <span className="text-[13px] font-medium text-gray-700">{m}</span>
                 </label>
               ))}
-              <button onClick={()=>setToast({message:'청킹 규칙이 저장되었습니다.'})} className="ml-auto px-4 py-1.5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-sm">저장</button>
+              <button onClick={()=>toast('청킹 규칙이 저장되었습니다.')} className="ml-auto px-4 py-1.5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-sm">저장</button>
             </div>
           </div>
         </div>
@@ -864,7 +930,7 @@ export const RagPipelinePage = () => {
                   </div>
                   <div className="flex gap-2 shrink-0 ml-4 items-center">
                     <SBadge v={a.status}/>
-                    <button onClick={()=>setToast({message:`${a.doc} 재처리 큐에 추가되었습니다.`})} className="px-3 py-1 bg-gray-800 text-white rounded-lg text-[11px] font-bold hover:bg-gray-700">재처리</button>
+                    <button onClick={()=>toast(`${a.doc} 재처리 큐에 추가되었습니다.`)} className="px-3 py-1 bg-gray-800 text-white rounded-lg text-[11px] font-bold hover:bg-gray-700">재처리</button>
                   </div>
                 </div>
               ))}
@@ -888,8 +954,8 @@ export const RagPipelinePage = () => {
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
               <h4 className="font-black text-[14px] text-gray-700">재처리 대기 목록</h4>
               <div className="flex gap-2">
-                <button onClick={()=>{setRpQueue(q=>q.map(r=>r.status==='대기중'?{...r,retryCount:r.retryCount+1}:r));setToast({message:`${rpQueue.filter(r=>r.status==='대기중').length}건 일괄 재처리가 시작되었습니다.`});}} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-sm"><RotateCcw className="w-3.5 h-3.5"/> 전체 재처리</button>
-                <button onClick={()=>setToast({message:'완료된 항목이 큐에서 제거되었습니다.'})} className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><Trash2 className="w-3.5 h-3.5"/> 완료 항목 정리</button>
+                <button onClick={()=>{setRpQueue(q=>q.map(r=>r.status==='대기중'?{...r,retryCount:r.retryCount+1}:r));toast(`${rpQueue.filter(r=>r.status==='대기중').length}건 일괄 재처리가 시작되었습니다.`);}} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-sm"><RotateCcw className="w-3.5 h-3.5"/> 전체 재처리</button>
+                <button onClick={()=>toast('완료된 항목이 큐에서 제거되었습니다.')} className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><Trash2 className="w-3.5 h-3.5"/> 완료 항목 정리</button>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -907,8 +973,8 @@ export const RagPipelinePage = () => {
                     <td className="py-3 px-3 text-center font-mono font-bold text-gray-600">{r.retryCount}회</td>
                     <td className="py-3 px-3"><SBadge v={r.status}/></td>
                     <td className="py-3 px-3">
-                      {r.status==='대기중' && <button onClick={()=>{setRpQueue(q=>q.map(x=>x.id===r.id?{...x,retryCount:x.retryCount+1}:x));setToast({message:`${r.doc} 재처리를 시작합니다.`});}} className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white rounded-lg text-[11px] font-bold hover:bg-blue-700"><RotateCcw className="w-3 h-3"/> 재처리</button>}
-                      {r.status==='수동처리필요' && <button onClick={()=>setToast({message:`${r.doc}: 파일 복호화 또는 분할 처리가 필요합니다.`})} className="flex items-center gap-1 px-2.5 py-1 bg-orange-500 text-white rounded-lg text-[11px] font-bold hover:bg-orange-600">수동 처리</button>}
+                      {r.status==='대기중' && <button onClick={()=>{setRpQueue(q=>q.map(x=>x.id===r.id?{...x,retryCount:x.retryCount+1}:x));toast(`${r.doc} 재처리를 시작합니다.`);}} className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white rounded-lg text-[11px] font-bold hover:bg-blue-700"><RotateCcw className="w-3 h-3"/> 재처리</button>}
+                      {r.status==='수동처리필요' && <button onClick={()=>toast(`${r.doc}: 파일 복호화 또는 분할 처리가 필요합니다.`)} className="flex items-center gap-1 px-2.5 py-1 bg-orange-500 text-white rounded-lg text-[11px] font-bold hover:bg-orange-600">수동 처리</button>}
                     </td>
                   </tr>
                 ))}</tbody>

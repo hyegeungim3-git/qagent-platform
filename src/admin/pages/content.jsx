@@ -68,7 +68,9 @@ export const ContentMgmtPage = () => {
   const [answerText, setAnswerText] = useState('');
   const [showNoticeForm, setShowNoticeForm] = useState(false);
   const [newNotice, setNewNotice] = useState({title:'',type:'공지',content:''});
-  const { setToast } = useToast();
+  const [editNotice, setEditNotice] = useState(null);  // 공지 수정 중(사본)
+  const [qFilter, setQFilter] = useState('전체');       // Q&A 상태 필터
+  const toast = useToast();
   const TABS = [{id:'notice',label:'📢 공지사항'},{id:'qna',label:'❓ Q&A 게시판'},{id:'survey',label:'📋 설문조사'}];
   const tcls = {공지:'bg-blue-100 text-blue-700',업데이트:'bg-green-100 text-green-700',점검:'bg-orange-100 text-orange-700',매뉴얼:'bg-purple-100 text-purple-700'};
   const qcls = {답변완료:'bg-green-100 text-green-700',처리중:'bg-blue-100 text-blue-700',대기:'bg-yellow-100 text-yellow-700'};
@@ -90,9 +92,9 @@ export const ContentMgmtPage = () => {
                   <td className="py-3 px-4 text-gray-600">{n.author}</td>
                   <td className="py-3 px-4 text-gray-500">{n.date}</td>
                   <td className="py-3 px-4 text-gray-600">{n.views}</td>
-                  <td className="py-3 px-4"><button onClick={()=>{setNotices(ns=>ns.map(x=>x.id===n.id?{...x,pinned:!x.pinned}:x));setToast({message:`고정 ${n.pinned?'해제':'설정'} 완료`});}} className={`text-[11px] font-bold px-2 py-0.5 rounded ${n.pinned?'bg-red-100 text-red-600':'bg-gray-100 text-gray-500'}`}>{n.pinned?'고정중':'고정'}</button></td>
+                  <td className="py-3 px-4"><button onClick={()=>{setNotices(ns=>ns.map(x=>x.id===n.id?{...x,pinned:!x.pinned}:x));toast(`고정 ${n.pinned?'해제':'설정'} 완료`);}} className={`text-[11px] font-bold px-2 py-0.5 rounded ${n.pinned?'bg-red-100 text-red-600':'bg-gray-100 text-gray-500'}`}>{n.pinned?'고정중':'고정'}</button></td>
                   <td className="py-3 px-4"><ToggleSwitch on={n.active} onChange={v=>{setNotices(ns=>ns.map(x=>x.id===n.id?{...x,active:v}:x));}} size="sm"/></td>
-                  <td className="py-3 px-4 flex gap-1"><button className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-600"><Edit3 className="w-3.5 h-3.5"/></button><button onClick={()=>{setNotices(ns=>ns.filter(x=>x.id!==n.id));setToast({message:'공지가 삭제되었습니다.'});}} className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5"/></button></td>
+                  <td className="py-3 px-4 flex gap-1"><button aria-label={`${n.title} 수정`} onClick={()=>setEditNotice({...n})} className="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-600"><Edit3 className="w-3.5 h-3.5"/></button><button onClick={()=>{setNotices(ns=>ns.filter(x=>x.id!==n.id));toast('공지가 삭제되었습니다.');}} className="p-1.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5"/></button></td>
                 </tr>
               ))}</tbody>
             </table>
@@ -105,7 +107,20 @@ export const ContentMgmtPage = () => {
               </select>
               <input value={newNotice.title} onChange={e=>setNewNotice(p=>({...p,title:e.target.value}))} placeholder="제목" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-[13px] mb-3 focus:outline-none focus:border-blue-400"/>
               <textarea value={newNotice.content} onChange={e=>setNewNotice(p=>({...p,content:e.target.value}))} placeholder="내용" rows={4} className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-[13px] mb-4 resize-none focus:outline-none focus:border-blue-400"/>
-              <div className="flex gap-3"><button onClick={()=>setShowNoticeForm(false)} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-bold text-[13px]">취소</button><button onClick={()=>{if(!newNotice.title){setToast({message:'제목을 입력하세요.'});return;}setNotices(ns=>[{id:`N-${Date.now()}`,title:newNotice.title,type:newNotice.type,author:ADMIN_PERSONA.name,date:new Date().toISOString().slice(0,10),views:0,pinned:false,active:true},...ns]);setShowNoticeForm(false);setNewNotice({title:'',type:'공지',content:''});setToast({message:'공지가 등록되었습니다.'});}} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-black text-[13px] hover:bg-blue-700">등록</button></div>
+              <div className="flex gap-3"><button onClick={()=>setShowNoticeForm(false)} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-bold text-[13px]">취소</button><button onClick={()=>{if(!newNotice.title){toast('제목을 입력하세요.');return;}setNotices(ns=>[{id:`N-${Date.now()}`,title:newNotice.title,type:newNotice.type,author:ADMIN_PERSONA.name,date:new Date().toISOString().slice(0,10),views:0,pinned:false,active:true},...ns]);setShowNoticeForm(false);setNewNotice({title:'',type:'공지',content:''});toast('공지가 등록되었습니다.');}} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-black text-[13px] hover:bg-blue-700">등록</button></div>
+            </div></div>
+          )}
+          {editNotice && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-7 mx-4">
+              <div className="flex items-center justify-between mb-5"><h3 className="font-black text-[16px]">공지 수정</h3><button onClick={()=>setEditNotice(null)} aria-label="닫기"><X className="w-5 h-5 text-gray-400"/></button></div>
+              <select value={editNotice.type} onChange={e=>setEditNotice(p=>({...p,type:e.target.value}))} className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-[13px] mb-3 focus:outline-none focus:border-blue-400">
+                {['공지','업데이트','점검','매뉴얼'].map(t=><option key={t}>{t}</option>)}
+              </select>
+              <input value={editNotice.title} onChange={e=>setEditNotice(p=>({...p,title:e.target.value}))} placeholder="제목" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-[13px] mb-4 focus:outline-none focus:border-blue-400"/>
+              <div className="flex gap-3">
+                <button onClick={()=>setEditNotice(null)} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 font-bold text-[13px]">취소</button>
+                <button onClick={()=>{if(!editNotice.title.trim()){toast('제목을 입력하세요.');return;}setNotices(ns=>ns.map(x=>x.id===editNotice.id?{...x,title:editNotice.title.trim(),type:editNotice.type}:x));setEditNotice(null);toast('공지가 수정되었습니다.');}} className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-black text-[13px] hover:bg-blue-700">저장</button>
+              </div>
             </div></div>
           )}
         </div>
@@ -116,12 +131,12 @@ export const ContentMgmtPage = () => {
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
               <h4 className="font-black text-[14px] text-gray-700">Q&A 문의 목록</h4>
               <div className="flex gap-2 text-[12px]">
-                {['전체','대기','처리중','답변완료'].map(s=><button key={s} className="px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium">{s}</button>)}
+                {['전체','대기','처리중','답변완료'].map(s=><button key={s} onClick={()=>setQFilter(s)} className={`px-3 py-1 rounded-lg border font-medium transition-colors ${qFilter===s?'border-blue-500 bg-blue-50 text-blue-700':'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>{s}</button>)}
               </div>
             </div>
             <table className="w-full text-[13px]">
               <thead><tr className="border-b border-gray-100 bg-gray-50">{['제목','질문자','부서','등록일','상태'].map(h=><th key={h} className="text-left font-bold text-gray-500 py-2.5 px-4 text-[11px] uppercase">{h}</th>)}</tr></thead>
-              <tbody>{qnas.map(q=>(
+              <tbody>{qnas.filter(q=>qFilter==='전체'||q.status===qFilter).map(q=>(
                 <tr key={q.id} onClick={()=>{setSelQ(q);setAnswerText(q.answer);}} className={`border-b border-gray-50 cursor-pointer ${selQ?.id===q.id?'bg-blue-50':'hover:bg-gray-50'}`}>
                   <td className="py-2.5 px-4 font-bold text-gray-800">{q.title}</td>
                   <td className="py-2.5 px-4 text-gray-600">{q.user}</td>
@@ -138,7 +153,7 @@ export const ContentMgmtPage = () => {
                 <h4 className="font-black text-[13px] text-gray-700 mb-3">답변 작성</h4>
                 <div className="p-3 bg-gray-50 rounded-xl mb-3 text-[12px] text-gray-700"><strong className="block mb-1">{selQ.user} ({selQ.dept})</strong>{selQ.title}</div>
                 <textarea value={answerText} onChange={e=>setAnswerText(e.target.value)} placeholder="답변을 입력하세요..." rows={6} className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-[13px] resize-none focus:outline-none focus:border-blue-400 mb-3"/>
-                <button onClick={()=>{setQnas(qs=>qs.map(q=>q.id===selQ.id?{...q,answer:answerText,status:'답변완료'}:q));setToast({message:'답변이 등록되었습니다.'});setSelQ(null);}} className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-black text-[13px] hover:bg-blue-700">답변 등록</button>
+                <button onClick={()=>{setQnas(qs=>qs.map(q=>q.id===selQ.id?{...q,answer:answerText,status:'답변완료'}:q));toast('답변이 등록되었습니다.');setSelQ(null);}} className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-black text-[13px] hover:bg-blue-700">답변 등록</button>
               </div>
             ) : <div className="flex flex-col items-center justify-center h-48 text-gray-400"><MessageSquare className="w-10 h-10 mb-2 text-gray-200"/><p className="text-[13px] font-medium text-center">Q&A를 선택하면<br/>답변을 작성할 수 있습니다</p></div>}
           </div>
@@ -146,7 +161,7 @@ export const ContentMgmtPage = () => {
       )}
       {tab==='survey' && (
         <div className="space-y-4">
-          <div className="flex justify-end"><button onClick={()=>setToast({message:'설문 생성 기능은 준비 중입니다.'})} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[13px] font-bold hover:bg-indigo-700 shadow-sm"><Plus className="w-4 h-4"/> 설문 생성</button></div>
+          <div className="flex justify-end"><button onClick={()=>toast('설문 생성 기능은 준비 중입니다.')} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[13px] font-bold hover:bg-indigo-700 shadow-sm"><Plus className="w-4 h-4"/> 설문 생성</button></div>
           <div className="space-y-4">
             {MOCK_SURVEYS_MGMT.map(sv=>(
               <div key={sv.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
@@ -159,7 +174,7 @@ export const ContentMgmtPage = () => {
                   <span className="text-[13px] font-bold text-gray-700">{sv.responses}/{sv.target}명</span>
                   <span className="text-[12px] text-indigo-600 font-bold">{Math.round((sv.responses/sv.target)*100)}%</span>
                 </div>
-                {sv.status==='완료' && <button onClick={()=>setToast({message:'설문 결과 상세 리포트를 표시합니다.'})} className="mt-3 px-3 py-1.5 border border-indigo-200 text-indigo-600 rounded-lg text-[12px] font-bold hover:bg-indigo-50">결과 보기</button>}
+                {sv.status==='완료' && <button onClick={()=>toast('설문 결과 상세 리포트를 표시합니다.')} className="mt-3 px-3 py-1.5 border border-indigo-200 text-indigo-600 rounded-lg text-[12px] font-bold hover:bg-indigo-50">결과 보기</button>}
               </div>
             ))}
           </div>
@@ -177,7 +192,7 @@ export const ApiPromptPage = () => {
   const [prompts, setPrompts] = useState(MOCK_PROMPTS_MGMT.map(p=>({...p})));
   const [selPrompt, setSelPrompt] = useState(null);
   const [editContent, setEditContent] = useState('');
-  const { setToast } = useToast();
+  const toast = useToast();
   const TABS = [{id:'api',label:'🔌 API 관리'},{id:'approval',label:'✅ 사용 승인'},{id:'prompt',label:'✏️ 프롬프트 관리'}];
   return (
     <PageShell breadcrumb={['운영·관리','API·프롬프트 관리']} title="API · 프롬프트 관리" sub="API 생성/승인/통계 및 프롬프트 설계·테스트">
@@ -186,7 +201,7 @@ export const ApiPromptPage = () => {
       </div>
       {tab==='api' && (
         <div className="space-y-4">
-          <div className="flex justify-end"><button onClick={()=>setToast({message:'API 등록 다이얼로그가 열립니다.'})} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-xl text-[13px] font-bold hover:bg-blue-700 shadow-sm"><Plus className="w-4 h-4"/> API 등록</button></div>
+          <div className="flex justify-end"><button onClick={()=>toast('API 등록 다이얼로그가 열립니다.')} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-xl text-[13px] font-bold hover:bg-blue-700 shadow-sm"><Plus className="w-4 h-4"/> API 등록</button></div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <table className="w-full text-[13px]">
               <thead><tr className="border-b border-gray-100 bg-gray-50">{['API명','엔드포인트','버전','인증 방식','상태','오늘 호출','승인일','활성화',''].map(h=><th key={h} className="text-left font-bold text-gray-500 py-2.5 px-4 text-[11px] uppercase whitespace-nowrap">{h}</th>)}</tr></thead>
@@ -200,7 +215,7 @@ export const ApiPromptPage = () => {
                   <td className="py-3 px-4 font-bold text-gray-700">{a.callsToday.toLocaleString()}</td>
                   <td className="py-3 px-4 text-gray-500">{a.approvedDate}</td>
                   <td className="py-3 px-4"><ToggleSwitch on={a.status==='활성'} onChange={v=>setApis(as=>as.map(x=>x.id===a.id?{...x,status:v?'활성':'비활성'}:x))} size="sm"/></td>
-                  <td className="py-3 px-4"><button onClick={()=>setToast({message:`${a.name} API 키를 재발급합니다.`})} className="px-2.5 py-1 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50">키 재발급</button></td>
+                  <td className="py-3 px-4"><button onClick={()=>toast(`${a.name} API 키를 재발급합니다.`)} className="px-2.5 py-1 border border-gray-200 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-50">키 재발급</button></td>
                 </tr>
               ))}</tbody>
             </table>
@@ -225,7 +240,7 @@ export const ApiPromptPage = () => {
                   <td className="py-3 px-4 text-gray-600 max-w-[200px] truncate">{a.purpose}</td>
                   <td className="py-3 px-4 text-gray-500">{a.requestDate}</td>
                   <td className="py-3 px-4"><span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${a.status==='대기'?'bg-yellow-100 text-yellow-700':'bg-green-100 text-green-700'}`}>{a.status}</span></td>
-                  <td className="py-3 px-4">{a.status==='대기'&&<div className="flex gap-2"><button onClick={()=>{setApprovals(as=>as.map(x=>x.id===a.id?{...x,status:'승인'}:x));setToast({message:`${a.requester} API 사용이 승인되었습니다.`});}} className="px-2.5 py-1 bg-green-600 text-white rounded-lg text-[11px] font-bold hover:bg-green-700">승인</button><button onClick={()=>{setApprovals(as=>as.filter(x=>x.id!==a.id));setToast({message:'거부되었습니다.'});}} className="px-2.5 py-1 bg-red-500 text-white rounded-lg text-[11px] font-bold hover:bg-red-600">거부</button></div>}</td>
+                  <td className="py-3 px-4">{a.status==='대기'&&<div className="flex gap-2"><button onClick={()=>{setApprovals(as=>as.map(x=>x.id===a.id?{...x,status:'승인'}:x));toast(`${a.requester} API 사용이 승인되었습니다.`);}} className="px-2.5 py-1 bg-green-600 text-white rounded-lg text-[11px] font-bold hover:bg-green-700">승인</button><button onClick={()=>{setApprovals(as=>as.filter(x=>x.id!==a.id));toast('거부되었습니다.');}} className="px-2.5 py-1 bg-red-500 text-white rounded-lg text-[11px] font-bold hover:bg-red-600">거부</button></div>}</td>
                 </tr>
               ))}</tbody>
             </table>
@@ -252,8 +267,8 @@ export const ApiPromptPage = () => {
               <div className="space-y-3">
                 <textarea value={editContent} onChange={e=>setEditContent(e.target.value)} rows={10} className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-[12px] font-mono resize-none focus:outline-none focus:border-blue-400"/>
                 <div className="flex gap-2">
-                  <button onClick={()=>setToast({message:'프롬프트가 저장되었습니다.'})} className="flex-1 py-2 rounded-xl bg-blue-600 text-white text-[12px] font-bold hover:bg-blue-700">저장</button>
-                  <button onClick={()=>setToast({message:'테스트 대화창이 열립니다.'})} className="flex-1 py-2 rounded-xl border-2 border-blue-200 text-blue-700 text-[12px] font-bold hover:bg-blue-50">테스트</button>
+                  <button onClick={()=>toast('프롬프트가 저장되었습니다.')} className="flex-1 py-2 rounded-xl bg-blue-600 text-white text-[12px] font-bold hover:bg-blue-700">저장</button>
+                  <button onClick={()=>toast('테스트 대화창이 열립니다.')} className="flex-1 py-2 rounded-xl border-2 border-blue-200 text-blue-700 text-[12px] font-bold hover:bg-blue-50">테스트</button>
                 </div>
               </div>
             ) : <div className="flex flex-col items-center justify-center h-48 text-gray-400"><Edit3 className="w-10 h-10 mb-2 text-gray-200"/><p className="text-[13px] font-medium text-center">프롬프트를 선택하면<br/>편집창이 열립니다</p></div>}

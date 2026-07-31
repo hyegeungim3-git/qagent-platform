@@ -128,7 +128,7 @@ export const UserPage = () => {
 
 // ==================== 신뢰성 관리 (환각 최소화) ====================
 export const ConnectedMonitorPage = () => {
-  const { setToast } = useToast();
+  const toast = useToast();
   const SW = [
     {key:'rag',name:'RAG 서비스',icon:BookOpen,c:'blue',d:MOCK_CONNECTED_SW.rag,metrics:[['QPS',MOCK_CONNECTED_SW.rag.qps],['평균 지연',`${MOCK_CONNECTED_SW.rag.avgLatency}ms`],['성공률',`${MOCK_CONNECTED_SW.rag.successRate}%`],['대기 큐',`${MOCK_CONNECTED_SW.rag.queueSize}건`]]},
     {key:'ocr',name:'OCR 엔진',icon:FileText,c:'green',d:MOCK_CONNECTED_SW.ocr,metrics:[['처리 건수',MOCK_CONNECTED_SW.ocr.processed],['평균 지연',`${MOCK_CONNECTED_SW.ocr.avgLatency}ms`],['성공률',`${MOCK_CONNECTED_SW.ocr.successRate}%`],['대기 큐',`${MOCK_CONNECTED_SW.ocr.queueSize}건`]]},
@@ -161,7 +161,7 @@ export const ConnectedMonitorPage = () => {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
           <h4 className="font-black text-[14px] text-gray-700">연계 SW 통합 로그 (최근)</h4>
-          <button onClick={()=>setToast({message:'로그를 새로고침했습니다.'})} className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><RotateCcw className="w-3.5 h-3.5"/> 새로고침</button>
+          <button onClick={()=>toast('로그를 새로고침했습니다.')} className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><RotateCcw className="w-3.5 h-3.5"/> 새로고침</button>
         </div>
         <table className="w-full text-[12px]">
           <thead><tr className="border-b border-gray-100 bg-gray-50">{['시각','SW','레벨','메시지'].map(h=><th key={h} className="text-left font-bold text-gray-500 py-2.5 px-4 text-[11px] uppercase whitespace-nowrap">{h}</th>)}</tr></thead>

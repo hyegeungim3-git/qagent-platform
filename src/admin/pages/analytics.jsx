@@ -68,9 +68,43 @@ export const UsageHistoryPage = () => {
   </PageShell>);
 };
 
+const SURVEY_TARGETS=['전체 사용자','최근 30일 이용자','부서관리자'];
+
 export const SatisfactionMgmtPage = () => {
   const [data]=useState(MOCK_SATISFACTION_DATA);
-  return(<PageShell breadcrumb={['관리자 전용','이용만족도 관리']} title="이용만족도 관리" action={<button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center"><Plus size={14} className="mr-1.5"/>만족도 조사 발송</button>}>
+  const toast=useToast();
+  const [survey,setSurvey]=useState(null);   // 발송 폼 상태
+  const [sentLog,setSentLog]=useState([]);   // 이번 세션 발송 이력
+  const sendSurvey=()=>{
+    if(!survey.subject.trim()){toast('제목을 입력하세요.','info');return;}
+    const now=new Date();
+    setSentLog(p=>[{target:survey.target,subject:survey.subject.trim(),
+      at:`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`},...p]);
+    toast(`${survey.target}에게 만족도 조사를 발송했습니다`);
+    setSurvey(null);
+  };
+  return(<PageShell breadcrumb={['관리자 전용','이용만족도 관리']} title="이용만족도 관리" action={<button onClick={()=>setSurvey({target:SURVEY_TARGETS[0],subject:'GenOS 이용 만족도 조사'})} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center hover:bg-blue-700"><Plus size={14} className="mr-1.5"/>만족도 조사 발송</button>}>
+    {survey&&(
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={()=>setSurvey(null)}>
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 mx-4" onClick={e=>e.stopPropagation()}>
+          <h3 className="font-bold text-lg mb-4">만족도 조사 발송</h3>
+          <label className="block text-sm font-medium mb-1">발송 대상</label>
+          <select value={survey.target} onChange={e=>setSurvey(p=>({...p,target:e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm bg-white mb-3">{SURVEY_TARGETS.map(t=><option key={t}>{t}</option>)}</select>
+          <label className="block text-sm font-medium mb-1">제목</label>
+          <input value={survey.subject} onChange={e=>setSurvey(p=>({...p,subject:e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm mb-4"/>
+          <div className="flex gap-2">
+            <button onClick={()=>setSurvey(null)} className="flex-1 py-2.5 border rounded-lg text-sm font-medium hover:bg-gray-50">취소</button>
+            <button onClick={sendSurvey} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">발송</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {sentLog.length>0&&(
+      <div className="mb-5 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+        <div className="text-xs font-bold text-blue-700 mb-1.5">이번 세션 발송 내역 {sentLog.length}건</div>
+        {sentLog.map((s,i)=><div key={i} className="text-xs text-blue-700">· {s.at} · {s.target} · {s.subject}</div>)}
+      </div>
+    )}
     <div className="grid grid-cols-4 gap-4 mb-6">
       {[{l:'평균 만족도',v:`${data.avg}점`,c:'border-yellow-500 bg-yellow-50',tc:'text-yellow-700'},
         {l:'총 응답 수',v:`${data.total}건`,c:'border-blue-500 bg-blue-50',tc:'text-blue-700'},
@@ -192,7 +226,7 @@ export const UsageStatsPage = () => {
 
 export const InfoServiceStatsPage = () => {
   const [tab, setTab] = useState('overview');
-  const { setToast } = useToast();
+  const toast = useToast();
   const TABS = [{id:'overview',label:'📊 이용 현황'},{id:'keyword',label:'🔑 키워드 분석'},{id:'apistats',label:'🔌 API 통계'}];
   const maxKw = MOCK_SERVICE_STATS.keywords[0].cnt;
   const maxBar = Math.max(...MOCK_SERVICE_STATS.daily.map(d=>d.api));
@@ -215,7 +249,7 @@ export const InfoServiceStatsPage = () => {
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-black text-[14px] text-gray-700 flex items-center gap-2"><TrendingUp className="w-4 h-4 text-blue-500"/> 일별 이용 추이 (최근 7일)</h4>
-              <button onClick={()=>setToast({message:'통계 데이터를 엑셀로 내보냅니다.'})} className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><Download className="w-3.5 h-3.5"/> 엑셀 내보내기</button>
+              <button onClick={()=>toast('통계 데이터를 엑셀로 내보냅니다.')} className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><Download className="w-3.5 h-3.5"/> 엑셀 내보내기</button>
             </div>
             <div className="flex items-end gap-2" style={{height:'100px'}}>
               {MOCK_SERVICE_STATS.daily.map(d=>{

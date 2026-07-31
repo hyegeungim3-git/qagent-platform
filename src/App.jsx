@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { LayoutDashboard, Database, Settings, Cpu, ChevronDown, Bot, Box, Layers, Code, BarChart2, Shield, Briefcase, Users, Grid, List, PieChart, Wrench, Bell, Columns, Monitor, FolderOpen, UserCog, Unplug, Megaphone, Scale, LayoutGrid } from 'lucide-react';
 import { ToastProvider, SidebarItem } from './admin/common.jsx';
-import { applyAdminDomain, ADMIN_PERSONA } from './admin/mocks.js';
+import { applyAdminDomain, ADMIN_PERSONA, ADMIN_APPROVAL_ROWS, MOCK_ABUSE_ALERTS } from './admin/mocks.js';
 import { UsageHistoryPage, SatisfactionMgmtPage, UsageStatsPage, InfoServiceStatsPage } from './admin/pages/analytics.jsx';
 import { ChatAppPage, ReportGenPage, DataAnalysisPage } from './admin/pages/applications.jsx';
 import { AnnouncementPage, ContentMgmtPage, ApiPromptPage } from './admin/pages/content.jsx';
@@ -23,6 +23,16 @@ const App = ({ onSwitchToUser, onExitPortal, domain }) => {
   const orgName = domain?.orgName || '한국부동산원';
   const admin = ADMIN_PERSONA;
   const [activeId,setActiveId]=useState('dashboard.system');
+  const [sidebarOpen,setSidebarOpen]=useState(true);   // 상단바 Columns 버튼으로 접기/펼치기
+  const [notifOpen,setNotifOpen]=useState(false);      // 상단바 알림 드롭다운
+  const [notifRead,setNotifRead]=useState(false);
+  // 운영 알림 — 기존 목업(승인 대기·오남용 탐지)에서 파생
+  const pendingApprovals=ADMIN_APPROVAL_ROWS.filter(r=>r.status==='대기 중');
+  const notifItems=[
+    ...(pendingApprovals.length?[{id:'n-approval',title:`승인 대기 ${pendingApprovals.length}건`,body:pendingApprovals[0].type+' 외',to:'ops.approval'}]:[]),
+    ...(MOCK_ABUSE_ALERTS.length?[{id:'n-abuse',title:`오남용 탐지 ${MOCK_ABUSE_ALERTS.length}건`,body:MOCK_ABUSE_ALERTS[0].user+' '+MOCK_ABUSE_ALERTS[0].type,to:'admin.accesssec'}]:[]),
+    {id:'n-quality',title:'답변 품질 검토 대기',body:'사용자 피드백이 반영된 검토 목록을 확인하세요.',to:'admin.quality'},
+  ];
 
   const menu = [
     /* ════════════════════════════════════
@@ -168,8 +178,8 @@ const App = ({ onSwitchToUser, onExitPortal, domain }) => {
   return (
     <ToastProvider>
     <div className="flex h-screen bg-gray-50 text-gray-800" style={{fontFamily:'"NanumSquareNeo","Pretendard",-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif'}}>
-      {/* Sidebar */}
-      <div className="w-60 bg-white flex flex-col h-full border-r border-gray-200 shrink-0 shadow-sm">
+      {/* Sidebar — 상단바 Columns 버튼으로 접기 */}
+      <div className={`bg-white flex-col h-full border-r border-gray-200 shrink-0 shadow-sm ${sidebarOpen?'w-60 flex':'hidden'}`}>
         <div className="px-5 py-4 flex items-center space-x-3 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600">
           <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-white font-black text-sm shadow-sm backdrop-blur-sm">G</div>
           <div>
@@ -215,9 +225,31 @@ const App = ({ onSwitchToUser, onExitPortal, domain }) => {
               <Monitor size={15}/> 사용자 포털 전환
             </button>
           )}
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><Columns size={18}/></button>
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><Settings size={18}/></button>
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg relative"><Bell size={18}/><span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"/></button>
+          <button onClick={()=>setSidebarOpen(v=>!v)} aria-label={sidebarOpen?'사이드바 접기':'사이드바 펼치기'} aria-pressed={!sidebarOpen}
+            title={sidebarOpen?'사이드바 접기':'사이드바 펼치기'}
+            className={`p-2 rounded-lg hover:bg-gray-100 ${sidebarOpen?'text-gray-400 hover:text-gray-600':'text-blue-600 bg-blue-50'}`}><Columns size={18}/></button>
+          <button onClick={()=>setActiveId('admin.manage')} aria-label="시스템 설정" title="시스템 설정"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><Settings size={18}/></button>
+          <div className="relative">
+            <button onClick={()=>{setNotifOpen(v=>!v);setNotifRead(true);}} aria-label="알림" aria-expanded={notifOpen} title="알림"
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg relative"><Bell size={18}/>
+              {!notifRead&&<span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"/>}</button>
+            {notifOpen&&(
+              <>
+                <div className="fixed inset-0 z-40" onClick={()=>setNotifOpen(false)}/>
+                <div className="absolute right-0 top-11 z-50 w-80 bg-white rounded-xl border shadow-xl overflow-hidden">
+                  <div className="px-4 py-2.5 border-b text-xs font-bold text-gray-500">운영 알림 {notifItems.length}건</div>
+                  {notifItems.map(n=>(
+                    <button key={n.id} onClick={()=>{setActiveId(n.to);setNotifOpen(false);}}
+                      className="w-full text-left px-4 py-3 hover:bg-blue-50/60 border-b last:border-b-0 transition-colors">
+                      <div className="text-[13px] font-bold text-gray-800">{n.title}</div>
+                      <div className="text-[11px] text-gray-500 mt-0.5 leading-snug">{n.body}</div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           <div className="flex items-center space-x-2 ml-3 pl-3 border-l text-sm font-medium text-gray-700 cursor-pointer hover:text-gray-900">
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white text-[10px] font-bold">{admin.name.charAt(0)}</div>
             <span>{admin.name}</span><ChevronDown size={14}/>

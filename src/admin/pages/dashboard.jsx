@@ -5,6 +5,7 @@ import { StatusBadge, Modal, SemiGauge, PageShell, useToast } from '../common.js
 
 export const SystemDashboard = () => {
   const [selectedNode,setSelectedNode]=useState(null);
+  const [range,setRange]=useState('24h');   // 파드 정보 조회 구간
   return (
     <PageShell breadcrumb={['대시보드','시스템']}>
       <div className="mb-6 flex justify-between items-center">
@@ -38,8 +39,8 @@ export const SystemDashboard = () => {
         </table>
       </div>
       <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-bold">파드 정보</h3>
-        <div className="flex space-x-1">{['1h','6h','24h','7d'].map(t=><button key={t} className="px-2.5 py-1 text-xs rounded border hover:bg-blue-50 hover:text-blue-600">{t}</button>)}</div>
+        <div className="flex items-baseline gap-2"><h3 className="text-lg font-bold">파드 정보</h3><span className="text-xs text-gray-400">최근 {range} 집계</span></div>
+        <div className="flex space-x-1">{['1h','6h','24h','7d'].map(t=><button key={t} onClick={()=>setRange(t)} aria-pressed={range===t} className={`px-2.5 py-1 text-xs rounded border transition-colors ${range===t?'border-blue-500 bg-blue-50 text-blue-600 font-bold':'hover:bg-blue-50 hover:text-blue-600'}`}>{t}</button>)}</div>
       </div>
       <div className="bg-white rounded-xl border overflow-hidden">
         <table className="w-full text-sm"><thead className="bg-gray-50 text-xs text-gray-500"><tr>
