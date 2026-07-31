@@ -1328,7 +1328,7 @@ Interpretation services (English, Chinese, Japanese, Vietnamese) are available b
       docStandardNote: "리포트 형식을 선택하면 한성시 표준 서식으로 자동 생성됩니다",
     },
     "agent-dbquery": {
-      headerTitle: "새올 행정대장 조회",
+      /* headerTitle 생략 — 허브 카탈로그 이름(행정DB 조회 에이전트)을 승계 */
       headerSubtitle: "인허가 대장 · 공유재산 대장 · 도시계획 열람 자연어 검색",
       dbStatusLabel: "새올 DB 연결됨",
       emptyTitle: "행정 대장을 자연어로 조회하세요",

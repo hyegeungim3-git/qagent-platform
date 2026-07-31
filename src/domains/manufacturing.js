@@ -612,7 +612,7 @@ const manufacturing = {
     "agent-internalreg":  { name: "사규·안전규정 조회 에이전트", shortName: "규정 조회", desc: "취업규칙, 산업안전 규정, 품질 매뉴얼을 조항 단위로 검색하고 개정 이력을 추적합니다." },
     "agent-ocr":          { name: "도면·성적서 OCR 에이전트", shortName: "도면 OCR", desc: "스캔 도면, 검사성적서, 수입검사 서류를 인식해 치수·공차까지 구조화된 데이터로 변환합니다." },
     "agent-dbquery":      { name: "MES·SCADA 데이터 조회 에이전트", shortName: "MES 조회", desc: "자연어로 질문하면 MES·SCADA·ERP 데이터를 설비 태그 표준 사전으로 매칭해 생산 실적·가동률·재고를 SQL로 조회합니다." },
-    "agent-address":      { name: "기준정보 표준화 에이전트", shortName: "기준정보", desc: "포스프레임·SCADA·MES 설비 태그와 사업장·협력사 기준정보를 표준 명명규칙으로 매핑하고 미매칭·중복 항목을 정비합니다." },
+    "agent-address":      { name: "설비 태그·기준정보 표준화 에이전트", shortName: "기준정보", desc: "포스프레임·SCADA·MES 설비 태그와 사업장·협력사 기준정보를 표준 명명규칙으로 매핑하고 미매칭·중복 항목을 정비합니다." },
     "agent-dataanalysis": { name: "공정 데이터 분석 에이전트", shortName: "공정 분석", desc: "공정 센서(온도·진동)와 품질 결과를 연계 분석해 불량을 사전 예측(AUC 0.91)하고 최적 공정변수 조합을 도출합니다." },
     "agent-summary":      { name: "기술문서 요약 에이전트", shortName: "문서 요약", desc: "사양서, 감사 보고서, 고객 클레임 문서를 유형·길이별로 요약하고 개정본을 비교합니다." },
     "agent-translate":    { name: "수출문서 번역 에이전트", shortName: "수출 번역", desc: "수출 사양서, 계약서, 기술 매뉴얼을 용어집 기반으로 번역하고 역번역으로 검증합니다." },
@@ -1131,7 +1131,7 @@ Delivery is due on the 25th of each month on a shipment basis, and nonconforming
     },
     /* ── MES 데이터 조회 에이전트 (key 계약: building=설비 / land=자재 / lup=라인 배치) ── */
     "agent-dbquery": {
-      headerTitle: 'MES·SCADA 설비·생산 데이터 조회',
+      /* headerTitle 생략 — 허브 카탈로그 이름(MES·SCADA 데이터 조회 에이전트)을 승계 */
       headerSubtitle: '설비 대장 · 자재 대장 · 라인 배치 현황 자연어 검색 (포스프레임 태그 표준 사전 연계)',
       dbStatusLabel: 'MES·SCADA 연결됨',
       emptyTitle: 'MES·SCADA 생산 데이터를 자연어로 조회하세요',
@@ -1336,7 +1336,7 @@ LIMIT 50;`,
     },
     /* ── 설비 태그·기준정보 표준화 에이전트 (M.AX 과제① 데이터 표준화. modeTypes.m 키 고정, master는 확장 유형) ── */
     "agent-address": {
-      headerTitle: '설비 태그·기준정보 표준화 에이전트',
+      /* headerTitle은 생략 — 코어가 허브 카탈로그 이름을 승계하므로 이름은 한 곳(agentCatalog)에서만 정의한다 */
       headerDesc: '포스프레임 태그 4,820개 · 표준화 62% — 미매칭 1,834개 매핑 후보 도출',
       headerStatus: '포스프레임 수집 서버 연결됨',
       defaultAddress: '경남 창원시 성산구 외동 853-4',
@@ -1660,7 +1660,7 @@ LIMIT 50;`,
     },
     /* ── 금형 도면 온톨로지 검색 에이전트 (M.AX 온톨로지 — 유사 도면 검색·설계 아웃라인 참조) ── */
     "agent-knowledge": {
-      headerTitle: '금형 도면 온톨로지 검색 에이전트',
+      /* headerTitle 생략 — 허브 카탈로그 이름(금형 도면 온톨로지 검색 에이전트)을 승계 */
       headerDesc: '도면 12,400장 온톨로지 — 유사 도면 검색 + 설계 아웃라인 자동 생성 (설계 리드타임 5.2일 → 1.8일)',
       defaultQuery: '브래킷 굽힘 금형 유사 도면 및 설계 아웃라인',
       quickQueries: ['유사 금형 도면 검색','프로그레시브 금형 설계 표준','금형 간섭 체크 기준','절삭유 농도 관리 기준'],

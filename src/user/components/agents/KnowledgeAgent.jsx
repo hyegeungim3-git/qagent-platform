@@ -108,6 +108,10 @@ export const CONTENT_DEFAULTS={
 
 const KnowledgeAgent=({onBack,domain})=>{
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-knowledge"]||{})};
+  /* 화면 제목은 허브 카탈로그 이름 승계 (팩 headerTitle 미제공 시 REB 기본 문구 노출 방지) */
+  const headerTitle=domain?.agentContent?.["agent-knowledge"]?.headerTitle
+    ||domain?.agentCatalog?.["agent-knowledge"]?.name
+    ||AGENT_TEAMS?.find(t=>t.id==='agent-knowledge')?.name||C.headerTitle;
   const [step,setStep]=useState(1);
   const [query,setQuery]=useState(C.defaultQuery);
   const [selectedKBs,setSelectedKBs]=useState(new Set(C.defaultSelectedKbIds));
@@ -158,7 +162,7 @@ const KnowledgeAgent=({onBack,domain})=>{
             <Search className="w-5 h-5 text-white"/>
           </div>
           <div>
-            <div className="text-[15px] font-black text-slate-800">{C.headerTitle}</div>
+            <div className="text-[15px] font-black text-slate-800">{headerTitle}</div>
             <div className="text-xs text-slate-400">{C.headerDesc}</div>
           </div>
         </div>

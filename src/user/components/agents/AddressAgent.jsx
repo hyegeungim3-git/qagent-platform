@@ -225,6 +225,11 @@ const MatchStatusBadge=({status})=>{
 
 const AddressAgent=({onBack,domain})=>{
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-address"]||{})};
+  /* 화면 제목은 허브 카탈로그 이름을 승계한다 — 팩이 headerTitle을 주지 않아도
+     바깥(허브·챗 헤더)과 안쪽이 어긋나거나 REB 기본 문구가 노출되지 않게 하기 위함 */
+  const catalogName=domain?.agentCatalog?.["agent-address"]?.name
+    ||AGENT_TEAMS?.find(t=>t.id==='agent-address')?.name;
+  const headerTitle=domain?.agentContent?.["agent-address"]?.headerTitle||catalogName||C.headerTitle;
   const OCR_DOC_WORDS=C.ocrDocText.split(' ');
   const [mode,setMode]=useState(()=>C.modeTypes?.[0]?.m||'single'); // 팩이 정렬한 첫 유형이 기본
   const [inputTab,setInputTab]=useState('address'); // 'address' | 'apt'
@@ -455,7 +460,7 @@ const AddressAgent=({onBack,domain})=>{
             <MapPin className="w-5 h-5 text-white"/>
           </div>
           <div>
-            <div className="text-[15px] font-black text-slate-800">{C.headerTitle}</div>
+            <div className="text-[15px] font-black text-slate-800">{headerTitle}</div>
             <div className="text-xs text-slate-400">{C.headerDesc}</div>
           </div>
           <div className="ml-auto flex items-center gap-1.5 text-[10px] text-slate-400">
