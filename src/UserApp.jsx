@@ -257,6 +257,10 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
         const hit = domain.sampleAnswers.find(sa => sa.keywords.some(k => q.includes(k)));
         if (hit) return { ...hit.answer };
       }
+      if (domain.id === "reb") {
+        if (q.includes("표준지") || q.includes("공시") || q.includes("기준일") || q.includes("조사") || q.includes("주기")) return AI_RESPONSES.GENERAL_PSV;
+        if (q.includes("예산") || q.includes("과업") || q.includes("사업비") || q.includes("금액") || q.includes("기간")) return AI_RESPONSES.GENERAL_BUDGET;
+      }
     }
     if (curMode === "REVIEW") return MA.REVIEW || AI_RESPONSES.REVIEW_DEFAULT;
     if (curMode === "TRANSLATE") return MA.TRANSLATE || AI_RESPONSES.TRANSLATE_DEFAULT;

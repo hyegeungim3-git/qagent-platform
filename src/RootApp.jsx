@@ -1,7 +1,7 @@
 /**
  * RootApp.jsx
- * QAgent 생성형 AI 플랫폼 — 최상위 진입점 (도메인 중립 코어)
- * 사용자 포털(UserApp) ↔ QAgent 관리자 시스템(App) 전환 + 도메인 팩 선택 관리
+ * AgentQ 생성형 AI 플랫폼 — 최상위 진입점 (도메인 중립 코어)
+ * 사용자 포털(UserApp) ↔ AgentQ 관리자 시스템(App) 전환 + 도메인 팩 선택 관리
  */
 import React, { useState, useEffect, Suspense, lazy } from "react";
 import { Shield, User, ArrowRight, Lock, CheckCircle2, Layers } from "lucide-react";
@@ -10,7 +10,7 @@ import { parseRoute, syncHash, sameRoute, DEFAULT_ADMIN_ID } from "./router.js";
 
 // 코드 스플리팅: 초기 로드 사이즈 축소
 const UserApp = lazy(() => import("./UserApp"));
-const QAgentAdmin = lazy(() => import("./App"));
+const AgentQAdmin = lazy(() => import("./App"));
 
 function cn(...classes) { return classes.filter(Boolean).join(" "); }
 
@@ -77,8 +77,9 @@ const PortalSelector = ({ domain, onChangeDomain, onSelectUser, onSelectAdmin })
             </svg>
           </div>
           <div className="flex items-baseline gap-3 mb-3">
-            <span className="text-4xl font-black tracking-[0.15em]" style={{ color: domain.brandColor }}>{domain.orgShort}</span>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">{domain.platformTitle}</h1>
+            {/* 솔루션명 고정 + 조직명 — 어느 분야에나 적용되는 제품임을 첫 화면에서 드러낸다 */}
+            <span className="text-4xl font-black tracking-[0.15em]" style={{ color: domain.brandColor }}>AgentQ</span>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">{domain.orgName}</h1>
           </div>
           <p className="text-[16px] text-slate-500 font-medium max-w-md leading-relaxed">
             {domain.welcome}<br />
@@ -210,7 +211,7 @@ const LoadingFallback = ({ domain }) => (
     <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl mb-4 animate-pulse" style={{ backgroundColor: domain?.brandColor || "#003087" }}>
       <span className="text-2xl font-black text-white">{(domain?.orgShort || "G")[0]}</span>
     </div>
-    <p className="text-slate-500 font-bold text-[14px] tracking-wide">{domain?.orgShort || "QAgent"} · 로딩 중…</p>
+    <p className="text-slate-500 font-bold text-[14px] tracking-wide">{domain?.orgShort || "AgentQ"} · 로딩 중…</p>
   </div>
 );
 
@@ -230,7 +231,7 @@ const RootApp = () => {
   const view = route.view;
 
   useEffect(() => {
-    document.title = `${domain.platformTitle} · ${domain.orgShort} QAgent`;
+    document.title = `${domain.platformTitle} · ${domain.orgShort} AgentQ`;
   }, [domain]);
 
   // 상태 → 주소
@@ -275,7 +276,7 @@ const RootApp = () => {
   if (view === "ADMIN") {
     return (
       <Suspense fallback={<LoadingFallback domain={domain} />}>
-        <QAgentAdmin key={mountKey} domain={domain}
+        <AgentQAdmin key={mountKey} domain={domain}
           initialMenuId={route.adminId}
           onRouteChange={(adminId) => go({ adminId })}
           onSwitchToUser={() => go({ view: "USER" })}

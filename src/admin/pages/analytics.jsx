@@ -83,7 +83,7 @@ export const SatisfactionMgmtPage = () => {
     toast(`${survey.target}에게 만족도 조사를 발송했습니다`);
     setSurvey(null);
   };
-  return(<PageShell breadcrumb={['관리자 전용','이용만족도 관리']} title="이용만족도 관리" action={<button onClick={()=>setSurvey({target:SURVEY_TARGETS[0],subject:'QAgent 이용 만족도 조사'})} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center hover:bg-blue-700"><Plus size={14} className="mr-1.5"/>만족도 조사 발송</button>}>
+  return(<PageShell breadcrumb={['관리자 전용','이용만족도 관리']} title="이용만족도 관리" action={<button onClick={()=>setSurvey({target:SURVEY_TARGETS[0],subject:'AgentQ 이용 만족도 조사'})} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center hover:bg-blue-700"><Plus size={14} className="mr-1.5"/>만족도 조사 발송</button>}>
     {survey&&(
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={()=>setSurvey(null)}>
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 mx-4" onClick={e=>e.stopPropagation()}>

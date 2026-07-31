@@ -9,7 +9,7 @@ export const USER_INFO = { name: "김민준", dept: "부동산공시처", title:
 
 export const MOCK_NOTICES_USER = [
   {id:'N-001',title:'[필독] 2026년 1분기 보안 업데이트 공지 — 비밀번호 변경 필요',date:'2026-02-25',pinned:true},
-  {id:'N-002',title:'QAgent AI 플랫폼 v2.3 업데이트: 에이전트 기능 강화 안내',date:'2026-02-20',pinned:false},
+  {id:'N-002',title:'AgentQ AI 플랫폼 v2.3 업데이트: 에이전트 기능 강화 안내',date:'2026-02-20',pinned:false},
   {id:'N-003',title:'2월 정기 시스템 점검 안내 (2/28 새벽 2~4시)',date:'2026-02-18',pinned:false},
 ];
 

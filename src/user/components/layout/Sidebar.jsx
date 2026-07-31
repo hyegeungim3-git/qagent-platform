@@ -62,11 +62,16 @@ const Sidebar = ({
       </div>
       {sidebarOpen && (
         <div className="ml-3 animate-in fade-in duration-200 min-w-0">
+          {/* 솔루션명(AgentQ)은 도메인과 무관하게 고정 — 어느 분야에나 적용되는 제품 이름이고,
+              옆의 조직명이 지금 시연 중인 적용 사례를 가리킨다.
+              (예전엔 'REB'가 하드코딩돼 있어 모든 도메인에 REB가 붙었다) */}
           <div className="flex items-baseline gap-1.5">
-            <span className={cn("text-[13px] font-black tracking-[0.12em]", isSecure ? "text-white" : "text-[#003087]")}>REB</span>
+            <span className={cn("text-[13px] font-black tracking-[0.12em]", isSecure && "text-white")}
+              style={isSecure ? undefined : { color: domain.brandColor }}>AgentQ</span>
             <span className={cn("text-[12px] font-bold tracking-tight leading-tight truncate", th.text)}>{domain.orgName}</span>
           </div>
-          <div className={cn("text-[10px] font-bold tracking-widest uppercase", isSecure ? "text-blue-400" : isAgent ? "text-indigo-500" : "text-[#003087]/70")}>
+          <div className={cn("text-[10px] font-bold tracking-widest uppercase", isSecure ? "text-blue-400" : isAgent && "text-indigo-500")}
+            style={isSecure || isAgent ? undefined : { color: domain.brandColor, opacity: 0.7 }}>
             {isSecure ? "보안 채팅" : isAgent ? "에이전트 모드" : "AI 플랫폼"}
           </div>
         </div>
@@ -347,7 +352,7 @@ const Sidebar = ({
               ))}
               {onSwitchToAdmin && (
                 <button onClick={() => { setShowUserMenu(false); onSwitchToAdmin(); }} className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium border-t transition-colors mt-1", isSecure ? "text-blue-400 hover:bg-slate-800 border-slate-700" : "text-indigo-700 hover:bg-indigo-50 border-slate-100")}>
-                  <Shield className="w-4 h-4 text-indigo-500" /> 관리자 시스템 (QAgent)
+                  <Shield className="w-4 h-4 text-indigo-500" /> 관리자 시스템 (AgentQ)
                 </button>
               )}
             </div>

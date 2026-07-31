@@ -510,7 +510,7 @@ const RightPanel = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Shield className={cn("w-4 h-4", isSecure ? "text-blue-400" : "text-indigo-600")} />
-                    <span className={cn("text-[13px] font-black", th.text)}>QAgent 관리자 시스템</span>
+                    <span className={cn("text-[13px] font-black", th.text)}>AgentQ 관리자 시스템</span>
                   </div>
                   <button onClick={onSwitchToAdmin} className={cn("flex items-center gap-1.5 text-[13px] font-bold transition-colors", isSecure ? "text-blue-400 hover:text-blue-300" : "text-indigo-600 hover:text-indigo-800")}>
                     전환 <ExternalLink className="w-3.5 h-3.5" />

@@ -3,17 +3,19 @@
  * 코어 플랫폼(RootApp/UserApp)은 이 레지스트리를 통해서만 도메인 콘텐츠에 접근한다.
  * 새 도메인 추가 = 팩 파일 1개 작성 + 여기 등록이 전부여야 한다.
  */
+import reb from "./reb.js";
 import manufacturing from "./manufacturing.js";
 import civic from "./civic.js";
 import hospital from "./hospital.js";
 
 export const DOMAINS = {
+  [reb.id]: reb,
   [manufacturing.id]: manufacturing,
   [civic.id]: civic,
   [hospital.id]: hospital,
 };
 
-export const DOMAIN_LIST = [manufacturing, civic, hospital];
+export const DOMAIN_LIST = [reb, manufacturing, civic, hospital];
 
 const STORAGE_KEY = "genos.activeDomain";
 

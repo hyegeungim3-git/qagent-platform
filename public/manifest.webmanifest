@@ -1,7 +1,7 @@
 {
-  "name": "QAgent — 멀티 도메인 생성형 AI 플랫폼",
-  "short_name": "QAgent",
-  "description": "멀티 AI 에이전트 플랫폼 데모 — 한빛정밀 · 한성시청 · 새빛대학교병원 도메인 팩",
+  "name": "AgentQ — 멀티 AI 에이전트 플랫폼",
+  "short_name": "AgentQ",
+  "description": "분야 무관 적용 가능한 멀티 AI 에이전트 플랫폼 — 공공·제조·행정·의료 적용 사례를 도메인 팩으로 제공",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -185,7 +185,7 @@ const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChang
         <div className="px-5 py-4 flex items-center space-x-3 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600">
           <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-white font-black text-sm shadow-sm backdrop-blur-sm">G</div>
           <div>
-            <div className="text-[15px] font-black tracking-tight text-white leading-tight">QAgent</div>
+            <div className="text-[15px] font-black tracking-tight text-white leading-tight">AgentQ</div>
             <div className="text-[9px] font-bold tracking-widest text-blue-100 uppercase">Admin Console</div>
           </div>
         </div>
