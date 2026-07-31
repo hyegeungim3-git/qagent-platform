@@ -347,7 +347,7 @@ const Sidebar = ({
               ))}
               {onSwitchToAdmin && (
                 <button onClick={() => { setShowUserMenu(false); onSwitchToAdmin(); }} className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium border-t transition-colors mt-1", isSecure ? "text-blue-400 hover:bg-slate-800 border-slate-700" : "text-indigo-700 hover:bg-indigo-50 border-slate-100")}>
-                  <Shield className="w-4 h-4 text-indigo-500" /> 관리자 시스템 (GenOS)
+                  <Shield className="w-4 h-4 text-indigo-500" /> 관리자 시스템 (QAgent)
                 </button>
               )}
             </div>

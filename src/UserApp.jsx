@@ -15,7 +15,6 @@ import {
 import { AI_RESPONSES, generateDocHTML } from "./user/data/responses.js";
 import { checkInputFilter, applyOutputGuardrails } from "./user/guardrails.js";
 import { matchMapIntel, buildMapIntelResponse } from "./user/mapIntel.js";
-import rebDomain from "./domains/reb.js";
 import { mergeAgentTeams } from "./domains/index.js";
 
 /* 레이아웃 컴포넌트 (2-C 분해: 탭·패널 단위) */
@@ -83,7 +82,7 @@ const AgentLoadingFallback = () => (
 /* ================================================================== */
 /* MAIN USER APP COMPONENT — 상태·핸들러·조립만 담당 (2-C 분해 후)      */
 /* ================================================================== */
-const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain, initialTab, initialAgentId, onRouteChange }) => {
+const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAgentId, onRouteChange }) => {
   // ── 도메인 팩 주입: 조직·사용자·워크스페이스·LLM·에이전트 카탈로그는 팩에서 공급 ──
   const USER_INFO = domain.user;
   const WORKSPACES = domain.workspaces;
@@ -257,10 +256,6 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain = rebDomain, initialTab
       if (domain.sampleAnswers) {
         const hit = domain.sampleAnswers.find(sa => sa.keywords.some(k => q.includes(k)));
         if (hit) return { ...hit.answer };
-      }
-      if (domain.id === "reb") {
-        if (q.includes("표준지") || q.includes("공시") || q.includes("기준일") || q.includes("조사") || q.includes("주기")) return AI_RESPONSES.GENERAL_PSV;
-        if (q.includes("예산") || q.includes("과업") || q.includes("사업비") || q.includes("금액") || q.includes("기간")) return AI_RESPONSES.GENERAL_BUDGET;
       }
     }
     if (curMode === "REVIEW") return MA.REVIEW || AI_RESPONSES.REVIEW_DEFAULT;

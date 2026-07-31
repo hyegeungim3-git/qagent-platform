@@ -3,19 +3,17 @@
  * 코어 플랫폼(RootApp/UserApp)은 이 레지스트리를 통해서만 도메인 콘텐츠에 접근한다.
  * 새 도메인 추가 = 팩 파일 1개 작성 + 여기 등록이 전부여야 한다.
  */
-import reb from "./reb.js";
 import manufacturing from "./manufacturing.js";
 import civic from "./civic.js";
 import hospital from "./hospital.js";
 
 export const DOMAINS = {
-  [reb.id]: reb,
   [manufacturing.id]: manufacturing,
   [civic.id]: civic,
   [hospital.id]: hospital,
 };
 
-export const DOMAIN_LIST = [reb, manufacturing, civic, hospital];
+export const DOMAIN_LIST = [manufacturing, civic, hospital];
 
 const STORAGE_KEY = "genos.activeDomain";
 
@@ -44,7 +42,7 @@ export function deleteCustomPack() {
 /** 베이스 팩 + 오버라이드 병합 — 아이콘·함수·미지정 필드는 베이스 상속 */
 export function buildCustomDomain(saved = loadCustomPack()) {
   if (!saved) return null;
-  const base = DOMAINS[saved.baseId] || reb;
+  const base = DOMAINS[saved.baseId] || manufacturing;
   const ov = saved.overrides || {};
   const orchBase = Array.isArray(base.orchestration) ? base.orchestration : base.orchestration ? [base.orchestration] : [];
   return {
@@ -79,9 +77,9 @@ export function getActiveDomainId() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === CUSTOM_ID && loadCustomPack()) return CUSTOM_ID;
-    return saved && DOMAINS[saved] ? saved : reb.id;
+    return saved && DOMAINS[saved] ? saved : manufacturing.id;
   } catch {
-    return reb.id;
+    return manufacturing.id;
   }
 }
 

@@ -9,7 +9,7 @@ export const USER_INFO = { name: "김민준", dept: "부동산공시처", title:
 
 export const MOCK_NOTICES_USER = [
   {id:'N-001',title:'[필독] 2026년 1분기 보안 업데이트 공지 — 비밀번호 변경 필요',date:'2026-02-25',pinned:true},
-  {id:'N-002',title:'GenOS AI 플랫폼 v2.3 업데이트: 에이전트 기능 강화 안내',date:'2026-02-20',pinned:false},
+  {id:'N-002',title:'QAgent AI 플랫폼 v2.3 업데이트: 에이전트 기능 강화 안내',date:'2026-02-20',pinned:false},
   {id:'N-003',title:'2월 정기 시스템 점검 안내 (2/28 새벽 2~4시)',date:'2026-02-18',pinned:false},
 ];
 
@@ -122,7 +122,7 @@ export const SUGGESTIONS = {
 
 export const AGENT_TEAMS = [
   {
-    id: "agent-chatbot", name: "챗봇 에이전트", shortName: "챗봇",
+    id: "agent-chatbot", name: "업무 챗봇", shortName: "업무 챗봇",
     desc: "공시지가, 사내 규정, 업무 절차 등 궁금한 사항을 자유롭게 질문하면 RAG 기반으로 근거와 함께 즉시 답변합니다.",
     icon: MessageCircle, color: "indigo", tech: ["RAG", "sLLM", "대화형"],
     workflow: [
@@ -132,7 +132,7 @@ export const AGENT_TEAMS = [
     ]
   },
   {
-    id: "agent-report", name: "보고서 작성 에이전트", shortName: "보고서 작성",
+    id: "agent-report", name: "표준 보고서 작성", shortName: "보고서 작성",
     desc: "단순 텍스트를 사내 표준 양식(주간실적·현장조사 등)에 맞춰 완성된 공문서로 자동 생성합니다.",
     icon: FileText, color: "emerald", tech: ["sLLM", "템플릿", "공문서"],
     workflow: [
@@ -142,7 +142,7 @@ export const AGENT_TEAMS = [
     ]
   },
   {
-    id: "agent-meeting", name: "회의록 작성 에이전트", shortName: "회의록 작성",
+    id: "agent-meeting", name: "회의록 작성", shortName: "회의록",
     desc: "음성 파일을 업로드하면 STT·분석·작성 에이전트가 협력하여 표준 양식의 회의록을 자동 생성합니다.",
     icon: ClipboardList, color: "purple", tech: ["STT", "RAG", "멀티에이전트"],
     workflow: [
@@ -152,7 +152,7 @@ export const AGENT_TEAMS = [
     ]
   },
   {
-    id: "agent-knowledge", name: "지식 검색 에이전트", shortName: "지식 검색",
+    id: "agent-knowledge", name: "지식 검색", shortName: "지식 검색",
     desc: "표준지 조사지침·취업규칙·공시 법령 등 사내 문서를 자연어로 검색하면 벡터 임베딩 기반으로 관련 내용과 출처를 제공합니다.",
     icon: Search, color: "violet", tech: ["RAG", "벡터DB", "시맨틱"],
     workflow: [
@@ -162,7 +162,7 @@ export const AGENT_TEAMS = [
     ]
   },
   {
-    id: "agent-internalreg", name: "내규 조회 에이전트", shortName: "내규 조회",
+    id: "agent-internalreg", name: "내규·규정 조회", shortName: "규정 조회",
     desc: "취업규칙·업무지침·복무규정 등 사내 내규를 자연어로 질의하면 근거 조항과 함께 명확한 답변을 제공합니다.",
     icon: BookOpen, color: "blue", tech: ["RAG", "지식DB", "인용"],
     workflow: [
@@ -172,7 +172,7 @@ export const AGENT_TEAMS = [
     ]
   },
   {
-    id: "agent-ocr", name: "OCR 에이전트", shortName: "OCR",
+    id: "agent-ocr", name: "문서 인식(OCR)", shortName: "문서 인식",
     desc: "스캔 이미지·PDF를 업로드하면 Vision OCR로 텍스트와 표를 추출하고 편집 가능한 문서로 변환합니다.",
     icon: ScanLine, color: "teal", tech: ["Vision OCR", "PDF", "표 추출"],
     workflow: [
@@ -182,7 +182,7 @@ export const AGENT_TEAMS = [
     ]
   },
   {
-    id: "agent-dbquery", name: "정형데이터(DB) 검색 에이전트", shortName: "DB 검색",
+    id: "agent-dbquery", name: "데이터 조회·분석", shortName: "데이터 조회",
     desc: "자연어로 공시지가·거래 데이터를 질의하면 SQL을 자동 생성하고 표·차트로 결과를 시각화합니다.",
     icon: Database, color: "cyan", tech: ["Text2SQL", "DB", "시각화"],
     workflow: [
@@ -192,17 +192,17 @@ export const AGENT_TEAMS = [
     ]
   },
   {
-    id: "agent-address", name: "주소 표준화 에이전트", shortName: "주소 표준화",
-    desc: "지번주소·자유형식 주소를 도로명주소로 일괄 변환하고 건물번호·우편번호·좌표를 함께 제공합니다.",
-    icon: MapPin, color: "rose", tech: ["주소DB", "지오코딩", "일괄처리"],
+    id: "agent-address", name: "기준정보 표준화", shortName: "기준정보",
+    desc: "시스템별로 제각각인 코드·명칭을 표준 명명규칙으로 매핑하고 미매칭·중복 항목을 정비합니다.",
+    icon: MapPin, color: "rose", tech: ["기준정보DB", "표준코드", "일괄처리"],
     workflow: [
-      { step: 1, role: "주소 파싱",   name: "주소 파서",           prompt: "입력 주소의 시·도·구·동·번지·건물명 구성요소를 분해하십시오.",              tool: "내장 알고리즘" },
-      { step: 2, role: "DB 조회",     name: "주소 매핑 에이전트",  prompt: "분해된 구성요소로 공식 주소 DB에서 최적 매칭 결과를 조회하십시오.",          tool: "도로명주소_DB" },
-      { step: 3, role: "좌표 변환",   name: "지오코딩 에이전트",   prompt: "표준화된 주소의 위경도 좌표와 우편번호를 산출하십시오.",                      tool: "지오코딩_엔진" },
+      { step: 1, role: "명칭 파싱",   name: "명명규칙 파서",       prompt: "입력 항목의 명명 구성요소를 표준 규칙 단위로 분해하십시오.",                tool: "내장 알고리즘" },
+      { step: 2, role: "DB 조회",     name: "표준코드 매퍼",       prompt: "분해된 구성요소로 표준 기준정보 사전에서 최적 매칭 결과를 조회하십시오.",    tool: "표준_기준정보_DB" },
+      { step: 3, role: "교차 검증",   name: "정합성 검증 에이전트", prompt: "매핑 결과의 중복·충돌 여부를 시스템 간 교차 검증하십시오.",                  tool: "기준정보_엔진" },
     ]
   },
   {
-    id: "agent-dataanalysis", name: "데이터 분석 에이전트", shortName: "데이터 분석",
+    id: "agent-dataanalysis", name: "데이터 시각화 분석", shortName: "데이터 분석",
     desc: "Excel·CSV 파일을 업로드하면 기술통계·분포·이상치 탐지를 자동 수행하고 차트·보고서로 시각화합니다.",
     icon: BarChart2, color: "orange", tech: ["통계분석", "시각화", "AI"],
     workflow: [
@@ -212,7 +212,7 @@ export const AGENT_TEAMS = [
     ]
   },
   {
-    id: "agent-summary", name: "문서 요약 에이전트", shortName: "문서 요약",
+    id: "agent-summary", name: "문서 요약", shortName: "문서 요약",
     desc: "업로드 문서를 핵심요약·상세요약·불릿 포인트 등 원하는 형식으로 자동 요약하고 핵심 키워드를 추출합니다.",
     icon: AlignLeft, color: "amber", tech: ["sLLM", "청킹", "키워드"],
     workflow: [
@@ -222,7 +222,7 @@ export const AGENT_TEAMS = [
     ]
   },
   {
-    id: "agent-translate", name: "번역·요약 에이전트", shortName: "번역·요약",
+    id: "agent-translate", name: "문서 번역", shortName: "번역",
     desc: "한·영·중·일 문서를 의미 단위로 분할해 번역하고, 용어집 적용·역번역 검증·요약까지 한 번에 처리합니다.",
     icon: Languages, color: "violet", tech: ["번역", "청킹", "용어집"],
     workflow: [
@@ -232,7 +232,7 @@ export const AGENT_TEAMS = [
     ]
   },
   {
-    id: "agent-review", name: "문서 사전 검토 에이전트", shortName: "문서 검토",
+    id: "agent-review", name: "문서 사전 검토", shortName: "문서 검토",
     desc: "기안문·보고서를 업로드하면 취업규칙·업무처리지침 등 사규와 자동 대조하여 위반 소지를 심각도별로 검토합니다.",
     icon: FileCheck, color: "indigo", tech: ["RAG", "사규 대조", "DRM"],
     workflow: [
@@ -242,7 +242,7 @@ export const AGENT_TEAMS = [
     ]
   },
   {
-    id: "agent-safety", name: "안전관리계획 에이전트", shortName: "안전계획",
+    id: "agent-safety", name: "안전관리계획 수립", shortName: "안전계획",
     desc: "현장 업무 정보와 위험 요소를 입력하면 위험성평가 매트릭스와 관련 법령 기반의 안전관리계획서를 자동 생성합니다.",
     icon: ShieldCheck, color: "orange", tech: ["위험성평가", "법령 RAG", "체크리스트"],
     workflow: [
@@ -257,13 +257,13 @@ export const MCP_TOOLS = [
   { id: "t1",  name: "사내_지식_검색망", type: "벡터 DB",    endpoint: "grpc://10.10.1.11:7001", latency: 38,   desc: "원내 내부 규정(사규, 업무지침 등) 시맨틱 검색 엔진",           status: "활성" },
   { id: "t2",  name: "DRM_자동_복호화_모듈",      type: "보안 모듈",  endpoint: "grpc://10.10.1.12:7002", latency: 15,   desc: "업로드 문서 파싱 전 암호화 해제 (원내 SSO/EAM 연동)",          status: "활성" },
   { id: "t3",  name: "Vision_OCR_엔진",           type: "OCR 모듈",   endpoint: "http://10.10.1.13:8080", latency: 220,  desc: "스캔된 PDF 및 이미지 내 텍스트·표 데이터 추출",                status: "활성" },
-  { id: "t4",  name: "도로명주소_DB",             type: "주소 DB",    endpoint: "grpc://10.10.1.14:7004", latency: 12,   desc: "행정안전부 도로명주소 공식 DB (실시간 연동)",                   status: "활성" },
-  { id: "t5",  name: "공시지가_정형DB",           type: "관계형 DB",  endpoint: "jdbc://10.10.1.15:5432", latency: 8,    desc: "표준지·개별 공시지가 이력 데이터베이스",                        status: "활성" },
+  { id: "t4",  name: "표준_기준정보_DB",           type: "기준정보 DB",    endpoint: "grpc://10.10.1.14:7004", latency: 12,   desc: "전사 표준 기준정보 사전 (실시간 연동)",                   status: "활성" },
+  { id: "t5",  name: "업무_정형DB",               type: "관계형 DB",  endpoint: "jdbc://10.10.1.15:5432", latency: 8,    desc: "표준지·개별 공시지가 이력 데이터베이스",                        status: "활성" },
   { id: "t6",  name: "Whisper_STT_엔진",          type: "STT 모듈",   endpoint: "grpc://10.10.1.16:7006", latency: 890,  desc: "음성 파일 텍스트 변환 및 화자 분리 (Speaker Diarization)",      status: "활성" },
   { id: "t7",  name: "GPT-OSS_120B_sLLM",        type: "sLLM 엔진",  endpoint: "grpc://10.10.1.17:7007", latency: 1240, desc: "원내 구축 오픈소스 대형 언어 모델 (120B 파라미터, 온프레미스)", status: "활성" },
   { id: "t8",  name: "Llama-3-Korean_70B",        type: "sLLM 엔진",  endpoint: "grpc://10.10.1.17:7008", latency: 820,  desc: "한국어 특화 Llama-3 기반 경량 sLLM (70B 파라미터)",            status: "활성" },
   { id: "t9",  name: "EXAONE-3_78B_sLLM",        type: "sLLM 엔진",  endpoint: "grpc://10.10.1.17:7009", latency: 940,  desc: "LG AI Research 한국어 특화 모델 (78B 파라미터)",               status: "활성" },
-  { id: "t10", name: "지오코딩_API_엔진",         type: "지도 API",   endpoint: "https://geo.krea.go.kr", latency: 43,   desc: "표준화 주소의 위경도 좌표·행정구역 코드 변환 서비스",            status: "활성" },
+  { id: "t10", name: "기준정보_매칭_엔진",         type: "지도 API",   endpoint: "grpc://10.10.1.20:7010", latency: 43,   desc: "표준화 주소의 위경도 좌표·행정구역 코드 변환 서비스",            status: "활성" },
 ];
 
 export const MY_RAG_INIT = [

@@ -12,7 +12,7 @@ const TYPE_STYLE = {
   "벡터 DB":   { icon: Database, color: "text-indigo-600", bg: "bg-indigo-100", border: "border-indigo-200", dot: "bg-indigo-400" },
   "보안 모듈": { icon: Shield,   color: "text-red-600",    bg: "bg-red-100",    border: "border-red-200",    dot: "bg-red-400" },
   "OCR 모듈":  { icon: ScanLine, color: "text-teal-600",   bg: "bg-teal-100",   border: "border-teal-200",   dot: "bg-teal-400" },
-  "주소 DB":   { icon: MapPin,   color: "text-rose-600",   bg: "bg-rose-100",   border: "border-rose-200",   dot: "bg-rose-400" },
+  "기준정보 DB": { icon: MapPin, color: "text-rose-600",   bg: "bg-rose-100",   border: "border-rose-200",   dot: "bg-rose-400" },
   "관계형 DB": { icon: Database, color: "text-cyan-600",   bg: "bg-cyan-100",   border: "border-cyan-200",   dot: "bg-cyan-400" },
   "STT 모듈":  { icon: Mic,      color: "text-purple-600", bg: "bg-purple-100", border: "border-purple-200", dot: "bg-purple-400" },
   "sLLM 엔진": { icon: Brain,    color: "text-blue-600",   bg: "bg-blue-100",   border: "border-blue-200",   dot: "bg-blue-400" },
@@ -24,8 +24,8 @@ const TOOL_ALIAS = {
   "GPT-OSS 120B":       "GPT-OSS_120B_sLLM",
   "Llama-3-Korean 70B": "Llama-3-Korean_70B",
   "EXAONE 3.0 78B":     "EXAONE-3_78B_sLLM",
-  "지오코딩_엔진":       "지오코딩_API_엔진",
-  "내장 DB 엔진":        "공시지가_정형DB",
+  "기준정보_엔진":       "기준정보_매칭_엔진",
+  "내장 DB 엔진":        "업무_정형DB",
 };
 
 const NO_MCP = new Set(["해당 없음", "내장 알고리즘"]);
@@ -92,17 +92,17 @@ function buildMcpCallLogs(mcp, step) {
         { msg: `← 200 OK  ${actualLat}ms`, detail: `status: DECRYPTED | drm_type: CreativeUC | audit_id: DRM-${rnd(10000,99999)}`, type: "mcp-res" },
       ];
     }
-    case "주소 DB": {
+    case "기준정보 DB": {
       const matchScore = rndF(0.94, 1.0, 2);
       return [
-        { msg: `→ POST ${ep}/v1/address/search`, detail: `query: "${step.prompt.slice(0,20)}..." | limit: 5 | fuzzy: true`, type: "mcp-req" },
-        { msg: `← 200 OK  ${actualLat}ms`, detail: `matches: 1건 | score: ${matchScore} | 법정동코드: 1168010${rnd(100,999)} | 출처: 행안부_도로명주소`, type: "mcp-res" },
+        { msg: `→ POST ${ep}/v1/master/search`, detail: `query: "${step.prompt.slice(0,20)}..." | limit: 5 | fuzzy: true`, type: "mcp-req" },
+        { msg: `← 200 OK  ${actualLat}ms`, detail: `matches: 1건 | score: ${matchScore} | 표준코드: STD-${rnd(10000,99999)} | 출처: 표준_기준정보_사전`, type: "mcp-res" },
       ];
     }
     case "관계형 DB": {
       const rows = rnd(12, 280);
       return [
-        { msg: `→ QUERY ${ep}/공시지가_정형DB`, detail: `SELECT * FROM std_land_price WHERE ... | params: 2 | pool: krea_primary`, type: "mcp-req" },
+        { msg: `→ QUERY ${ep}/업무_정형DB`, detail: `SELECT * FROM std_master WHERE ... | params: 2 | pool: primary`, type: "mcp-req" },
         { msg: `← OK  ${actualLat}ms`, detail: `rows: ${rows}건 | scan: index | cache: HIT | query_id: Q-${rnd(1000,9999)}`, type: "mcp-res" },
       ];
     }

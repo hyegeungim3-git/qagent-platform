@@ -179,12 +179,10 @@ const RightPanel = ({
             <div>
               <div className={cn("text-[11px] font-black uppercase tracking-wider mb-2", th.subtext)}>빠른 실행</div>
               <div className="flex flex-wrap gap-1.5">
-                {[
-                  { id: 'agent-chatbot',   label: '챗봇' },
-                  { id: 'agent-meeting',   label: '회의록' },
-                  { id: 'agent-knowledge', label: '지식 검색' },
-                  { id: 'agent-summary',   label: '문서 요약' },
-                ].map(a => (
+                {/* 라벨은 도메인 카탈로그를 따른다 — 코어 이름을 박아두면
+                    발주처 화면에 남의 에이전트 이름이 뜬다(실제 사고 이력) */}
+                {['agent-chatbot', 'agent-meeting', 'agent-knowledge', 'agent-summary']
+                  .map(id => ({ id, label: shortAgentName(domain, id) })).map(a => (
                   <button key={a.id} onClick={() => setActiveAgentId(a.id)}
                     className={cn("px-3 py-1.5 rounded-full text-[13px] font-bold border-2 transition-all",
                       isSecure ? "bg-[#0a0f1c] border-slate-700 text-slate-300 hover:border-indigo-600 hover:text-indigo-300"
@@ -512,7 +510,7 @@ const RightPanel = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Shield className={cn("w-4 h-4", isSecure ? "text-blue-400" : "text-indigo-600")} />
-                    <span className={cn("text-[13px] font-black", th.text)}>GenOS 관리자 시스템</span>
+                    <span className={cn("text-[13px] font-black", th.text)}>QAgent 관리자 시스템</span>
                   </div>
                   <button onClick={onSwitchToAdmin} className={cn("flex items-center gap-1.5 text-[13px] font-bold transition-colors", isSecure ? "text-blue-400 hover:text-blue-300" : "text-indigo-600 hover:text-indigo-800")}>
                     전환 <ExternalLink className="w-3.5 h-3.5" />

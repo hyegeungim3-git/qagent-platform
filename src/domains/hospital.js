@@ -13,7 +13,7 @@ const hospital = {
   id: "hospital",
   orgName: "새빛대학교병원",
   orgShort: "SUH",
-  platformTitle: "새빛대학교병원 의료 AI 플랫폼",
+  platformTitle: "새빛대학교병원 QAgent — 멀티 AI 에이전트 플랫폼",
   brandColor: "#0369A1",
   welcome: "새빛대학교병원 의료 생성형 AI 플랫폼에 오신 것을 환영합니다.",
   statusBadge: "시스템 정상 가동 중 · 로컬 LLM · 병원 내부망 전용 · 망분리 적용",

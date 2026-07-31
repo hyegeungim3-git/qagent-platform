@@ -14,7 +14,7 @@ export const target = {
   docSub: '제조 AI 전환(M.AX) 프로토타입 · 사용자 포털 · AI 에이전트 · 관리자',
   baseUrl: 'http://localhost:5173/',
   version: '',
-  accounts: {},                 // GenOS는 로그인 없음 — 전 화면 auth:'public'
+  accounts: {},                 // QAgent는 로그인 없음 — 전 화면 auth:'public'
   viewports: {
     desktop: { width: 1440, height: 900, deviceScaleFactor: 1 },
     mobile:  { width: 375,  height: 812, deviceScaleFactor: 2 },

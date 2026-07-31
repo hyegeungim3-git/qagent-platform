@@ -11,7 +11,7 @@ const civic = {
   id: "civic",
   orgName: "한성시청",
   orgShort: "HSC",
-  platformTitle: "한성시 스마트행정 AI 플랫폼",
+  platformTitle: "한성시 QAgent — 멀티 AI 에이전트 플랫폼",
   brandColor: "#166534",
   welcome: "한성시 스마트행정 생성형 AI 플랫폼에 오신 것을 환영합니다.",
   statusBadge: "시스템 정상 가동 중 · 로컬 LLM · 행정망 전용 · 망분리 적용",

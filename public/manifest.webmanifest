@@ -1,6 +1,6 @@
 {
-  "name": "GenOS — 멀티 도메인 생성형 AI 플랫폼",
-  "short_name": "GenOS",
+  "name": "QAgent — 멀티 도메인 생성형 AI 플랫폼",
+  "short_name": "QAgent",
   "description": "생성형 AI 플랫폼 데모 — 한국부동산원 · 한빛정밀 · 한성시청 도메인 팩",
   "start_url": "./",
   "scope": "./",

@@ -1,16 +1,16 @@
 /**
  * RootApp.jsx
- * GenOS 생성형 AI 플랫폼 — 최상위 진입점 (도메인 중립 코어)
- * 사용자 포털(UserApp) ↔ GenOS 관리자 시스템(App) 전환 + 도메인 팩 선택 관리
+ * QAgent 생성형 AI 플랫폼 — 최상위 진입점 (도메인 중립 코어)
+ * 사용자 포털(UserApp) ↔ QAgent 관리자 시스템(App) 전환 + 도메인 팩 선택 관리
  */
 import React, { useState, useEffect, Suspense, lazy } from "react";
 import { Shield, User, ArrowRight, Lock, CheckCircle2, Layers } from "lucide-react";
-import { DOMAINS, getDomain, getDomainList, getActiveDomainId, setActiveDomainId } from "./domains/index.js";
+import { DOMAINS, DOMAIN_LIST, getDomain, getDomainList, getActiveDomainId, setActiveDomainId } from "./domains/index.js";
 import { parseRoute, syncHash, sameRoute, DEFAULT_ADMIN_ID } from "./router.js";
 
 // 코드 스플리팅: 초기 로드 사이즈 축소
 const UserApp = lazy(() => import("./UserApp"));
-const GenOSAdmin = lazy(() => import("./App"));
+const QAgentAdmin = lazy(() => import("./App"));
 
 function cn(...classes) { return classes.filter(Boolean).join(" "); }
 
@@ -210,7 +210,7 @@ const LoadingFallback = ({ domain }) => (
     <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl mb-4 animate-pulse" style={{ backgroundColor: domain?.brandColor || "#003087" }}>
       <span className="text-2xl font-black text-white">{(domain?.orgShort || "G")[0]}</span>
     </div>
-    <p className="text-slate-500 font-bold text-[14px] tracking-wide">{domain?.orgShort || "GenOS"} · 로딩 중…</p>
+    <p className="text-slate-500 font-bold text-[14px] tracking-wide">{domain?.orgShort || "QAgent"} · 로딩 중…</p>
   </div>
 );
 
@@ -226,11 +226,11 @@ const RootApp = () => {
 
   const domainId = route.domainId;
   // 커스텀 팩(스튜디오)이 삭제된 직후에도 안전하도록 REB 폴백
-  const domain = getDomain(domainId) || DOMAINS.reb;
+  const domain = getDomain(domainId) || DOMAIN_LIST[0];
   const view = route.view;
 
   useEffect(() => {
-    document.title = `${domain.platformTitle} · ${domain.orgShort} GenOS`;
+    document.title = `${domain.platformTitle} · ${domain.orgShort} QAgent`;
   }, [domain]);
 
   // 상태 → 주소
@@ -275,7 +275,7 @@ const RootApp = () => {
   if (view === "ADMIN") {
     return (
       <Suspense fallback={<LoadingFallback domain={domain} />}>
-        <GenOSAdmin key={mountKey} domain={domain}
+        <QAgentAdmin key={mountKey} domain={domain}
           initialMenuId={route.adminId}
           onRouteChange={(adminId) => go({ adminId })}
           onSwitchToUser={() => go({ view: "USER" })}

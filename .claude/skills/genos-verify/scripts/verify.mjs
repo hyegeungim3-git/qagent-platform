@@ -16,13 +16,6 @@ const ONLY = process.argv[3] || null;
 // 도메인별 판정 기준 — 새 도메인 팩을 추가하면 여기에 항목을 추가하라 (index.js 등록과 나란히)
 const DOMAINS = [
   {
-    id: "reb", label: "한국부동산원",
-    banned: ["KOGAS", "kogas", "한빛정밀", "한성시청", "HBP-", "HSC-", "새빛대학교병원", "SUH-"],
-    generalMarkers: ["한국부동산원", "오늘의 업무 브리핑", "실거래 이상거래 탐지"],
-    hubMarkers: ["공시지가 이의신청 서류 일괄 처리", "실거래 신고 이상거래 검증"],
-    orchCards: 2,
-  },
-  {
     id: "manufacturing", label: "한빛정밀",
     banned: ["KOGAS", "kogas", "한국부동산원", "공시지가", "표준지", "KREA-", "한성시청", "HSC-", "새빛대학교병원", "SUH-"],
     generalMarkers: ["한빛정밀", "오늘의 업무 브리핑", "설비 데이터 진단", "도면 설계 지원", "AX 로드맵", "데이터 보안"],
@@ -160,11 +153,12 @@ async function scanDomain(browser, d) {
        쓰므로 '안쪽 화면이 코어 기본 이름을 그대로 노출'하는 실제 결함을 못 잡았다.
        지금은 화면 어디든 '코어 기본 에이전트 이름'이 보이면서 그 이름이 이 도메인의
        카탈로그 이름이 아닐 때 불일치로 본다(팩이 같은 이름을 의도적으로 쓰는 경우는 통과). */
-    if (d.id !== "reb") {
-      for (const n of leakNames) {
-        if (info.text.includes(n)) {
-          fails.push(`${id} 내부에 코어 기본 이름 노출: "${n}" (이 도메인 카탈로그에 없는 이름)`);
-        }
+    /* 줄 단위 '완전 일치'로 본다 — 부분 일치는 버튼 문구까지 걸린다
+       (예: 코어명 '안전관리계획 수립' ⊂ 버튼 '안전관리계획 수립 시작'). */
+    const lines = new Set(info.text.split("\n").map(t => t.trim()));
+    for (const n of leakNames) {
+      if (lines.has(n)) {
+        fails.push(`${id} 내부에 코어 기본 이름 노출: "${n}" (이 도메인 카탈로그에 없는 이름)`);
       }
     }
   }

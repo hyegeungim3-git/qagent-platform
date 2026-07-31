@@ -429,7 +429,7 @@ export let MOCK_ABUSE_ALERTS = [
   {id:'ab-003',user:'장영수',ip:'10.20.30.75',type:'대량 추출',detail:'1시간 내 엑셀 추출 8회 (일 평균 0.3회)',detected:'2026-02-23 14:40',status:'모니터링',severity:'정보'},
 ];
 export let MOCK_APIS = [
-  {id:'api-001',name:'GeNOS Chat API',endpoint:'/api/v1/chat',version:'v1.2',auth:'Bearer Token',status:'활성',callsToday:28420,approvedDate:'2026-01-05'},
+  {id:'api-001',name:'QAgent Chat API',endpoint:'/api/v1/chat',version:'v1.2',auth:'Bearer Token',status:'활성',callsToday:28420,approvedDate:'2026-01-05'},
   {id:'api-002',name:'RAG 검색 API',endpoint:'/api/v1/rag/search',version:'v1.0',auth:'Bearer Token',status:'활성',callsToday:12880,approvedDate:'2026-01-05'},
   {id:'api-003',name:'임베딩 API',endpoint:'/api/v1/embed',version:'v1.1',auth:'API Key',status:'활성',callsToday:4820,approvedDate:'2026-01-12'},
   {id:'api-004',name:'에이전트 실행 API',endpoint:'/api/v1/agent/run',version:'v0.9',auth:'Bearer Token',status:'베타',callsToday:1940,approvedDate:'2026-02-01'},
@@ -493,7 +493,7 @@ export let MOCK_QUALITY_REVIEWS = [
 ];
 
 export let MOCK_ANNOUNCEMENTS = [
-  {id:1,title:'GenOS AI 플랫폼 정식 오픈 안내',category:'공지',status:'Running',startDate:'2026-02-01',endDate:'2026-03-01',author:'한서윤',views:452},
+  {id:1,title:'QAgent AI 플랫폼 정식 오픈 안내',category:'공지',status:'Running',startDate:'2026-02-01',endDate:'2026-03-01',author:'한서윤',views:452},
   {id:2,title:'시스템 정기 점검 안내 (2/15 02:00~06:00)',category:'점검',status:'Running',startDate:'2026-02-13',endDate:'2026-02-15',author:'한서윤',views:128},
   {id:3,title:'신규 모델 Solar-10.7B 서비스 추가',category:'업데이트',status:'Running',startDate:'2026-02-10',endDate:'2026-02-28',author:'김영빈',views:89},
   {id:4,title:'개인 지식영역 기능 출시',category:'업데이트',status:'Stopped',startDate:'2026-01-15',endDate:'2026-02-01',author:'김영빈',views:310},
@@ -643,7 +643,7 @@ export let MOCK_AIACT_SYSTEMS = [
      {k:'사람의 관리·감독 체계(최종 검증 인력 지정)',done:true},
      {k:'안전성·신뢰성 확보 조치 문서 작성·보관',done:false},
    ]},
-  {id:'hi-005',name:'GenOS 업무지원 챗봇',dept:'AI활용 업무혁신 TF',status:'비해당',confirmedAt:'2026-01-28',manager:'김영빈 팀장',
+  {id:'hi-005',name:'QAgent 업무지원 챗봇',dept:'AI활용 업무혁신 TF',status:'비해당',confirmedAt:'2026-01-28',manager:'김영빈 팀장',
    purpose:'임직원 내부 업무 질의응답·문서 초안 작성 보조',
    basis:'내부 업무 보조 목적 — 국민의 생명·신체·기본권에 미치는 영향 없음',
    measures:[
@@ -666,7 +666,7 @@ export let MOCK_AIACT_SYSTEMS = [
 ];
 
 export let MOCK_AIACT_LABELING = [
-  {id:'lb-01',target:'GenOS 채팅 응답',type:'텍스트',method:'응답 하단 고지문 자동 삽입',enabled:true,coverage:100,weekly:12840},
+  {id:'lb-01',target:'QAgent 채팅 응답',type:'텍스트',method:'응답 하단 고지문 자동 삽입',enabled:true,coverage:100,weekly:12840},
   {id:'lb-02',target:'보고서 생성 에이전트 산출물',type:'문서',method:'표지 고지문 + 문서 속성 메타데이터 기록',enabled:true,coverage:100,weekly:342},
   {id:'lb-03',target:'회의록 초안',type:'문서',method:'머리말(헤더) 고지문 삽입',enabled:true,coverage:98.2,weekly:156},
   {id:'lb-04',target:'데이터 분석 차트 이미지',type:'이미지',method:'비가시성 워터마크(C2PA 메타데이터)',enabled:true,coverage:94.6,weekly:88},
@@ -782,7 +782,7 @@ export let ADMIN_USER_GROUPS = [
   {name:'외부 협력업체',type:'외부 그룹',members:12,areas:['교육자료 (일부)'],perms:'제한적 읽기'},
 ];
 // AI기본법 텍스트·문서 표준 고지문 — string, 'ⓘ ' 접두는 페이지 소유 (compliance.jsx)
-export let AIACT_STD_PHRASE = '본 내용은 한국부동산원 생성형 AI 플랫폼(GenOS)을 활용하여 작성되었습니다. 중요한 의사결정에는 담당자의 검토·확인이 필요합니다.';
+export let AIACT_STD_PHRASE = '본 내용은 한국부동산원 생성형 AI 플랫폼(QAgent)을 활용하여 작성되었습니다. 중요한 의사결정에는 담당자의 검토·확인이 필요합니다.';
 
 // MCP 서버 목록 — {id,n:서버명,u:URL,t:연결 도구,s:상태}[3] (deployment MCPServerPage)
 export let ADMIN_MCP_SERVERS = [

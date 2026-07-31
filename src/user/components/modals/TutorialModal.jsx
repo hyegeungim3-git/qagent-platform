@@ -16,7 +16,7 @@ const TutorialModal = ({ onClose }) => (
           </div>
           <div>
             <h3 className="text-xl font-black text-slate-800">사용 가이드</h3>
-            <p className="text-[13px] text-slate-500 font-medium">GeNOS AI 플랫폼 주요 기능 안내</p>
+            <p className="text-[13px] text-slate-500 font-medium">QAgent AI 플랫폼 주요 기능 안내</p>
           </div>
         </div>
         <button onClick={onClose} aria-label="닫기" className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"><X className="w-5 h-5" /></button>

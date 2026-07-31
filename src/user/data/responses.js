@@ -146,7 +146,7 @@ b{font-weight:900;color:${bc}}
     <tr>${apvSig}</tr>
     <tr>${apvDate}</tr>
   </table>
-  <div class="ai-note">⚠️ 본 문서는 GenOS AI 에이전트가 자동 생성한 초안입니다. 공식 문서로 활용 전 반드시 내용을 검토하고 담당자의 최종 승인을 받으시기 바랍니다.</div>
+  <div class="ai-note">⚠️ 본 문서는 QAgent AI 에이전트가 자동 생성한 초안입니다. 공식 문서로 활용 전 반드시 내용을 검토하고 담당자의 최종 승인을 받으시기 바랍니다.</div>
 </div>
 </body></html>`;
 };

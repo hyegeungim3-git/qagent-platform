@@ -80,7 +80,7 @@ const Field = ({ label, value, onChange, placeholder, wide }) => (
 
 export const PackStudioPage = () => {
   const [saved, setSaved] = useState(loadCustomPack);
-  const [form, setForm] = useState(() => (loadCustomPack() ? formFromSaved(loadCustomPack()) : emptyForm('reb')));
+  const [form, setForm] = useState(() => (loadCustomPack() ? formFromSaved(loadCustomPack()) : emptyForm('manufacturing')));
   const [banner, setBanner] = useState(null);
   const [showJson, setShowJson] = useState(false);
   const base = DOMAINS[form.baseId];
