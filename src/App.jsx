@@ -17,6 +17,8 @@ import { SecurityArchPage } from './admin/pages/security.jsx';
 import { PredictionOpsPage } from './admin/pages/predops.jsx';
 import { DataCatalogPage } from './admin/pages/catalog.jsx';
 import { AugmentStrategyPage } from './admin/pages/augment.jsx';
+import { SafetyActPage } from './admin/pages/safetyact.jsx';
+import { ReproPage } from './admin/pages/repro.jsx';
 import { SystemMonitorPage, AdminPage, UserPage, ConnectedMonitorPage } from './admin/pages/system.jsx';
 import { LlmTraining, VlmTraining, EmbeddingPage, RerankingPage, LeaderboardPage, EvalMetricsPage } from './admin/pages/training.jsx';
 import { ApprovalPage, QuotaPage, UserManagementPage, AccessLogPage, AccessSecurityPage, WorkLogPage, UsageMonitorPage, HrSyncPage } from './admin/pages/users.jsx';
@@ -87,7 +89,11 @@ const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChang
       {id:'guardrail.log',    label:'탐지 로그'},
     ]},
     {id:'security.arch', label:'보안 아키텍처', icon:Network},
-    {id:'aiact', label:'AI 기본법 대응', icon:Scale},
+    {id:'compliance', label:'규제 대응', icon:Scale, children:[
+      {id:'aiact',     label:'AI 기본법 대응'},
+      {id:'safetyact', label:'중대재해처벌법 대응'},
+      {id:'repro',     label:'답변 재현성'},
+    ]},
     {id:'packstudio', label:'도메인 팩 스튜디오', icon:LayoutGrid},
     {id:'deploy', label:'도구 · 배포', icon:Wrench, children:[
       {id:'deploy.tools.mcp',    label:'MCP 도구'},
@@ -167,7 +173,7 @@ const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChang
     'eval.leaderboard':<LeaderboardPage/>,'eval.metrics':<EvalMetricsPage/>,'eval.predops':<PredictionOpsPage/>,
     'guardrail.filter':<GuardrailFilterPage/>,'guardrail.log':<GuardrailLogPage/>,
     'security.arch':<SecurityArchPage/>,
-    'aiact':<AiActCompliancePage/>,
+    'aiact':<AiActCompliancePage/>,'safetyact':<SafetyActPage/>,'repro':<ReproPage/>,
     'packstudio':<PackStudioPage/>,
     'deploy.tools.mcp':<MCPToolsPage/>,'deploy.tools.server':<MCPServerPage/>,'deploy.tools.prompt':<PromptLibraryPage/>,
     'deploy.serving':<ServingPage/>,

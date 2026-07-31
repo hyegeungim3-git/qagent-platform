@@ -198,6 +198,69 @@ export let MOCK_CAG_CACHE = [
   {id:'cc-2',name:'업무 처리 절차',tokens:'28K',loaded:'2026-03-15 02:10',sourceRev:'v2 (2026-03-14)',status:'최신',hits:640},
   {id:'cc-3',name:'자주 묻는 질문 모음',tokens:'16K',loaded:'2026-02-20 02:10',sourceRev:'v7 (2026-03-25)',status:'재적재 필요',hits:310},
 ];
+/* ==================== 중대재해처벌법 대응 ====================
+   시행령 제4조의 안전보건 확보 의무 9개 호가 뼈대다.
+   이 플랫폼의 값어치는 '문서를 새로 만드는 것'이 아니라, 위험성평가·작업지시·
+   교육·점검이 돌아가면서 이행 증빙이 자동으로 쌓인다는 데 있다.
+   코어 기본값은 도메인 중립이고 팩이 자기 현장 기준을 공급한다. */
+export let MOCK_SAFETY_DUTIES = [
+  {id:'sd-1',clause:'제1호',name:'안전보건 목표·경영방침 설정',status:'이행',
+   evidence:'2026년 안전보건 경영방침 공표',last:'2026-01-05',owner:'경영지원팀',auto:false},
+  {id:'sd-2',clause:'제2호',name:'안전보건 전담 조직 구성',status:'이행',
+   evidence:'안전보건 전담 조직 지정서',last:'2026-01-10',owner:'경영지원팀',auto:false},
+  {id:'sd-3',clause:'제3호',name:'유해·위험요인 확인·개선 절차',status:'이행',
+   evidence:'위험성평가 실시 이력 (플랫폼 자동 축적)',last:'2026-03-28',owner:'안전 담당',auto:true},
+  {id:'sd-4',clause:'제4호',name:'안전보건 예산 편성·집행',status:'이행',
+   evidence:'2026년 안전보건 예산 집행 내역',last:'2026-03-31',owner:'경영지원팀',auto:false},
+  {id:'sd-5',clause:'제5호',name:'안전보건관리책임자 권한·평가',status:'주의',
+   evidence:'반기 평가 미실시 — 상반기 평가 예정',last:'2025-12-20',owner:'경영지원팀',auto:false},
+  {id:'sd-6',clause:'제6호',name:'안전보건 전문인력 배치',status:'이행',
+   evidence:'전문인력 배치 현황',last:'2026-02-01',owner:'경영지원팀',auto:false},
+  {id:'sd-7',clause:'제7호',name:'종사자 의견 청취 절차',status:'이행',
+   evidence:'의견 접수·처리 이력 (플랫폼 자동 축적)',last:'2026-03-30',owner:'안전 담당',auto:true},
+  {id:'sd-8',clause:'제8호',name:'중대재해 대응 매뉴얼',status:'이행',
+   evidence:'비상 대응 매뉴얼 및 훈련 기록',last:'2026-02-14',owner:'안전 담당',auto:false},
+  {id:'sd-9',clause:'제9호',name:'도급·용역·위탁 안전 평가기준',status:'주의',
+   evidence:'수급업체 평가 기준 있음 — 최근 평가 미실시 1개사',last:'2026-01-28',owner:'구매 담당',auto:false},
+];
+// 위험성평가 이행 이력 — 플랫폼이 자동으로 남기는 증빙
+export let MOCK_SAFETY_RISK_LOG = [
+  {id:'rl-1',task:'정기 설비 정비 작업',doc:'ORG-안전-2026-031',assessed:'2026-03-28',by:'안전 담당',risks:3,actions:3,status:'조치 완료'},
+  {id:'rl-2',task:'고소 작업',doc:'ORG-안전-2026-027',assessed:'2026-03-14',by:'안전 담당',risks:4,actions:3,status:'조치 중'},
+];
+// 교육·점검 이력
+export let MOCK_SAFETY_TRAINING = [
+  {id:'tr-1',name:'정기 안전보건교육 (1분기)',target:'전 종사자',done:142,total:150,date:'2026-03-20',status:'진행 중'},
+  {id:'tr-2',name:'신규 채용자 안전교육',target:'신규 입사자',done:8,total:8,date:'2026-03-05',status:'완료'},
+];
+/* ==================== 답변 재현성 스냅샷 ====================
+   품질 기록은 5년 보존이고 ISO·IATF 심사 대상이다. 그런데 "그때 그 답변이
+   왜 그랬나"는 질의·답변만 남겨선 재현되지 않는다 — 모델 버전, 지식베이스
+   리비전, 검색된 근거 문서, 프롬프트·파라미터, 가드레일 규칙이 함께 있어야 한다.
+   재현을 시도했을 때 지금 구성과 무엇이 달라졌는지 정직하게 보여주는 게 핵심이다. */
+export let MOCK_REPRO_SNAPSHOTS = [
+  {id:'sn-1',at:'2026-03-31 14:22',question:'사내 규정상 처리 절차가 어떻게 되나요?',
+   strategy:'CAG',model:'Llama-3-Korean 70B',modelVer:'v1.4',kbRev:'kb-2026.03.27',
+   promptVer:'p-2.1',temp:0.2,guardrailVer:'g-1.8',confidence:92,
+   sources:[{name:'업무 처리 절차',rev:'v2 (2026-03-14)'}],
+   reproducible:true,drift:[]},
+  {id:'sn-2',at:'2026-03-24 09:05',question:'최근 분기 실적 추이를 알려주세요',
+   strategy:'TAG',model:'GPT-OSS 120B',modelVer:'v2.2',kbRev:'kb-2026.03.20',
+   promptVer:'p-2.0',temp:0.1,guardrailVer:'g-1.7',confidence:88,
+   sources:[{name:'업무 실적 집계',rev:'2026-03-24 마감'}],
+   reproducible:false,drift:['모델 v2.2 → v2.3 교체됨','프롬프트 p-2.0 → p-2.1 개정','원천 테이블이 이후 재마감됨']},
+  {id:'sn-3',at:'2026-02-11 16:40',question:'관련 지침 문서를 찾아주세요',
+   strategy:'RAG',model:'GPT-OSS 120B',modelVer:'v2.1',kbRev:'kb-2026.02.05',
+   promptVer:'p-1.9',temp:0.3,guardrailVer:'g-1.6',confidence:76,
+   sources:[{name:'사내 규정·지침 문서',rev:'v3 (2026-01-30)'}],
+   reproducible:false,drift:['지식베이스 재색인(kb-2026.02.05 → kb-2026.03.27)','가드레일 규칙 g-1.6 → g-1.8']},
+];
+// 보존 정책 — 심사 대응 기준
+export let MOCK_REPRO_POLICY = {
+  retentionYears: 5, captured: '전체 질의', excluded: '보안(무저장) 세션',
+  items: ['질의·답변 원문', '모델 식별자·버전', '지식베이스 리비전', '검색된 근거 문서와 그 개정 버전',
+          '프롬프트 템플릿 버전', '생성 파라미터', '가드레일 규칙 버전', '응답 신뢰도'],
+};
 // ==================== LLM ADMIN MOCK DATA ====================
 export let MOCK_LLM_ADMIN_MODELS = [
   {id:'m-001',name:'GPT-OSS-120B',baseModel:'Meta-Llama-3-405B-Instruct',version:'v2.4.1',
@@ -917,6 +980,8 @@ export let ADMIN_MCP_SERVERS = [
    ════════════════════════════════════════════════════════════════ */
 // __RESOLVER_START__
 const __REB_DEFAULTS = {
+  MOCK_REPRO_SNAPSHOTS, MOCK_REPRO_POLICY,
+  MOCK_SAFETY_DUTIES, MOCK_SAFETY_RISK_LOG, MOCK_SAFETY_TRAINING,
   MOCK_AUG_STRATEGIES, MOCK_AUG_ROUTES, MOCK_CAG_CACHE,
   MOCK_DATA_ASSETS, MOCK_DATA_LINEAGE,
   MOCK_PRED_MODELS, MOCK_PRED_TREND, MOCK_PRED_DRIFT, MOCK_RETRAIN_RUNS,
@@ -1004,6 +1069,11 @@ const __REB_DEFAULTS = {
 
 export function applyAdminDomain(domain) {
   const o = (domain && domain.adminContent) || {};
+  MOCK_REPRO_SNAPSHOTS = o.MOCK_REPRO_SNAPSHOTS !== undefined ? o.MOCK_REPRO_SNAPSHOTS : __REB_DEFAULTS.MOCK_REPRO_SNAPSHOTS;
+  MOCK_REPRO_POLICY = o.MOCK_REPRO_POLICY !== undefined ? o.MOCK_REPRO_POLICY : __REB_DEFAULTS.MOCK_REPRO_POLICY;
+  MOCK_SAFETY_DUTIES = o.MOCK_SAFETY_DUTIES !== undefined ? o.MOCK_SAFETY_DUTIES : __REB_DEFAULTS.MOCK_SAFETY_DUTIES;
+  MOCK_SAFETY_RISK_LOG = o.MOCK_SAFETY_RISK_LOG !== undefined ? o.MOCK_SAFETY_RISK_LOG : __REB_DEFAULTS.MOCK_SAFETY_RISK_LOG;
+  MOCK_SAFETY_TRAINING = o.MOCK_SAFETY_TRAINING !== undefined ? o.MOCK_SAFETY_TRAINING : __REB_DEFAULTS.MOCK_SAFETY_TRAINING;
   MOCK_AUG_STRATEGIES = o.MOCK_AUG_STRATEGIES !== undefined ? o.MOCK_AUG_STRATEGIES : __REB_DEFAULTS.MOCK_AUG_STRATEGIES;
   MOCK_AUG_ROUTES = o.MOCK_AUG_ROUTES !== undefined ? o.MOCK_AUG_ROUTES : __REB_DEFAULTS.MOCK_AUG_ROUTES;
   MOCK_CAG_CACHE = o.MOCK_CAG_CACHE !== undefined ? o.MOCK_CAG_CACHE : __REB_DEFAULTS.MOCK_CAG_CACHE;

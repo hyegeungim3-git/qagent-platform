@@ -2620,6 +2620,74 @@ LIMIT 50;`,
   adminContent: {
     ADMIN_PERSONA: { name: '서동현', role: '관리자', dept: '스마트팩토리 혁신 TF', email: 'seo@hbp.co.kr' },
 
+    /* ── 답변 재현성 스냅샷 — 품질 기록 5년 보존·IATF 심사 대응.
+       증강 전략(RAG·CAG·TAG)·카탈로그 자산 리비전·모델 버전과 같은 값을 참조한다. */
+    MOCK_REPRO_SNAPSHOTS: [
+      {id:'sn-1',at:'2026-03-31 14:22',question:'절삭유 교체 주기와 농도 관리 기준은?',
+       strategy:'CAG',model:'Llama-3-Korean 70B',modelVer:'v1.4',kbRev:'kb-2026.03.30',
+       promptVer:'p-2.1',temp:0.2,guardrailVer:'g-1.8',confidence:96,
+       sources:[{name:'작업표준(SOP) 핵심 발췌',rev:'v12 (2026-03-29)'}],
+       reproducible:true,drift:[]},
+      {id:'sn-2',at:'2026-03-24 09:05',question:'2공장 프레스 라인 주간 불량률 알려줘',
+       strategy:'TAG',model:'GPT-OSS 120B',modelVer:'v2.2',kbRev:'kb-2026.03.20',
+       promptVer:'p-2.0',temp:0.1,guardrailVer:'g-1.7',confidence:89,
+       sources:[{name:'MES 생산·품질 실적',rev:'2026-03-24 마감분'}],
+       reproducible:false,
+       drift:['모델 v2.2 → v2.3 교체됨','프롬프트 p-2.0 → p-2.1 개정','MES 실적이 이후 재마감되어 원천 수치가 갱신됨']},
+      {id:'sn-3',at:'2026-03-18 11:40',question:'브래킷 M-318과 유사한 도면을 찾아줘',
+       strategy:'RAG',model:'GPT-OSS 120B',modelVer:'v2.2',kbRev:'kb-2026.03.02',
+       promptVer:'p-2.0',temp:0.3,guardrailVer:'g-1.7',confidence:91,
+       sources:[{name:'설계 도면 온톨로지',rev:'12,180장 색인 (2026-03-02)'}],
+       reproducible:false,
+       drift:['도면 온톨로지 재색인 — 12,180장 → 12,400장','모델 v2.2 → v2.3 교체됨','가드레일 g-1.7 → g-1.8']},
+      {id:'sn-4',at:'2026-02-26 15:10',question:'금형 교체 작업 위험성평가 항목을 정리해줘',
+       strategy:'CAG',model:'Llama-3-Korean 70B',modelVer:'v1.4',kbRev:'kb-2026.02.20',
+       promptVer:'p-1.9',temp:0.2,guardrailVer:'g-1.6',confidence:94,
+       sources:[{name:'산업안전 규정·LOTO 절차',rev:'v5 (2026-03-20)'}],
+       reproducible:false,
+       drift:['안전 규정 v4 → v5 개정 (캐시 재적재됨)','프롬프트 p-1.9 → p-2.1 개정']},
+    ],
+    MOCK_REPRO_POLICY: {
+      retentionYears: 5, captured: '전체 질의·시나리오 산출물', excluded: '보안(무저장) 세션',
+      items: ['질의·답변 원문', '모델 식별자·버전', '지식베이스 리비전', '검색된 근거 도면·문서와 개정 버전',
+              '증강 전략(RAG/CAG/TAG)', '프롬프트 템플릿 버전', '생성 파라미터', '가드레일 규칙 버전', '응답 신뢰도'],
+    },
+
+    /* ── 중대재해처벌법 대응 — 프레스·열처리 현장 기준.
+       위험성평가 이력은 위험성평가 에이전트·작업지시(HBP-안전-2026-034)와 같은 세계관. */
+    MOCK_SAFETY_DUTIES: [
+      {id:'sd-1',clause:'제1호',name:'안전보건 목표·경영방침 설정',status:'이행',
+       evidence:"2026년 안전보건 경영방침 공표 ('무재해 사업장' 목표)",last:'2026-01-05',owner:'경영지원팀',auto:false},
+      {id:'sd-2',clause:'제2호',name:'안전보건 전담 조직 구성',status:'이행',
+       evidence:'안전환경팀 전담 조직 지정 (7명)',last:'2026-01-10',owner:'경영지원팀',auto:false},
+      {id:'sd-3',clause:'제3호',name:'유해·위험요인 확인·개선 절차',status:'이행',
+       evidence:'위험성평가 실시 이력 — 금형 교체·정비 작업 등 (플랫폼 자동 축적)',last:'2026-03-31',owner:'안전환경팀 오세훈',auto:true},
+      {id:'sd-4',clause:'제4호',name:'안전보건 예산 편성·집행',status:'이행',
+       evidence:'2026년 안전보건 예산 4.2억 · 집행률 24%',last:'2026-03-31',owner:'경영지원팀',auto:false},
+      {id:'sd-5',clause:'제5호',name:'안전보건관리책임자 권한·평가',status:'주의',
+       evidence:'반기 평가 미실시 — 상반기 평가 6월 예정',last:'2025-12-20',owner:'경영지원팀',auto:false},
+      {id:'sd-6',clause:'제6호',name:'안전보건 전문인력 배치',status:'이행',
+       evidence:'안전관리자 2명·보건관리자 1명 배치 (7개 사업장)',last:'2026-02-01',owner:'경영지원팀',auto:false},
+      {id:'sd-7',clause:'제7호',name:'종사자 의견 청취 절차',status:'이행',
+       evidence:'현장 의견 접수·처리 이력 — 3/14 공정회의 안건 반영 (플랫폼 자동 축적)',last:'2026-03-30',owner:'안전환경팀',auto:true},
+      {id:'sd-8',clause:'제8호',name:'중대재해 대응 매뉴얼·훈련',status:'이행',
+       evidence:'비상 대응 매뉴얼 v3 · 프레스 협착 사고 대응 훈련 실시',last:'2026-02-14',owner:'안전환경팀',auto:false},
+      {id:'sd-9',clause:'제9호',name:'도급·용역·위탁 안전 평가기준',status:'주의',
+       evidence:'수급업체 안전평가 기준 운영 중 — 설비 보전 외주 1개사 최근 평가 미실시',last:'2026-01-28',owner:'구매팀',auto:false},
+    ],
+    MOCK_SAFETY_RISK_LOG: [
+      {id:'rl-1',task:'금형 교체(SMED) 작업',doc:'HBP-안전-2026-034',assessed:'2026-03-31',by:'안전환경팀 오세훈',risks:5,actions:5,status:'조치 완료'},
+      {id:'rl-2',task:'PRS-C03 크랭크축 베어링 교체',doc:'HBP-안전-2026-031',assessed:'2026-03-21',by:'안전환경팀 오세훈',risks:4,actions:4,status:'조치 완료'},
+      {id:'rl-3',task:'침탄로 고온부 점검',doc:'HBP-안전-2026-028',assessed:'2026-03-12',by:'안전환경팀 오세훈',risks:6,actions:4,status:'조치 중'},
+      {id:'rl-4',task:'프레스 라인 소음·분진 작업환경 측정',doc:'HBP-안전-2026-022',assessed:'2026-02-26',by:'안전환경팀',risks:3,actions:3,status:'조치 완료'},
+    ],
+    MOCK_SAFETY_TRAINING: [
+      {id:'tr-1',name:'정기 안전보건교육 (1분기)',target:'전 종사자',done:284,total:312,date:'2026-03-20',status:'진행 중'},
+      {id:'tr-2',name:'프레스 특별안전교육 (협착 위험)',target:'프레스 라인 작업자',done:48,total:48,date:'2026-03-06',status:'완료'},
+      {id:'tr-3',name:'열처리 고온 작업 안전교육',target:'열처리 작업자',done:22,total:22,date:'2026-02-27',status:'완료'},
+      {id:'tr-4',name:'수급업체 안전보건 교육',target:'협력사·외주 인력',done:31,total:44,date:'2026-03-25',status:'진행 중'},
+    ],
+
     /* ── 지식 증강 전략 (RAG·CAG·TAG) ──
        제조 업무별로 성격이 갈린다: 도면은 검색(RAG), 작업표준은 캐시(CAG),
        생산 실적은 집계(TAG). 카탈로그의 자산 태그(RAG/CAG/TAG 대상)와 짝을 이룬다. */
