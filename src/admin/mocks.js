@@ -137,6 +137,67 @@ export let MOCK_RETRAIN_RUNS = [
    champion:8.9,challenger:8.4,verdict:'승격 완료',note:'v2.3으로 배포됨'},
 ];
 
+/* ==================== 데이터 카탈로그 · 리니지 ====================
+   "어떤 데이터 자산이 있고(카탈로그), 그게 어디서 와서 어디로 가는가(리니지)".
+   답변 근거의 역추적·표준화 진척·망 경계 통과 여부가 전부 여기에 걸린다.
+   코어 기본값은 도메인 중립이고 팩이 자기 자산을 공급한다. */
+export let MOCK_DATA_ASSETS = [
+  {id:'as-1',name:'사내 규정·지침 문서',source:'문서관리시스템',owner:'경영지원팀',grade:'내부',
+   format:'PDF·HWP',volume:'문서 1,240건',cycle:'수시',freshness:'2일 전',quality:92,standardized:100,
+   tags:['RAG 대상','규정'],consumers:['지식 검색','내규 조회']},
+  {id:'as-2',name:'업무 실적 집계',source:'업무 시스템 DB',owner:'기획팀',grade:'대외비',
+   format:'관계형 테이블',volume:'월 12,400행',cycle:'일 1회',freshness:'8시간 전',quality:88,standardized:74,
+   tags:['TAG 대상','집계'],consumers:['데이터 조회','보고서 작성']},
+  {id:'as-3',name:'스캔 문서 이미지',source:'스캐너·업로드',owner:'총무팀',grade:'내부',
+   format:'이미지',volume:'월 286건',cycle:'수시',freshness:'1일 전',quality:71,standardized:45,
+   tags:['OCR 대상'],consumers:['문서 인식(OCR)']},
+];
+export let MOCK_DATA_LINEAGE = {
+  'as-1':{upstream:[{name:'부서별 규정 원본',type:'파일'},{name:'개정 이력',type:'문서'}],
+    stages:[{name:'수집',desc:'문서관리시스템 연동 수집',tool:'커넥터'},
+            {name:'청킹',desc:'조항 단위 분할(512토큰)',tool:'RAG 파이프라인'},
+            {name:'임베딩',desc:'벡터 생성·색인',tool:'임베딩 엔진'}],
+    downstream:[{name:'지식 검색 에이전트',type:'에이전트'},{name:'내규 조회 에이전트',type:'에이전트'}]},
+  'as-2':{upstream:[{name:'업무 시스템 원장',type:'DB'}],
+    stages:[{name:'추출',desc:'일 1회 배치 추출',tool:'ETL'},
+            {name:'표준화',desc:'코드·단위 표준 매핑',tool:'기준정보 사전'},
+            {name:'적재',desc:'분석 DB 적재',tool:'분석 DB'}],
+    downstream:[{name:'데이터 조회 에이전트',type:'에이전트'},{name:'보고서 작성',type:'에이전트'}]},
+  'as-3':{upstream:[{name:'스캔 원본',type:'이미지'}],
+    stages:[{name:'전처리',desc:'기울기·노이즈 보정',tool:'이미지 전처리'},
+            {name:'OCR',desc:'문자·표 인식',tool:'Vision OCR'}],
+    downstream:[{name:'문서 인식 에이전트',type:'에이전트'}]},
+};
+
+/* ==================== 지식 증강 전략 (RAG · CAG · TAG) ====================
+   셋은 경쟁 관계가 아니라 용도가 다른 도구다.
+     RAG 검색 후 생성 — 크고 검색이 필요한 비정형 지식
+     CAG 캐시에 미리 적재해 검색 없이 생성 — 작고 잘 안 바뀌고 자주 참조되는 지식
+     TAG 자연어를 SQL로 바꿔 실행 — 수치는 검색이 아니라 계산해야 한다
+   어떤 질의를 어느 전략으로 보낼지(라우팅)와 그 결과를 관리하는 데이터. */
+export let MOCK_AUG_STRATEGIES = [
+  {id:'rag',name:'RAG',full:'Retrieval-Augmented Generation',desc:'벡터 검색으로 근거 문서를 찾아 답변',
+   targets:['사내 규정·지침'],share:62,avgLatency:1180,hitRate:88,costPer1k:'₩24',
+   strength:'문서가 많고 자주 갱신돼도 대응',caveat:'검색 지연이 있고 청킹 품질에 좌우된다'},
+  {id:'cag',name:'CAG',full:'Cache-Augmented Generation',desc:'지식을 캐시에 미리 적재해 검색 없이 답변',
+   targets:['자주 쓰는 표준 문서'],share:23,avgLatency:340,hitRate:95,costPer1k:'₩11',
+   strength:'검색 단계가 없어 빠르고 답변이 일관된다',caveat:'적재 용량 한계 — 원문이 바뀌면 재적재해야 한다'},
+  {id:'tag',name:'TAG',full:'Table-Augmented Generation',desc:'자연어를 SQL로 변환해 정형 데이터를 집계',
+   targets:['업무 실적 테이블'],share:15,avgLatency:860,hitRate:91,costPer1k:'₩18',
+   strength:'수치를 계산해 답하므로 집계·비교에 정확',caveat:'스키마·기준정보가 표준화돼 있어야 한다'},
+];
+// 라우팅 규칙 — 위에서부터 먼저 맞는 규칙이 적용된다
+export let MOCK_AUG_ROUTES = [
+  {id:'rt-1',order:1,when:'수치·집계·비교를 묻는 질의',keywords:'건수, 비율, 추이, 대비, 합계',strategy:'TAG',hits:1240,enabled:true},
+  {id:'rt-2',order:2,when:'표준 문서·규정 조회',keywords:'기준, 절차, 규정, 지침, 주기',strategy:'CAG',hits:1860,enabled:true},
+  {id:'rt-3',order:3,when:'그 외 문서 근거가 필요한 질의',keywords:'(기본 경로)',strategy:'RAG',hits:4920,enabled:true},
+];
+// CAG 캐시 적재 현황 — 원문이 바뀌면 무효화·재적재가 필요하다
+export let MOCK_CAG_CACHE = [
+  {id:'cc-1',name:'사내 규정 요약본',tokens:'42K',loaded:'2026-03-28 02:10',sourceRev:'v4 (2026-03-27)',status:'최신',hits:1420},
+  {id:'cc-2',name:'업무 처리 절차',tokens:'28K',loaded:'2026-03-15 02:10',sourceRev:'v2 (2026-03-14)',status:'최신',hits:640},
+  {id:'cc-3',name:'자주 묻는 질문 모음',tokens:'16K',loaded:'2026-02-20 02:10',sourceRev:'v7 (2026-03-25)',status:'재적재 필요',hits:310},
+];
 // ==================== LLM ADMIN MOCK DATA ====================
 export let MOCK_LLM_ADMIN_MODELS = [
   {id:'m-001',name:'GPT-OSS-120B',baseModel:'Meta-Llama-3-405B-Instruct',version:'v2.4.1',
@@ -856,6 +917,8 @@ export let ADMIN_MCP_SERVERS = [
    ════════════════════════════════════════════════════════════════ */
 // __RESOLVER_START__
 const __REB_DEFAULTS = {
+  MOCK_AUG_STRATEGIES, MOCK_AUG_ROUTES, MOCK_CAG_CACHE,
+  MOCK_DATA_ASSETS, MOCK_DATA_LINEAGE,
   MOCK_PRED_MODELS, MOCK_PRED_TREND, MOCK_PRED_DRIFT, MOCK_RETRAIN_RUNS,
   MOCK_DATA_FLOWS, MOCK_BOUNDARY_POLICY, MOCK_EXTERNAL_ACCESS,
   ADMIN_PERSONA,
@@ -941,6 +1004,11 @@ const __REB_DEFAULTS = {
 
 export function applyAdminDomain(domain) {
   const o = (domain && domain.adminContent) || {};
+  MOCK_AUG_STRATEGIES = o.MOCK_AUG_STRATEGIES !== undefined ? o.MOCK_AUG_STRATEGIES : __REB_DEFAULTS.MOCK_AUG_STRATEGIES;
+  MOCK_AUG_ROUTES = o.MOCK_AUG_ROUTES !== undefined ? o.MOCK_AUG_ROUTES : __REB_DEFAULTS.MOCK_AUG_ROUTES;
+  MOCK_CAG_CACHE = o.MOCK_CAG_CACHE !== undefined ? o.MOCK_CAG_CACHE : __REB_DEFAULTS.MOCK_CAG_CACHE;
+  MOCK_DATA_ASSETS = o.MOCK_DATA_ASSETS !== undefined ? o.MOCK_DATA_ASSETS : __REB_DEFAULTS.MOCK_DATA_ASSETS;
+  MOCK_DATA_LINEAGE = o.MOCK_DATA_LINEAGE !== undefined ? o.MOCK_DATA_LINEAGE : __REB_DEFAULTS.MOCK_DATA_LINEAGE;
   MOCK_PRED_MODELS = o.MOCK_PRED_MODELS !== undefined ? o.MOCK_PRED_MODELS : __REB_DEFAULTS.MOCK_PRED_MODELS;
   MOCK_PRED_TREND = o.MOCK_PRED_TREND !== undefined ? o.MOCK_PRED_TREND : __REB_DEFAULTS.MOCK_PRED_TREND;
   MOCK_PRED_DRIFT = o.MOCK_PRED_DRIFT !== undefined ? o.MOCK_PRED_DRIFT : __REB_DEFAULTS.MOCK_PRED_DRIFT;

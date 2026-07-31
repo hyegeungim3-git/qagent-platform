@@ -2620,6 +2620,81 @@ LIMIT 50;`,
   adminContent: {
     ADMIN_PERSONA: { name: '서동현', role: '관리자', dept: '스마트팩토리 혁신 TF', email: 'seo@hbp.co.kr' },
 
+    /* ── 지식 증강 전략 (RAG·CAG·TAG) ──
+       제조 업무별로 성격이 갈린다: 도면은 검색(RAG), 작업표준은 캐시(CAG),
+       생산 실적은 집계(TAG). 카탈로그의 자산 태그(RAG/CAG/TAG 대상)와 짝을 이룬다. */
+    MOCK_AUG_STRATEGIES: [
+      {id:'rag',name:'RAG',full:'Retrieval-Augmented Generation',desc:'설계 도면·트러블슈팅 사례를 벡터 검색해 근거와 함께 답변',
+       targets:['설계 도면 온톨로지(12,400장)','성형 트러블슈팅 사례집'],share:54,avgLatency:1240,hitRate:86,costPer1k:'₩26',
+       strength:'도면이 계속 늘어나도 재적재 없이 대응된다',caveat:'검색 지연이 있고 도면 속성 추출 품질에 좌우된다'},
+      {id:'cag',name:'CAG',full:'Cache-Augmented Generation',desc:'작업표준(SOP)·안전수칙을 캐시에 적재해 검색 없이 즉답',
+       targets:['작업표준(SOP) 412건','산업안전 규정'],share:29,avgLatency:310,hitRate:96,costPer1k:'₩10',
+       strength:'현장 단말에서 체감 지연이 거의 없고 답변이 항상 같다',caveat:'SOP가 개정되면 재적재 전까지 옛 기준으로 답한다'},
+      {id:'tag',name:'TAG',full:'Table-Augmented Generation',desc:'자연어를 SQL로 바꿔 MES·SCADA 실적을 직접 집계',
+       targets:['MES 생산·품질 실적','설비 가동 이력'],share:17,avgLatency:820,hitRate:92,costPer1k:'₩17',
+       strength:'불량률·가동률처럼 계산이 필요한 답을 정확히 낸다',caveat:'로트 키 미발행 29% 구간은 공정조건 결합이 안 된다'},
+    ],
+    MOCK_AUG_ROUTES: [
+      {id:'rt-1',order:1,when:'생산 실적·불량률·가동률 등 수치 집계',keywords:'불량률, 가동률, 생산량, 건수, 추이, 대비',strategy:'TAG',hits:1480,enabled:true},
+      {id:'rt-2',order:2,when:'작업표준·안전수칙 조회',keywords:'교체 주기, 관리 기준, 작업 절차, 안전 수칙, SOP',strategy:'CAG',hits:2240,enabled:true},
+      {id:'rt-3',order:3,when:'도면·설계·기술 사례 질의',keywords:'도면, 설계, 유사, 금형, 공차, 스테이지',strategy:'RAG',hits:3120,enabled:true},
+      {id:'rt-4',order:4,when:'그 외 문서 근거가 필요한 질의',keywords:'(기본 경로)',strategy:'RAG',hits:1860,enabled:true},
+    ],
+    MOCK_CAG_CACHE: [
+      {id:'cc-1',name:'작업표준(SOP) 핵심 발췌',tokens:'58K',loaded:'2026-03-30 02:10',sourceRev:'v12 (2026-03-29)',status:'최신',hits:2140},
+      {id:'cc-2',name:'산업안전 규정·LOTO 절차',tokens:'31K',loaded:'2026-03-22 02:10',sourceRev:'v5 (2026-03-20)',status:'최신',hits:880},
+      {id:'cc-3',name:'설비 점검 주기표',tokens:'12K',loaded:'2026-02-18 02:10',sourceRev:'v9 (2026-03-26)',status:'재적재 필요',hits:410},
+      {id:'cc-4',name:'품질 판정 기준(수입검사)',tokens:'19K',loaded:'2026-03-11 02:10',sourceRev:'v3 (2026-03-10)',status:'최신',hits:520},
+    ],
+
+    /* ── 데이터 카탈로그 · 리니지 ──
+       Needs 1(데이터 표준화)의 진척을 자산 단위로 보여준다. 리니지는 보안 아키텍처
+       (OT→IT 단방향 반출)·예측 모델 운영(드리프트 원인 추적)과 같은 경로를 가리킨다. */
+    MOCK_DATA_ASSETS: [
+      {id:'as-1',name:'포스프레임 설비 태그',source:'프레스·열처리 PLC',owner:'생산기술팀',grade:'대외비',
+       format:'시계열',volume:'태그 4,820개 · 초당 수집',cycle:'실시간(1초)',freshness:'실시간',quality:74,standardized:62,
+       tags:['OT 원천','표준화 대상'],consumers:['품질 예측 모델','MES 조회','예지보전']},
+      {id:'as-2',name:'MES 생산·품질 실적',source:'MES DB',owner:'생산관리부',grade:'대외비',
+       format:'관계형 테이블',volume:'월 8,412로트',cycle:'일 1회 마감',freshness:'8시간 전',quality:91,standardized:88,
+       tags:['TAG 대상','집계'],consumers:['생산일보','데이터 조회','품질 예측 모델']},
+      {id:'as-3',name:'설계 도면 온톨로지',source:'PLM 도면 저장소',owner:'생산기술팀',grade:'기밀',
+       format:'도면·벡터',volume:'도면 12,400장',cycle:'수시',freshness:'1일 전',quality:89,standardized:96,
+       tags:['RAG 대상','사내망 전용'],consumers:['도면 설계 지원','설계 아웃라인 시나리오']},
+      {id:'as-4',name:'작업표준(SOP)·안전규정',source:'문서관리시스템',owner:'안전환경팀',grade:'내부',
+       format:'PDF·HWP',volume:'문서 412건',cycle:'개정 시',freshness:'12일 전',quality:94,standardized:100,
+       tags:['CAG 후보','저변동'],consumers:['현장 Q&A','규정 조회','위험성평가']},
+      {id:'as-5',name:'협력사 검사성적서',source:'협력사 제출(스캔)',owner:'품질관리부',grade:'내부',
+       format:'이미지·PDF',volume:'월 286건',cycle:'수시',freshness:'1일 전',quality:68,standardized:41,
+       tags:['OCR 대상','표준화 미흡'],consumers:['도면·성적서 OCR','검사성적서 시나리오']},
+    ],
+    MOCK_DATA_LINEAGE: {
+      'as-1':{upstream:[{name:'프레스 PLC (PRS 계열)',type:'센서'},{name:'침탄로 PLC (FUR 계열)',type:'센서'}],
+        stages:[{name:'수집',desc:'포스프레임 서버가 1초 주기 수집',tool:'포스프레임(OT)'},
+                {name:'표준화',desc:'표준 명명규칙 매핑 — 4,820개 중 62% 완료, 미매칭 1,834개',tool:'기준정보 표준화'},
+                {name:'단방향 반출',desc:'OT→IT 데이터 다이오드 통과(역방향 물리 차단)',tool:'보안 게이트웨이'},
+                {name:'적재',desc:'IT 분석 DB 적재 · 로트 키 결합',tool:'분석 DB'}],
+        downstream:[{name:'프레스 품질 예측 모델',type:'모델'},{name:'MES·SCADA 조회 에이전트',type:'에이전트'},{name:'예지보전 시나리오',type:'에이전트'}]},
+      'as-2':{upstream:[{name:'MES 생산 원장',type:'DB'},{name:'검사 성적 DB',type:'DB'}],
+        stages:[{name:'마감',desc:'일 1회 생산 실적 마감',tool:'MES'},
+                {name:'로트 키 결합',desc:'설비 태그와 로트 매칭 — 29%는 키 미발행으로 결합 불가',tool:'기준정보 사전'},
+                {name:'적재',desc:'분석 DB 적재',tool:'분석 DB'}],
+        downstream:[{name:'생산일보 작성',type:'에이전트'},{name:'프레스 품질 예측 모델',type:'모델'},{name:'공정 데이터 분석',type:'에이전트'}]},
+      'as-3':{upstream:[{name:'PLM 도면 원본(.dwg)',type:'파일'},{name:'설계 표준·체크리스트',type:'문서'}],
+        stages:[{name:'속성 추출',desc:'형상·치수·가공조건 온톨로지 속성 추출',tool:'도면 파서'},
+                {name:'임베딩',desc:'벡터 색인(사내 GPU) — 원본은 사내망 밖으로 나가지 않음',tool:'임베딩 엔진'}],
+        downstream:[{name:'도면 설계 지원 에이전트',type:'에이전트'},{name:'설계 아웃라인 시나리오',type:'에이전트'}]},
+      'as-4':{upstream:[{name:'작업표준 원본',type:'문서'},{name:'개정 이력',type:'문서'}],
+        stages:[{name:'수집',desc:'문서관리시스템 연동',tool:'커넥터'},
+                {name:'청킹',desc:'조항 단위 분할',tool:'RAG 파이프라인'},
+                {name:'임베딩',desc:'벡터 생성·색인',tool:'임베딩 엔진'}],
+        downstream:[{name:'현장 Q&A 챗봇',type:'에이전트'},{name:'사규·안전규정 조회',type:'에이전트'},{name:'작업 위험성평가',type:'에이전트'}]},
+      'as-5':{upstream:[{name:'협력사 제출 스캔본',type:'이미지'}],
+        stages:[{name:'전처리',desc:'기울기·노이즈 보정',tool:'이미지 전처리'},
+                {name:'OCR',desc:'치수·공차 표 인식',tool:'Vision OCR'},
+                {name:'기준정보 매칭',desc:'협력사·품목 코드 매칭 — 표준화 41%로 수기 확인 비중 높음',tool:'기준정보 사전'}],
+        downstream:[{name:'도면·성적서 OCR 에이전트',type:'에이전트'},{name:'검사성적서 판정 시나리오',type:'에이전트'}]},
+    },
+
     /* ── 예측 모델 운영 — 이 사업의 핵심 가치가 품질 예측(AUC 0.91)인데,
        금형 마모·소재 로트 변경이 누적되면 모델은 반드시 열화한다.
        기존 세계관(AUC 0.91, 불량률 0.42%, 침탄로 3호기, PRS-C03)을 승계한다. */

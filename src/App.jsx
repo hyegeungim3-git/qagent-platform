@@ -15,6 +15,8 @@ import { PackStudioPage } from './admin/pages/packstudio.jsx';
 import { ScenarioBuilderPage } from './admin/pages/scenariobuilder.jsx';
 import { SecurityArchPage } from './admin/pages/security.jsx';
 import { PredictionOpsPage } from './admin/pages/predops.jsx';
+import { DataCatalogPage } from './admin/pages/catalog.jsx';
+import { AugmentStrategyPage } from './admin/pages/augment.jsx';
 import { SystemMonitorPage, AdminPage, UserPage, ConnectedMonitorPage } from './admin/pages/system.jsx';
 import { LlmTraining, VlmTraining, EmbeddingPage, RerankingPage, LeaderboardPage, EvalMetricsPage } from './admin/pages/training.jsx';
 import { ApprovalPage, QuotaPage, UserManagementPage, AccessLogPage, AccessSecurityPage, WorkLogPage, UsageMonitorPage, HrSyncPage } from './admin/pages/users.jsx';
@@ -57,6 +59,7 @@ const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChang
       {id:'data.dataset',  label:'데이터셋'},
       {id:'data.vectordb', label:'벡터 DB'},
       {id:'data.autoload', label:'자동 적재'},
+      {id:'data.catalog',  label:'카탈로그 · 리니지'},
     ]},
     {id:'dev', label:'개발 환경', icon:Code, children:[
       {id:'dev.codespace', label:'코드스페이스'},
@@ -111,6 +114,7 @@ const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChang
     {id:'knowledge', label:'지식 관리', icon:FolderOpen, children:[
       {id:'admin.knowledge', label:'지식영역 설정'},
       {id:'admin.rag',       label:'RAG 파이프라인'},
+      {id:'admin.augment',   label:'지식 증강 전략'},
     ]},
 
     /* ════════════════════════════════════
@@ -156,7 +160,7 @@ const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChang
 
   const pages = {
     'dashboard.system':<SystemDashboard/>,'dashboard.service':<ServiceDashboard/>,'dashboard.gpu':<GpuDashboard/>,'dashboard.trainer':<DashboardTrainer/>,
-    'data.dataset':<DatasetPage/>,'data.vectordb':<VectorDbPage/>,'data.autoload':<AutoLoadPage/>,
+    'data.dataset':<DatasetPage/>,'data.vectordb':<VectorDbPage/>,'data.autoload':<AutoLoadPage/>,'data.catalog':<DataCatalogPage/>,
     'dev.codespace':<CodespacePage/>,'dev.volume':<SharedVolumePage/>,
     'model.registry':<ModelRegistry/>,
     'trainer.llm':<LlmTraining/>,'trainer.vlm':<VlmTraining/>,'trainer.embedding':<EmbeddingPage/>,'trainer.reranking':<RerankingPage/>,
@@ -170,7 +174,7 @@ const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChang
     'agent.taskflow.builder':<TaskflowBuilderPage/>,'agent.taskflow.deploy':<TaskflowDeployPage/>,'agent.workflow':<WorkflowPage/>,'agent.scenario':<ScenarioBuilderPage domain={domain}/>,
     'app.chat':<ChatAppPage/>,'app.report':<ReportGenPage/>,'app.analysis':<DataAnalysisPage/>,
     'ops.approval':<ApprovalPage/>,'ops.quota':<QuotaPage/>,
-    'admin.manage':<AdminPage/>,'admin.users':<UserManagementPage/>,'admin.knowledge':<KnowledgeManagementPage/>,'admin.rag':<RagPipelinePage/>,
+    'admin.manage':<AdminPage/>,'admin.users':<UserManagementPage/>,'admin.knowledge':<KnowledgeManagementPage/>,'admin.rag':<RagPipelinePage/>,'admin.augment':<AugmentStrategyPage/>,
     'admin.llm':<LlmManagePage/>,
     'admin.trust':<TrustManagePage/>,
     'admin.history':<UsageHistoryPage/>,'admin.satisfaction':<SatisfactionMgmtPage/>,
