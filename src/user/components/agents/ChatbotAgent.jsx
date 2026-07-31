@@ -658,7 +658,7 @@ export default function ChatbotAgent({ onBack, domain }) {
               onChange={e => {
                 const f = e.target.files?.[0];
                 if (!f) return;
-                setAttachment({ name: f.name, size: `${(f.size / 1024).toFixed(0)}KB` });
+                setAttachment({ name: f.name, size: f.size < 1024 ? `${f.size}B` : `${(f.size / 1024).toFixed(0)}KB` });
                 setMicNotice(false);
                 e.target.value = '';
               }} />
@@ -821,6 +821,14 @@ function MessageBubble({ msg, previews, onFeedback, onCopy, copied, activeSource
       <div className="flex justify-end">
         <div className="max-w-[75%]">
           <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5">
+            {/* 첨부 파일 — 전송 후에도 어떤 파일을 함께 보냈는지 남긴다 */}
+            {msg.attachment && (
+              <div className="flex items-center gap-1.5 mb-1.5 pb-1.5 border-b border-white/25 text-[11px] text-blue-50">
+                <Paperclip size={11} className="shrink-0" />
+                <span className="truncate font-medium">{msg.attachment.name}</span>
+                <span className="opacity-70 shrink-0">{msg.attachment.size}</span>
+              </div>
+            )}
             <p className="text-sm leading-relaxed">{msg.text}</p>
           </div>
           <p className="text-right text-xs text-slate-400 mt-1 pr-1">
