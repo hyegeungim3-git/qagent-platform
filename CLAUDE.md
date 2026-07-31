@@ -20,7 +20,8 @@
 
 | 역할 | 주소 | 저장소/참조 |
 |---|---|---|
-| **v3 개발 라인 (push 대상)** | https://hyegeungim3-git.github.io/reb-ai-platform-v3/ | **origin = reb-ai-platform-v3** 의 `main` |
+| **v4 개발 라인 (push 대상)** | https://hyegeungim3-git.github.io/qagent-platform/ | **remote `qagent` = qagent-platform** 의 `main` ← 로컬 브랜치 `v4`. base `/qagent-platform/`. QAgent 리브랜딩 + REB 도메인 팩 삭제본 |
+| v3 동결 (2026-07-31, 태그 `v3.0`) | https://hyegeungim3-git.github.io/reb-ai-platform-v3/ | origin = reb-ai-platform-v3 의 `main`. REB 팩이 살아 있는 마지막 버전 — 기능 push 금지 |
 | **v2 동결 (2026-07-12, 시각 보완 07-13)** | https://hyegeungim3-git.github.io/reb-ai-platform-v2/ | remote명 `v2` — main = v2.0 트리 + 오케스트레이션 UI 세련화(순수 시각). **v2.0 태그는 원본 보존**. 기능 개발 push 금지, 시각 보완만 예외 |
 | v2.0 초기 스냅샷 (7/5 동결) | https://hyegeungim3-git.github.io/reb-ai-platform/ | remote명 snapshot |
 | v1.0 안정 버전 | https://hyegeungim3-git.github.io/genos-app/ | genos-app |
