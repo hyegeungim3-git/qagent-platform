@@ -6,6 +6,22 @@ import {
 } from "lucide-react";
 import { cn } from "../../utils.jsx";
 
+/* OCUBE 심볼 — 브랜드 철학 'OPEN + CUBE'를 아이소메트릭 큐브로.
+   윗면·왼면은 채우고 오른면만 선으로 비워 '열린 큐브'를 만든다.
+   AgentQ의 Q는 우하단 점으로 암시. 색은 도메인 브랜드컬러를 따른다. */
+const OcubeMark = ({ color }) => (
+  <span className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-md"
+    style={{ backgroundColor: color }}>
+    <svg viewBox="0 0 32 32" fill="none" className="w-[26px] h-[26px]" aria-hidden="true">
+      <path d="M16 4.2 L26.6 10.3 L16 16.4 L5.4 10.3 Z" fill="white" />
+      <path d="M5.4 10.3 L16 16.4 L16 28.2 L5.4 22.1 Z" fill="white" opacity="0.62" />
+      <path d="M26.6 10.3 L26.6 22.1 L16 28.2 L16 16.4 Z"
+        stroke="white" strokeWidth="1.5" strokeLinejoin="round" fill="none" opacity="0.85" />
+      <circle cx="23.2" cy="21.4" r="2.1" fill="white" />
+    </svg>
+  </span>
+);
+
 /* ================================================================== */
 /* 좌측 사이드바 — 로고·탭 스위처·워크스페이스·모드·대화 이력·프로필    */
 /* ================================================================== */
@@ -42,41 +58,27 @@ const Sidebar = ({
       {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
     </button>
 
-    {/* Logo */}
-    <div className={cn("h-16 flex items-center px-4 border-b shrink-0", th.sidebarSection)}>
-      <div className="w-9 h-9 rounded-xl bg-[#003087] flex items-center justify-center shrink-0 shadow-md overflow-hidden">
-        {/* REB 스타일 로고 아이콘 */}
-        <svg viewBox="0 0 28 28" fill="none" className="w-6 h-6">
-          {/* 외부 원 */}
-          <circle cx="14" cy="14" r="10.5" stroke="white" strokeWidth="1.8" fill="none"/>
-          {/* 수직 경선 */}
-          <path d="M14 3.5 Q10 14 14 24.5" stroke="white" strokeWidth="1.1" fill="none" opacity="0.65"/>
-          <path d="M14 3.5 Q18 14 14 24.5" stroke="white" strokeWidth="1.1" fill="none" opacity="0.65"/>
-          {/* 적도 */}
-          <path d="M3.5 14 Q14 11 24.5 14" stroke="white" strokeWidth="1.1" fill="none" opacity="0.65"/>
-          {/* 상위 위선 */}
-          <path d="M6 9 Q14 7 22 9" stroke="white" strokeWidth="0.7" fill="none" opacity="0.4"/>
-          {/* 하위 위선 */}
-          <path d="M6 19 Q14 21 22 19" stroke="white" strokeWidth="0.7" fill="none" opacity="0.4"/>
-        </svg>
-      </div>
+    {/* Logo — OCUBE의 AgentQ. 클릭 시 홈(일반 질의)으로 */}
+    <button onClick={() => onTabSwitch("GENERAL")} aria-label="AgentQ 홈으로"
+      className={cn("h-16 w-full flex items-center px-4 border-b shrink-0 text-left transition-colors",
+        th.sidebarSection, isSecure ? "hover:bg-white/5" : "hover:bg-slate-100/70")}>
+      <OcubeMark color={domain.brandColor} />
       {sidebarOpen && (
-        <div className="ml-3 animate-in fade-in duration-200 min-w-0">
-          {/* 솔루션명(AgentQ)은 도메인과 무관하게 고정 — 어느 분야에나 적용되는 제품 이름이고,
-              옆의 조직명이 지금 시연 중인 적용 사례를 가리킨다.
-              (예전엔 'REB'가 하드코딩돼 있어 모든 도메인에 REB가 붙었다) */}
+        <div className="ml-2.5 animate-in fade-in duration-200 min-w-0">
+          {/* 회사(OCUBE) 위, 제품(AgentQ) 아래 — 'OCUBE의 AgentQ' 위계.
+              옆의 분야명이 지금 시연 중인 적용 영역을 가리킨다. */}
+          <div className={cn("text-[9px] font-black tracking-[0.22em] leading-none mb-1",
+            isSecure ? "text-slate-500" : "text-slate-400")}>OCUBE</div>
           <div className="flex items-baseline gap-1.5">
-            <span className={cn("text-[13px] font-black tracking-[0.12em]", isSecure && "text-white")}
+            <span className={cn("text-[19px] font-black tracking-[0.01em] leading-none", isSecure && "text-white")}
               style={isSecure ? undefined : { color: domain.brandColor }}>AgentQ</span>
-            <span className={cn("text-[12px] font-bold tracking-tight leading-tight truncate", th.text)}>{domain.sectorLabel || domain.orgName}</span>
-          </div>
-          <div className={cn("text-[10px] font-bold tracking-widest uppercase", isSecure ? "text-blue-400" : isAgent && "text-indigo-500")}
-            style={isSecure || isAgent ? undefined : { color: domain.brandColor, opacity: 0.7 }}>
-            {isSecure ? "보안 채팅" : isAgent ? "에이전트 모드" : "AI 플랫폼"}
+            <span className={cn("text-[12px] font-bold tracking-tight leading-none truncate", th.subtext)}>
+              {isSecure ? "보안" : isAgent ? "에이전트" : (domain.sectorLabel || domain.orgName)}
+            </span>
           </div>
         </div>
       )}
-    </div>
+    </button>
 
     {/* Tab Switcher */}
     <div className={cn("px-3 py-3 border-b shrink-0", th.sidebarSection)}>

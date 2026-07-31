@@ -65,21 +65,20 @@ const PortalSelector = ({ domain, onChangeDomain, onSelectUser, onSelectAdmin })
       <main className="relative z-10 w-full max-w-3xl px-6 flex flex-col items-center">
         {/* Logo & Title */}
         <div className="flex flex-col items-center mb-16 text-center">
-          <div className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl mb-6 border-4" style={{ backgroundColor: domain.brandColor, borderColor: `${domain.brandColor}33` }}>
-            {/* 지구본 로고 (도메인 중립) */}
-            <svg viewBox="0 0 28 28" fill="none" className="w-12 h-12">
-              <circle cx="14" cy="14" r="10.5" stroke="white" strokeWidth="1.8" fill="none"/>
-              <path d="M14 3.5 Q10 14 14 24.5" stroke="white" strokeWidth="1.1" fill="none" opacity="0.65"/>
-              <path d="M14 3.5 Q18 14 14 24.5" stroke="white" strokeWidth="1.1" fill="none" opacity="0.65"/>
-              <path d="M3.5 14 Q14 11 24.5 14" stroke="white" strokeWidth="1.1" fill="none" opacity="0.65"/>
-              <path d="M6 9 Q14 7 22 9" stroke="white" strokeWidth="0.7" fill="none" opacity="0.4"/>
-              <path d="M6 19 Q14 21 22 19" stroke="white" strokeWidth="0.7" fill="none" opacity="0.4"/>
+          {/* OCUBE 심볼 — 브랜드 철학 'OPEN + CUBE' (사이드바 로고와 동일 형태) */}
+          <div className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl mb-5 border-4" style={{ backgroundColor: domain.brandColor, borderColor: `${domain.brandColor}33` }}>
+            <svg viewBox="0 0 32 32" fill="none" className="w-12 h-12" aria-hidden="true">
+              <path d="M16 4.2 L26.6 10.3 L16 16.4 L5.4 10.3 Z" fill="white"/>
+              <path d="M5.4 10.3 L16 16.4 L16 28.2 L5.4 22.1 Z" fill="white" opacity="0.62"/>
+              <path d="M26.6 10.3 L26.6 22.1 L16 28.2 L16 16.4 Z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" fill="none" opacity="0.85"/>
+              <circle cx="23.2" cy="21.4" r="2.1" fill="white"/>
             </svg>
           </div>
+          {/* 회사(OCUBE) 위, 제품(AgentQ) 아래 — 'OCUBE의 AgentQ' 위계 */}
+          <div className="text-[12px] font-black tracking-[0.35em] text-slate-400 mb-2">OCUBE</div>
           <div className="flex items-baseline gap-3 mb-3">
-            {/* 솔루션명 고정 + 조직명 — 어느 분야에나 적용되는 제품임을 첫 화면에서 드러낸다 */}
-            <span className="text-4xl font-black tracking-[0.15em]" style={{ color: domain.brandColor }}>AgentQ</span>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">{domain.sectorLabel || domain.orgName}</h1>
+            <span className="text-5xl font-black tracking-[0.01em]" style={{ color: domain.brandColor }}>AgentQ</span>
+            <h1 className="text-2xl font-bold text-slate-400 tracking-tight">{domain.sectorLabel || domain.orgName}</h1>
           </div>
           <p className="text-[16px] text-slate-500 font-medium max-w-md leading-relaxed">
             {domain.welcome}<br />
