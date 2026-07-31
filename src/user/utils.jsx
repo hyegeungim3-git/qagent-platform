@@ -38,19 +38,21 @@ export function orgLogoDataUri(org = {}) {
   const short = (org.short || "ORG").toUpperCase();
   const color = org.color || "#334155";
   const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  // 약칭 길이에 따라 이름 시작 위치를 밀어 겹침을 막는다
-  const nameX = 74 + Math.max(0, short.length - 3) * 13;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 64" width="260" height="64">
-<rect x="4" y="10" width="44" height="44" rx="11" fill="${color}"/>
-<g transform="translate(13,19) scale(0.82)">
+  /* 조직명(1행)과 약칭·제품(2행)을 세로로 쌓는다.
+     한 줄에 가로로 붙이면 한글 폭을 SVG가 미리 알 수 없어 글자가 겹친다(실제 사고).
+     조직명이 길면 폰트를 줄여 260 폭 안에 들어오게 한다. */
+  const F = name.length >= 8 ? 15 : name.length >= 6 ? 17 : 19;
+  const FONT = "'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 56" width="200" height="56">
+<rect x="0" y="6" width="44" height="44" rx="11" fill="${color}"/>
+<g transform="translate(9,15) scale(0.82)">
 <path d="M16 4.2 L26.6 10.3 L16 16.4 L5.4 10.3 Z" fill="#fff"/>
 <path d="M5.4 10.3 L16 16.4 L16 28.2 L5.4 22.1 Z" fill="#fff" opacity="0.62"/>
 <path d="M26.6 10.3 L26.6 22.1 L16 28.2 L16 16.4 Z" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.85"/>
 <circle cx="23.2" cy="21.4" r="2.1" fill="#fff"/>
 </g>
-<text x="58" y="34" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif" font-size="19" font-weight="800" fill="${color}" letter-spacing="1">${esc(short)}</text>
-<text x="${nameX}" y="34" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif" font-size="16" font-weight="700" fill="#1f2937">${esc(name)}</text>
-<text x="58" y="50" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="2">AgentQ</text>
+<text x="54" y="28" font-family="${FONT}" font-size="${F}" font-weight="800" fill="#1f2937">${esc(name)}</text>
+<text x="54" y="44" font-family="${FONT}" font-size="11" font-weight="700" fill="${color}" letter-spacing="1.2">${esc(short)} <tspan fill="#94a3b8">· AgentQ</tspan></text>
 </svg>`;
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
