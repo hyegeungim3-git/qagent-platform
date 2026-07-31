@@ -266,12 +266,27 @@ export const UserManagementPage = () => {
 };
 
 // ── Document OCR 시뮬레이션 결과 ──
-export const AccessLogPage = () => (
+export const AccessLogPage = () => {
+  const [q,setQ]=useState('');
+  const [action,setAction]=useState('전체 액션');
+  const [period,setPeriod]=useState('최근 7일');
+  // 기간: 목업 로그의 최신 일자를 기준으로 N일 이내만 노출
+  const days=period==='오늘'?1:period==='최근 7일'?7:30;
+  const latest=MOCK_ACCESS_LOGS.reduce((m,l)=>{const d=l.time.slice(0,10);return d>m?d:m;},'0000-00-00');
+  const cutoff=new Date(latest+'T00:00:00'); cutoff.setDate(cutoff.getDate()-(days-1));
+  const rows=MOCK_ACCESS_LOGS.filter(l=>{
+    const hitQ=!q.trim()||[l.user,l.dept,l.ip,l.detail].some(v=>String(v).includes(q.trim()));
+    const hitA=action==='전체 액션'||l.action===action;
+    const hitP=new Date(l.time.slice(0,10)+'T00:00:00')>=cutoff;
+    return hitQ&&hitA&&hitP;
+  });
+  return (
   <PageShell breadcrumb={['관리자 전용','접근 로그']} title="접근 및 감사 로그">
     <div className="flex items-center space-x-3 mb-4">
-      <div className="relative flex-1 max-w-sm"><input placeholder="사용자, 부서, IP 검색..." className="w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"/><Search size={16} className="absolute left-3 top-3 text-gray-400"/></div>
-      <select className="px-3 py-2.5 border rounded-lg text-sm bg-white"><option>전체 액션</option><option>로그인</option><option>에이전트 호출</option><option>설정 변경</option><option>문서 업로드</option></select>
-      <select className="px-3 py-2.5 border rounded-lg text-sm bg-white"><option>오늘</option><option>최근 7일</option><option>최근 30일</option></select>
+      <div className="relative flex-1 max-w-sm"><input value={q} onChange={e=>setQ(e.target.value)} placeholder="사용자, 부서, IP 검색..." className="w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"/><Search size={16} className="absolute left-3 top-3 text-gray-400"/></div>
+      <select value={action} onChange={e=>setAction(e.target.value)} className="px-3 py-2.5 border rounded-lg text-sm bg-white">{['전체 액션','로그인','에이전트 호출','설정 변경','문서 업로드'].map(o=><option key={o}>{o}</option>)}</select>
+      <select value={period} onChange={e=>setPeriod(e.target.value)} className="px-3 py-2.5 border rounded-lg text-sm bg-white">{['오늘','최근 7일','최근 30일'].map(o=><option key={o}>{o}</option>)}</select>
+      <span className="text-xs text-gray-400 whitespace-nowrap">{rows.length}건</span>
     </div>
     <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
       <table className="w-full text-sm"><thead className="bg-gray-50/80"><tr>
@@ -281,7 +296,7 @@ export const AccessLogPage = () => (
         <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500">액션</th>
         <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500">IP</th>
         <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500">상세</th>
-      </tr></thead><tbody className="divide-y divide-gray-100">{MOCK_ACCESS_LOGS.map(l=>(
+      </tr></thead><tbody className="divide-y divide-gray-100">{rows.map(l=>(
         <tr key={l.id} className="hover:bg-gray-50/50">
           <td className="px-5 py-3.5 font-mono text-xs text-gray-400">{l.time}</td>
           <td className="px-5 py-3.5 font-medium">{l.user}</td>
@@ -291,9 +306,11 @@ export const AccessLogPage = () => (
           <td className="px-5 py-3.5 text-gray-500 text-xs">{l.detail}</td>
         </tr>
       ))}</tbody></table>
+      {rows.length===0&&<div className="px-5 py-10 text-center text-sm text-gray-400">조건에 맞는 로그가 없습니다</div>}
     </div>
   </PageShell>
-);
+  );
+};
 
 export const AccessSecurityPage = () => {
   const [tab, setTab] = useState('permission');
@@ -384,27 +401,34 @@ export const WorkLogPage = () => {
   const [q, setQ] = useState('');
   const [qMode, setQMode] = useState('전체');   // 질의 이력 모드 필터
   const [qText, setQText] = useState('');       // 질의 이력 검색어
+  const [from, setFrom] = useState('2026-02-01');
+  const [to, setTo] = useState('2026-02-25');
   const toast = useToast();
+  /* 검색어·기간 필터 — 원본 로그 배열에 적용한 뒤 표 행으로 변환한다 */
+  const inRange = l => { const d = String(l.time).slice(0,10); return d >= from && d <= to; };
+  const hitText = l => { const s = q.trim(); return !s || [l.user,l.dept,l.ip,l.detail,l.target,l.action,l.file].some(v => v && String(v).includes(s)); };
+  const pick = arr => arr.filter(l => inRange(l) && hitText(l));
   const TABS = [{id:'access',label:'🔑 접속 로그'},{id:'work',label:'⚙️ 작업 로그'},{id:'query',label:'💬 질의 이력'},{id:'extract',label:'📥 추출·출력 로그'}];
   const LogTable = ({cols,rows}) => (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-1 min-w-0"><Search className="w-4 h-4 text-gray-400 shrink-0"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="사용자·IP·내용 검색..." className="flex-1 text-[13px] outline-none font-medium text-gray-700 placeholder:text-gray-400"/></div>
         <div className="flex gap-2 shrink-0">
-          <input type="date" defaultValue="2026-02-01" className="border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] focus:outline-none"/>
-          <input type="date" defaultValue="2026-02-25" className="border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] focus:outline-none"/>
+          <input type="date" value={from} onChange={e=>setFrom(e.target.value)} aria-label="시작일" className="border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] focus:outline-none"/>
+          <input type="date" value={to} onChange={e=>setTo(e.target.value)} aria-label="종료일" className="border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] focus:outline-none"/>
           <button onClick={()=>toast('CSV로 내보냅니다.')} className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-gray-50"><Download className="w-3.5 h-3.5"/> CSV</button>
         </div>
       </div>
       <div className="overflow-x-auto"><table className="w-full text-[12px]">
         <thead><tr className="border-b border-gray-100 bg-gray-50">{cols.map(c=><th key={c} className="text-left font-bold text-gray-500 py-2.5 px-3 text-[11px] uppercase whitespace-nowrap">{c}</th>)}</tr></thead>
         <tbody>{rows.map((r,i)=><tr key={i} className="border-b border-gray-50 hover:bg-gray-50">{r.map((c,j)=><td key={j} className={`py-2.5 px-3 ${j===0?'text-gray-400 whitespace-nowrap':j===1||j===2?'font-bold text-gray-800':'text-gray-600'}`}>{c}</td>)}</tr>)}</tbody>
-      </table></div>
+      </table>
+      {rows.length===0&&<div className="py-10 text-center text-[13px] text-gray-400">조건에 맞는 기록이 없습니다</div>}</div>
     </div>
   );
-  const accessRows = MOCK_ACCESS_LOGS.map(l=>[l.time,l.user,l.dept,l.ip,<span className={`px-2 py-0.5 rounded text-[11px] font-bold ${(l.action.includes('로그인')||l.action.includes('성공'))?'bg-green-100 text-green-700':'bg-blue-100 text-blue-700'}`}>{l.action}</span>,l.detail]);
-  const workRows = MOCK_WORK_LOG.map(l=>[l.time,l.user,l.dept,l.ip,<span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[11px] font-bold">{l.action}</span>,l.target,l.detail]);
-  const extractRows = MOCK_EXTRACT_LOG.map(l=>[l.time,l.user,l.dept,l.type,l.file,l.size,l.rows?l.rows+'행':'–']);
+  const accessRows = pick(MOCK_ACCESS_LOGS).map(l=>[l.time,l.user,l.dept,l.ip,<span className={`px-2 py-0.5 rounded text-[11px] font-bold ${(l.action.includes('로그인')||l.action.includes('성공'))?'bg-green-100 text-green-700':'bg-blue-100 text-blue-700'}`}>{l.action}</span>,l.detail]);
+  const workRows = pick(MOCK_WORK_LOG).map(l=>[l.time,l.user,l.dept,l.ip,<span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[11px] font-bold">{l.action}</span>,l.target,l.detail]);
+  const extractRows = pick(MOCK_EXTRACT_LOG).map(l=>[l.time,l.user,l.dept,l.type,l.file,l.size,l.rows?l.rows+'행':'–']);
   return (
     <PageShell breadcrumb={['운영·관리','통합 로그 관리']} title="통합 로그 관리" sub="접속 · 작업 · 질의 이력 · 추출/출력 로그 통합 조회">
       <div className="flex gap-0.5 mb-6 border-b border-gray-200 -mx-6 px-6">

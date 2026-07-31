@@ -150,6 +150,7 @@ const SummaryAgent=({onBack,domain})=>{
   const [focusAreas,setFocusAreas]=useState([]);
   const [copied,setCopied]=useState(false);
   const [downloaded,setDownloaded]=useState(false);
+  const [uploaded,setUploaded]=useState(null);   // 업로드한 문서 A {name,size}
   const fileRef=useRef(null);
 
   const toggleFocus=(f)=>setFocusAreas(p=>p.includes(f)?p.filter(x=>x!==f):[...p,f]);
@@ -233,7 +234,9 @@ const SummaryAgent=({onBack,domain})=>{
               <UploadCloud className={cn('w-8 h-8 mx-auto mb-2',fileDrag?'text-amber-500':'text-slate-300')}/>
               <div className="text-sm font-semibold text-slate-600">파일을 드래그하거나 클릭하여 업로드</div>
               <div className="text-xs text-slate-400 mt-1">PDF, DOCX, HWP, PPTX 지원 · 최대 50MB</div>
-              <input ref={fileRef} type="file" accept=".pdf,.docx,.hwp,.pptx" className="hidden"/>
+              <input ref={fileRef} type="file" accept=".pdf,.docx,.hwp,.pptx" className="hidden"
+                onChange={e=>{const f=e.target.files?.[0]; if(!f)return;
+                  setUploaded({name:f.name,size:`${(f.size/1024/1024).toFixed(1)}MB`}); e.target.value='';}}/>
             </div>
             {/* mock uploaded file(s) */}
             <div className={cn('flex gap-3', compareMode ? 'flex-col' : '')}>
@@ -243,8 +246,8 @@ const SummaryAgent=({onBack,domain})=>{
                   <FileText className="w-4 h-4 text-white"/>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-slate-700 truncate">{C.docAName}</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">3.2MB · PDF · 업로드 완료</div>
+                  <div className="text-xs font-bold text-slate-700 truncate">{uploaded?.name||C.docAName}</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">{uploaded?`${uploaded.size} · 업로드 완료`:'3.2MB · PDF · 업로드 완료'}</div>
                 </div>
                 <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0">
                   <CheckCircle className="w-3 h-3 text-white"/>

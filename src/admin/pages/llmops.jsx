@@ -1005,6 +1005,9 @@ export const QualityManagementPage = () => {
   const [goldenIds,setGoldenIds]=useState([]);      // 이번 세션에 등록한 검토 건
   const [editAnswer,setEditAnswer]=useState(null);   // 답변 수정 중 {id, text}
   const [newGolden,setNewGolden]=useState(null);     // 직접 등록 폼 {q,a}
+  const [ratingFilter,setRatingFilter]=useState('전체');
+  const [autoTh,setAutoTh]=useState(80);             // 자동 응답 임계값(%)
+  const [halluTh,setHalluTh]=useState(60);           // 할루시네이션 경고 임계값(%)
 
   const registerGolden=(review)=>{
     if(goldenIds.includes(review.id)){toast('이미 골든 데이터로 등록된 건입니다.','info');return;}
@@ -1058,9 +1061,9 @@ export const QualityManagementPage = () => {
           <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
             <div className="px-5 py-3 bg-gray-50/80 border-b flex items-center justify-between">
               <h3 className="font-bold text-sm">전문가 검토 내역</h3>
-              <select className="text-xs border rounded px-2 py-1 bg-white"><option>전체</option><option>정확</option><option>수정 필요</option><option>할루시네이션</option></select>
+              <select value={ratingFilter} onChange={e=>setRatingFilter(e.target.value)} aria-label="검토 결과 필터" className="text-xs border rounded px-2 py-1 bg-white">{['전체','정확','수정 필요','할루시네이션'].map(o=><option key={o}>{o}</option>)}</select>
             </div>
-            <div className="divide-y">{rows.map(r=>(
+            <div className="divide-y">{rows.filter(r=>ratingFilter==='전체'||ratingLabel(r.rating)===ratingFilter).map(r=>(
               <div key={r.id} onClick={()=>setSelReview(r)} className="px-5 py-4 hover:bg-gray-50/50 cursor-pointer">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-2">
@@ -1083,8 +1086,8 @@ export const QualityManagementPage = () => {
           <div className="bg-white rounded-xl border shadow-sm p-5">
             <h3 className="font-bold text-sm mb-4">신뢰도 임계값 설정</h3>
             <div className="space-y-4">
-              <div><label className="text-xs text-gray-500">자동 응답 임계값</label><div className="flex items-center space-x-2 mt-1"><input type="range" min="0" max="100" defaultValue="80" className="flex-1"/><span className="text-sm font-bold text-blue-600">80%</span></div><p className="text-xs text-gray-400 mt-1">이 값 이상이면 자동 응답, 미만이면 전문가 검토 요청</p></div>
-              <div><label className="text-xs text-gray-500">할루시네이션 경고 임계값</label><div className="flex items-center space-x-2 mt-1"><input type="range" min="0" max="100" defaultValue="60" className="flex-1"/><span className="text-sm font-bold text-red-600">60%</span></div><p className="text-xs text-gray-400 mt-1">이 값 미만이면 할루시네이션 경고 표시</p></div>
+              <div><label className="text-xs text-gray-500">자동 응답 임계값</label><div className="flex items-center space-x-2 mt-1"><input type="range" min="0" max="100" value={autoTh} onChange={e=>setAutoTh(+e.target.value)} aria-label="자동 응답 임계값" className="flex-1"/><span className="text-sm font-bold text-blue-600 w-12 text-right">{autoTh}%</span></div><p className="text-xs text-gray-400 mt-1">이 값 이상이면 자동 응답, 미만이면 전문가 검토 요청 — 현재 검토 내역 {rows.filter(r=>(r.confidence*100)<autoTh).length}건이 해당</p></div>
+              <div><label className="text-xs text-gray-500">할루시네이션 경고 임계값</label><div className="flex items-center space-x-2 mt-1"><input type="range" min="0" max="100" value={halluTh} onChange={e=>setHalluTh(+e.target.value)} aria-label="할루시네이션 경고 임계값" className="flex-1"/><span className="text-sm font-bold text-red-600 w-12 text-right">{halluTh}%</span></div><p className="text-xs text-gray-400 mt-1">이 값 미만이면 할루시네이션 경고 표시 — 현재 {rows.filter(r=>(r.confidence*100)<halluTh).length}건이 해당</p></div>
             </div>
           </div>
           <div className="bg-white rounded-xl border shadow-sm p-5">
