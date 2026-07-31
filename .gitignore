@@ -22,3 +22,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+tools/screen-spec/node_modules/
+tools/screen-spec/captures*/
