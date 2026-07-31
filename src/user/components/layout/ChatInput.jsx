@@ -14,6 +14,7 @@ const ChatInput = ({
   llmDropdownRef, llmButtonRef, showLLMDropdown, setShowLLMDropdown, setLlmDropdownPos,
   activeLLM, setShowBuilderModal,
   onOpenScan,
+  scanLabel = "코드 스캔",   // 팩 scanLabel — 무엇을 찍는지는 도메인마다 다르다(설비·로트 / 시설물 / 접수증)
 }) => {
   const [listening, setListening] = useState(false);
   const recRef = useRef(null);
@@ -66,7 +67,7 @@ const ChatInput = ({
             {listening ? <Square className="w-3.5 h-3.5 fill-current" /> : <Mic className="w-4 h-4" />}
           </button>
           {onOpenScan && (
-            <button title="설비·로트 코드 스캔" aria-label="설비·로트 코드 스캔" onClick={onOpenScan}
+            <button title={scanLabel} aria-label={scanLabel} onClick={onOpenScan}
               className={cn("h-8 w-8 rounded-lg flex items-center justify-center transition-colors", isSecure ? "text-slate-500 hover:text-blue-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100")}>
               <ScanLine className="w-4 h-4" />
             </button>

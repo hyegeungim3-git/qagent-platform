@@ -16,7 +16,7 @@ import { cn } from "../utils.jsx";
 
 const TYPE_LABEL = { equip: "설비", lot: "로트", order: "작업지시", material: "자재" };
 
-const ScanModal = ({ registry = [], brandColor = "#334155", onPick, onClose }) => {
+const ScanModal = ({ registry = [], brandColor = "#334155", label = "코드 스캔", onPick, onClose }) => {
   const [manual, setManual] = useState("");
   const [camState, setCamState] = useState("idle"); // idle | live | unsupported | denied
   const [err, setErr] = useState(null);
@@ -64,12 +64,12 @@ const ScanModal = ({ registry = [], brandColor = "#334155", onPick, onClose }) =
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div role="dialog" aria-label="설비·로트 코드 스캔"
+      <div role="dialog" aria-label={label}
         className="bg-white w-full max-w-lg max-h-[88vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         <div className="px-5 py-4 flex items-center gap-3 text-white shrink-0" style={{ backgroundColor: brandColor }}>
           <ScanLine className="w-5 h-5 shrink-0" />
           <div className="min-w-0">
-            <div className="text-[15px] font-black">설비·로트 코드 스캔</div>
+            <div className="text-[15px] font-black">{label}</div>
             <div className="text-[11px] opacity-80">코드를 찍으면 해당 대상의 업무 화면으로 바로 들어갑니다</div>
           </div>
           <button onClick={onClose} aria-label="닫기" className="ml-auto p-2 rounded-lg hover:bg-white/15 transition-colors">

@@ -23,13 +23,24 @@ import { readAudit } from "./auditLog.js";
 const keyOf = (d) => `genos.handover.${d}`;
 export const HANDOVER_CAP = 20;
 
-/* 항목 유형 — 인수인계 노트의 분류. 순서가 곧 표시 순서(중요도 순) */
+/* 항목 유형 — 인수인계 노트의 분류. 순서가 곧 표시 순서(중요도 순).
+   type 4종은 구조라 고정이지만, 라벨은 업무 성격에 따라 달라진다
+   (제조는 '설비 이상·알람'이 맞지만 행정 상황실은 '상황 발생'이 맞다).
+   그래서 코어 기본값은 중립으로 두고 팩이 shiftHandover.itemLabels로 덮는다. */
 export const ITEM_TYPES = [
-  { type: "alarm",   label: "설비 이상·알람",   tone: "rose" },
+  { type: "alarm",   label: "이상·경보",        tone: "rose" },
   { type: "action",  label: "조치 완료",        tone: "emerald" },
   { type: "pending", label: "인계 사항(미결)",  tone: "amber" },
-  { type: "quality", label: "품질 특이사항",    tone: "blue" },
+  { type: "quality", label: "특이사항",         tone: "blue" },
 ];
+
+/* 팩 라벨을 얹은 항목 유형 — 화면·텍스트 출력은 전부 이걸 쓴다.
+   itemLabels 미제공 시 코어 중립 라벨 그대로(기존 동작 유지). */
+export function itemTypes(domain) {
+  const over = domain?.shiftHandover?.itemLabels;
+  if (!over) return ITEM_TYPES;
+  return ITEM_TYPES.map(t => (over[t.type] ? { ...t, label: over[t.type] } : t));
+}
 
 export function readHandovers(domainId = getActiveDomainId()) {
   try { return JSON.parse(localStorage.getItem(keyOf(domainId)) || "[]"); } catch { return []; }
@@ -118,7 +129,8 @@ export function readIncoming(domain) {
 }
 
 /* 인수인계 노트를 텍스트로 — 내려받기·복사·인쇄 공용 */
-export function handoverToText(note, orgName = "") {
+export function handoverToText(note, orgName = "", domain = null) {
+  const TYPES = itemTypes(domain);
   const head = [
     `${orgName ? orgName + " " : ""}교대 인수인계`,
     `작성 조: ${note.shiftLabel}${note.shiftTime ? ` (${note.shiftTime})` : ""}`,
@@ -126,7 +138,7 @@ export function handoverToText(note, orgName = "") {
     note.savedAt ? `작성 시각: ${note.savedAt}` : "",
     "",
   ].filter(Boolean);
-  const body = ITEM_TYPES.flatMap(({ type, label }) => {
+  const body = TYPES.flatMap(({ type, label }) => {
     const list = (note.items || []).filter(i => i.type === type);
     return list.length ? [`[${label}]`, ...list.map(i => `- ${i.text}`), ""] : [];
   });

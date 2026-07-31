@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ArrowRightLeft, CheckCircle2, Plus, Trash2, Download, Bot, ClipboardCheck } from "lucide-react";
 import { cn, downloadTextFile } from "../utils.jsx";
-import { ITEM_TYPES, saveHandover, handoverToText } from "../shiftHandover.js";
+import { itemTypes, saveHandover, handoverToText } from "../shiftHandover.js";
 
 /* ==================================================================
  * 교대 인수인계 — 받은 인계 확인 + 이번 조 노트 작성
@@ -40,21 +40,26 @@ const ShiftHandoverModal = ({ domain, incoming, draft, userName, onClose, onSave
     }
   };
 
+  /* 항목 유형 라벨·모달 제목은 팩이 덮을 수 있다 — 업무 성격이 다르면 분류 이름도 달라진다
+     (제조 '설비 이상·알람' vs 행정 상황실 '상황 발생'). 미제공 시 코어 중립 라벨. */
+  const TYPES = itemTypes(domain);
+  const TITLE = domain?.shiftHandover?.title || "교대 인수인계";
+
   const download = () => downloadTextFile(
-    `교대인수인계_${draft?.shiftLabel || ""}.txt`,
-    handoverToText({ ...draft, items, author: userName }, domain?.orgName));
+    `${TITLE.replace(/\s/g, "")}_${draft?.shiftLabel || ""}.txt`,
+    handoverToText({ ...draft, items, author: userName }, domain?.orgName, domain));
 
   return createPortal(
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div role="dialog" aria-label="교대 인수인계"
+      <div role="dialog" aria-label={TITLE}
         className="bg-white w-full max-w-4xl max-h-[88vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         {/* 헤더 */}
         <div className="px-6 py-4 flex items-center gap-3 shrink-0 text-white"
           style={{ backgroundColor: domain?.brandColor || "#334155" }}>
           <ArrowRightLeft className="w-5 h-5 shrink-0" />
           <div className="min-w-0">
-            <div className="text-[15px] font-black">교대 인수인계</div>
+            <div className="text-[15px] font-black">{TITLE}</div>
             <div className="text-[12px] opacity-80 truncate">
               {incoming ? `${incoming.shiftLabel} → ` : ""}{draft?.shiftLabel}
               {draft?.shiftTime ? ` (${draft.shiftTime})` : ""}
@@ -80,7 +85,7 @@ const ShiftHandoverModal = ({ domain, incoming, draft, userName, onClose, onSave
               <>
                 <div className="space-y-1.5">
                   {(incoming.items || []).map((it, i) => {
-                    const meta = ITEM_TYPES.find(t => t.type === it.type) || ITEM_TYPES[2];
+                    const meta = TYPES.find(t => t.type === it.type) || TYPES[2];
                     const tone = TONE[meta.tone];
                     return (
                       <div key={i} className="flex items-start gap-2 px-3 py-2 rounded-lg border border-slate-100 bg-slate-50/60">
@@ -112,7 +117,7 @@ const ShiftHandoverModal = ({ domain, incoming, draft, userName, onClose, onSave
               )}
             </div>
 
-            {ITEM_TYPES.map(({ type, label, tone }) => {
+            {TYPES.map(({ type, label, tone }) => {
               const list = byType(type);
               if (!list.length) return null;
               return (
@@ -140,7 +145,7 @@ const ShiftHandoverModal = ({ domain, incoming, draft, userName, onClose, onSave
             <div className="flex items-center gap-1.5 pt-1">
               <select value={addType} onChange={e => setAddType(e.target.value)}
                 aria-label="항목 유형" className="text-[11px] border border-slate-200 rounded-lg px-2 py-2 bg-white shrink-0">
-                {ITEM_TYPES.map(t => <option key={t.type} value={t.type}>{t.label}</option>)}
+                {TYPES.map(t => <option key={t.type} value={t.type}>{t.label}</option>)}
               </select>
               <input value={adding} onChange={e => setAdding(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && addItem()}

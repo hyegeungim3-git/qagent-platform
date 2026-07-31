@@ -464,6 +464,8 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
     const draft = buildDraft(domain, { notifications: NOTIFS });
     const incoming = readIncoming(domain);
     return {
+      title: domain.shiftHandover.title || "",
+      hint: domain.shiftHandover.hint || "",
       shiftLabel: draft?.shiftLabel || "",
       shiftTime: draft?.shiftTime || "",
       draftCount: draft?.items?.length || 0,
@@ -663,6 +665,7 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
               setLlmDropdownPos={setLlmDropdownPos}
               activeLLM={activeLLM} setShowBuilderModal={setShowBuilderModal}
               onOpenScan={domain.scanRegistry?.length ? () => setShowScan(true) : undefined}
+              scanLabel={domain.scanLabel || "코드 스캔"}
             />
           )}
         </main>
@@ -753,6 +756,7 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
         <ScanModal
           registry={domain.scanRegistry || []}
           brandColor={domain.brandColor}
+          label={domain.scanLabel || "코드 스캔"}
           onClose={() => setShowScan(false)}
           onPick={(hit) => {
             setShowScan(false);

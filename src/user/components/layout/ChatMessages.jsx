@@ -209,7 +209,7 @@ const ChatMessages = ({
                     className="w-full max-w-2xl mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all text-left overflow-hidden group">
                     <div className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-100 flex items-center gap-2">
                       <ArrowRightLeft className="w-3.5 h-3.5" style={{ color: domainColor }} />
-                      <span className="text-[12px] font-black text-slate-800">교대 인수인계</span>
+                      <span className="text-[12px] font-black text-slate-800">{handover.title || "교대 인수인계"}</span>
                       <span className="ml-auto text-[10px] font-bold text-slate-400">
                         {handover.shiftLabel}{handover.shiftTime ? ` · ${handover.shiftTime}` : ""}
                       </span>
@@ -227,7 +227,7 @@ const ChatMessages = ({
                           </p>
                         )}
                         <p className="text-[10px] text-slate-400 mt-0.5">
-                          알람·조치·미결을 자동으로 모아 다음 조에 넘깁니다
+                          {handover.hint || "이상·조치·미결을 자동으로 모아 다음 조에 넘깁니다"}
                         </p>
                       </div>
                       <span className="flex items-center gap-0.5 text-[11px] font-black shrink-0 group-hover:gap-1.5 transition-all"
