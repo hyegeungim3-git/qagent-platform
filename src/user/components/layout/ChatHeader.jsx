@@ -69,7 +69,9 @@ const ChatHeader = ({
                 {isSecure ? "보안 강화" : isAgent ? "에이전트" : "활성"}
               </span>
             </h2>
-            <p className={cn("text-[12px] font-medium leading-tight truncate", th.subtext)}>
+            {/* 좁은 폭은 1줄 말줄임, 넓은 화면(제안서 캡처 대상)에서는 2줄까지 펼쳐
+                에이전트 설명이 문장 중간에서 잘리지 않게 한다 */}
+            <p className={cn("text-[12px] font-medium leading-tight truncate xl:whitespace-normal xl:line-clamp-2", th.subtext)}>
               {isSecure ? "무저장 · 로컬 LLM · 망분리 — 강화된 보안 환경에서 처리됩니다" : isAgent ? (isOrch ? (orchActive?.brief ?? "요청 1건이 여러 에이전트를 자동 릴레이합니다") : activeAgentId ? (AGENT_TEAMS.find(a=>a.id===activeAgentId)?.desc ?? "") : `${domain.orgName} 멀티 에이전트 허브`) : mc.desc}
             </p>
           </div>
@@ -154,7 +156,7 @@ const ChatHeader = ({
           <span className="text-[11px] font-black text-blue-700 shrink-0 bg-blue-100 px-1.5 py-0.5 rounded">공지</span>
           <span className="text-[12px] text-blue-700 flex-1 truncate font-medium">{MOCK_NOTICES_USER[0].title}</span>
           <span className="text-[10px] text-blue-400 font-mono shrink-0">{MOCK_NOTICES_USER[0].date}</span>
-          <button onClick={() => setShowNoticeBanner(false)} className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition-colors ml-1">
+          <button onClick={() => setShowNoticeBanner(false)} className="shrink-0 w-7 h-7 max-md:w-9 max-md:h-9 flex items-center justify-center rounded-full text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition-colors ml-1">
             <X className="w-3 h-3" />
           </button>
         </div>

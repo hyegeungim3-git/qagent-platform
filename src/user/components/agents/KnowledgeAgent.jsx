@@ -152,7 +152,7 @@ const KnowledgeAgent=({onBack,domain})=>{
       <div className="max-w-2xl mx-auto space-y-6">
         {/* 헤더 */}
         <div className="flex items-center gap-3 mb-2">
-          {onBack&&<button onClick={onBack} className="text-slate-400 hover:text-slate-600 text-[11px] font-bold flex items-center gap-1 shrink-0">
+          {onBack&&<button onClick={onBack} className="text-slate-400 hover:text-slate-600 text-[11px] font-bold flex items-center gap-1 shrink-0 py-2 pr-2 max-md:py-2.5">
             <ChevronRight className="w-3.5 h-3.5 rotate-180"/>뒤로
           </button>}
           <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center shadow-md shrink-0">

@@ -136,7 +136,8 @@ const AgentHub = ({ onLaunch, agents = AGENT_TEAMS, orgName = "한국부동산�
                         <span className="text-[10px] text-slate-400 font-medium">요청 1건 → 에이전트 {orch.stages.length}개 자동 릴레이</span>
                       </div>
                       <div className="text-[15px] font-bold text-slate-900 leading-tight truncate">{orch.title}</div>
-                      <div className="text-[11px] text-slate-500 font-medium truncate mt-0.5">{orch.brief}</div>
+                      {/* 넓은 화면(제안서 캡처)에서는 2줄까지 — 시나리오 설명이 중간에서 잘리지 않게 */}
+                      <div className="text-[11px] text-slate-500 font-medium truncate xl:whitespace-normal xl:line-clamp-2 mt-0.5">{orch.brief}</div>
                     </div>
                     <button onClick={() => onLaunch(`orchestration:${oi}`)}
                       className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-[12px] font-semibold shadow-sm hover:bg-indigo-700 transition-colors">

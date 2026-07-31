@@ -34,7 +34,7 @@ const LiveMetricCard = ({ cfg, state, speed, setSpeed, onAction }) => {
           <span className="flex items-center gap-1 shrink-0" role="group" aria-label="시뮬레이션 배속">
             {[1, 10, 60].map(s => (
               <button key={s} onClick={() => setSpeed(s)} aria-pressed={speed === s}
-                className={cn("px-1.5 py-0.5 rounded-md text-[10px] font-black border transition-colors",
+                className={cn("px-2 py-0.5 min-h-[28px] max-md:min-h-[36px] max-md:px-2.5 rounded-md text-[10px] font-black border transition-colors",
                   speed === s ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-500 border-slate-200 hover:border-indigo-300")}>
                 {s}×
               </button>
