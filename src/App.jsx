@@ -162,7 +162,7 @@ const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChang
     'packstudio':<PackStudioPage/>,
     'deploy.tools.mcp':<MCPToolsPage/>,'deploy.tools.server':<MCPServerPage/>,'deploy.tools.prompt':<PromptLibraryPage/>,
     'deploy.serving':<ServingPage/>,
-    'agent.taskflow.builder':<TaskflowBuilderPage/>,'agent.taskflow.deploy':<TaskflowDeployPage/>,'agent.workflow':<WorkflowPage/>,'agent.scenario':<ScenarioBuilderPage/>,
+    'agent.taskflow.builder':<TaskflowBuilderPage/>,'agent.taskflow.deploy':<TaskflowDeployPage/>,'agent.workflow':<WorkflowPage/>,'agent.scenario':<ScenarioBuilderPage domain={domain}/>,
     'app.chat':<ChatAppPage/>,'app.report':<ReportGenPage/>,'app.analysis':<DataAnalysisPage/>,
     'ops.approval':<ApprovalPage/>,'ops.quota':<QuotaPage/>,
     'admin.manage':<AdminPage/>,'admin.users':<UserManagementPage/>,'admin.knowledge':<KnowledgeManagementPage/>,'admin.rag':<RagPipelinePage/>,

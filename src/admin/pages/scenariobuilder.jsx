@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Workflow, Plus, Trash2, Save, FileJson, ChevronRight, GripVertical } from 'lucide-react';
 import { PageShell, Modal, useToast } from '../common.jsx';
-import { getDomainList } from '../../domains/index.js';
+import { getDomainList, getDomain, getActiveDomainId } from '../../domains/index.js';
 import { AGENT_TEAMS } from '../../user/data/constants.js';
 import { loadCustomScenarios, saveCustomScenarios, SCENARIO_CAP } from '../../user/scenarios.js';
 
@@ -11,7 +11,17 @@ import { loadCustomScenarios, saveCustomScenarios, SCENARIO_CAP } from '../../us
 /* agentId는 선택식(오타 방지), 스키마는 팩 orchestration과 동일        */
 /* ================================================================== */
 
-const AGENT_OPTS = AGENT_TEAMS.map(a => ({ id: a.id, label: `${a.shortName} — ${a.name}` }));
+/* 에이전트 선택지는 '대상 도메인'의 허브 카탈로그 이름을 쓴다 —
+   코어 기본 이름을 그대로 보여주면 발주처 관리자가 자기 에이전트를 못 알아본다
+   (예: 한빛에서 '도면 설계 지원'이 '지식 검색 에이전트'로 보임). */
+const agentOptsFor = (domain) => AGENT_TEAMS.map(a => {
+  const c = domain?.agentCatalog?.[a.id];
+  return { id: a.id, label: `${c?.shortName || a.shortName} — ${c?.name || a.name}` };
+});
+const agentShortName = (domain, id) =>
+  domain?.agentCatalog?.[id]?.shortName || AGENT_TEAMS.find(a => a.id === id)?.shortName || id;
+
+const AGENT_OPTS = agentOptsFor(null);
 
 const newStage = () => ({ agentId: AGENT_OPTS[0].id, task: '', logsText: '', outputLabel: '', outputItems: '', handoff: '' });
 const newDraft = () => ({
@@ -56,13 +66,20 @@ const Input = ({ label, value, onChange, placeholder, wide }) => (
   </label>
 );
 
-export const ScenarioBuilderPage = () => {
+export const ScenarioBuilderPage = ({ domain }) => {
   const toast = useToast();
   const domains = getDomainList();
-  const [domainId, setDomainId] = useState(domains[0].id);
-  const [list, setList] = useState(() => loadCustomScenarios(domains[0].id));
+  /* 기본 대상 도메인 = 지금 관리 중인 도메인 (REB 고정이면 발주처 시연에서 매번 바꿔야 한다).
+     주소로 바로 진입하면 localStorage에 활성 도메인이 없을 수 있어 prop을 먼저 본다. */
+  const currentId = domain?.id || getActiveDomainId();
+  const initialDomainId = domains.some(d => d.id === currentId) ? currentId : domains[0].id;
+  const [domainId, setDomainId] = useState(initialDomainId);
+  const [list, setList] = useState(() => loadCustomScenarios(initialDomainId));
   const [draft, setDraft] = useState(newDraft);
   const [jsonView, setJsonView] = useState(null);
+  /* 선택된 대상 도메인 기준으로 에이전트 이름을 표시 */
+  const targetDomain = getDomain(domainId);
+  const agentOpts = agentOptsFor(targetDomain);
   const set = (patch) => setDraft(d => ({ ...d, ...patch }));
   const setStage = (i, patch) => set({ stages: draft.stages.map((s, j) => j === i ? { ...s, ...patch } : s) });
 
@@ -128,7 +145,7 @@ export const ScenarioBuilderPage = () => {
                     {/* agentId 선택식 — 오타로 인한 조용한 미표시 방지 */}
                     <select value={s.agentId} onChange={e => setStage(i, { agentId: e.target.value })}
                       className="border rounded-lg px-2.5 py-1.5 text-sm bg-white flex-1">
-                      {AGENT_OPTS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+                      {agentOpts.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
                     </select>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -197,7 +214,7 @@ export const ScenarioBuilderPage = () => {
                     <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1 flex-wrap">
                       {s.stages.map((st, j) => (
                         <React.Fragment key={j}>
-                          <span>{AGENT_TEAMS.find(a => a.id === st.agentId)?.shortName || st.agentId}</span>
+                          <span>{agentShortName(targetDomain, st.agentId)}</span>
                           {j < s.stages.length - 1 && <ChevronRight size={10}/>}
                         </React.Fragment>
                       ))}
