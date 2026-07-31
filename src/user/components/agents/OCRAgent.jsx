@@ -7,7 +7,7 @@ import {
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { cn } from "../../utils.jsx";
+import { cn, downloadTextFile, buildDocHtml } from "../../utils.jsx";
 
 
 const MOCK_FILES = [
@@ -167,6 +167,7 @@ const OCRAgent = ({ onBack, domain }) => {
   const [ocrPage, setOcrPage] = useState(0);
   const [activeTab, setActiveTab] = useState('text');
   const [copied, setCopied] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
   const fileRef = useRef(null);
 
   const totalPages = files.reduce((s, f) => s + (f.pages || 1), 0);
@@ -184,6 +185,17 @@ const OCRAgent = ({ onBack, domain }) => {
 
   const reset = () => { resetSim(); setOcrPage(0); setFiles(C.sampleFiles); setActiveTab('text'); setCopied(false); };
   const handleCopy = () => { navigator.clipboard?.writeText(C.extractedText).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+
+  /* 화면에 보이는 본문(마스킹 토글 반영)을 워드 문서로 — 마스킹 상태를 파일명에 남긴다 */
+  const handleDownloadDoc = () => {
+    const masked = maskPII;
+    const body = masked ? C.maskedText : C.extractedText;
+    downloadTextFile(`OCR_추출본${masked ? '_마스킹' : ''}.doc`,
+      buildDocHtml(`OCR 추출 결과${masked ? ' (개인정보 마스킹 적용)' : ''}`, body),
+      'application/msword;charset=utf-8');
+    setDownloaded(true);
+    setTimeout(() => setDownloaded(false), 2000);
+  };
 
   const getScoreColor = (level) => level === 'high' ? 'bg-emerald-500' : level === 'med' ? 'bg-yellow-400' : 'bg-red-400';
   const getScoreTextColor = (level) => level === 'high' ? 'text-emerald-600' : level === 'med' ? 'text-yellow-600' : 'text-red-500';
@@ -467,8 +479,10 @@ const OCRAgent = ({ onBack, domain }) => {
         <button onClick={handleCopy} className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors border', copied?'bg-emerald-50 border-emerald-200 text-emerald-700':'border-slate-200 text-slate-500 hover:bg-slate-50')}>
           <Copy className="w-3 h-3"/>{copied ? '복사됨' : '텍스트 복사'}
         </button>
-        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white rounded-lg text-[11px] font-bold hover:bg-teal-700 transition-colors shadow-sm">
-          <Download className="w-3 h-3"/>워드 다운로드
+        <button onClick={handleDownloadDoc}
+          className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors shadow-sm text-white',
+            downloaded?'bg-emerald-600 hover:bg-emerald-700':'bg-teal-600 hover:bg-teal-700')}>
+          <Download className="w-3 h-3"/>{downloaded?'내려받음':'워드 다운로드'}
         </button>
       </div>
 

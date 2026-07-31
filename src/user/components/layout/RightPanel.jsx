@@ -27,6 +27,7 @@ const RightPanel = ({
   const [myRagAreas, setMyRagAreas] = useState(MY_RAG_INIT.map(a=>({...a})));
   const [selRagArea, setSelRagArea] = useState('mra-1');
   const [myRagDocs, setMyRagDocs] = useState(JSON.parse(JSON.stringify(MY_RAG_DOCS_INIT)));
+  const [zoom, setZoom] = useState(100); // 문서 뷰어 확대율 (70~150%)
   const [newAreaName, setNewAreaName] = useState('');
   const [showNewArea, setShowNewArea] = useState(false);
 
@@ -146,14 +147,19 @@ const RightPanel = ({
           <div className="flex flex-col h-full">
             <div className={cn("h-11 border-b flex items-center justify-end px-4 gap-2 shrink-0", isSecure ? "bg-[#0a0f1c] border-slate-800" : "bg-white border-slate-100 shadow-sm")}>
               <div className={cn("flex items-center rounded-lg border p-0.5 shadow-sm", isSecure ? "bg-[#040814] border-slate-700" : "bg-white border-slate-200")}>
-                <button aria-label="축소" className={cn("p-1.5 rounded-md transition-colors", isSecure ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-100 text-slate-500")}><ZoomOut className="w-3.5 h-3.5" /></button>
-                <span className={cn("text-[13px] font-bold px-2 w-10 text-center", isSecure ? "text-slate-300" : "text-slate-600")}>100%</span>
-                <button aria-label="확대" className={cn("p-1.5 rounded-md transition-colors", isSecure ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-100 text-slate-500")}><ZoomIn className="w-3.5 h-3.5" /></button>
+                <button aria-label="축소" onClick={() => setZoom(z => Math.max(70, z - 10))} disabled={zoom <= 70}
+                  className={cn("p-1.5 rounded-md transition-colors disabled:opacity-30", isSecure ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-100 text-slate-500")}><ZoomOut className="w-3.5 h-3.5" /></button>
+                <button onClick={() => setZoom(100)} title="100%로 되돌리기"
+                  className={cn("text-[13px] font-bold px-2 w-12 text-center rounded transition-colors", isSecure ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100")}>{zoom}%</button>
+                <button aria-label="확대" onClick={() => setZoom(z => Math.min(150, z + 10))} disabled={zoom >= 150}
+                  className={cn("p-1.5 rounded-md transition-colors disabled:opacity-30", isSecure ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-100 text-slate-500")}><ZoomIn className="w-3.5 h-3.5" /></button>
               </div>
               <span className={cn("text-[13px] px-2 py-0.5 rounded font-bold border", isSecure ? "bg-slate-800 text-blue-400 border-slate-700" : "bg-yellow-50 text-yellow-700 border-yellow-200")}>관련 구절 강조됨</span>
             </div>
             <div className="flex-1 overflow-y-auto p-5 custom-scrollbar" ref={readerRef}>
-              <div className={cn("rounded-xl shadow-md border p-6 sm:p-8 min-h-full", isSecure ? "bg-[#0a0f1c] border-slate-800" : "bg-white border-slate-200")}>
+              {/* 본문 글자 크기가 고정 px 클래스라 font-size 상속으로는 확대되지 않는다 — zoom으로 레이아웃까지 배율 적용 */}
+              <div style={{ zoom: zoom / 100 }}
+                className={cn("rounded-xl shadow-md border p-6 sm:p-8 min-h-full", isSecure ? "bg-[#0a0f1c] border-slate-800" : "bg-white border-slate-200")}>
                 {renderDocText()}
               </div>
             </div>

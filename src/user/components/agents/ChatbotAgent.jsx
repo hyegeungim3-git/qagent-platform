@@ -412,6 +412,9 @@ export default function ChatbotAgent({ onBack, domain }) {
 
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+  const attachRef = useRef(null);
+  const [attachment, setAttachment] = useState(null); // {name,size} — 첨부 후 다음 질의에 동봉
+  const [micNotice, setMicNotice] = useState(false);  // 음성 입력 미지원 안내
   const timerRef = useRef([]);
 
   const userMsgCount = messages.filter(m => m.role === 'user').length;
@@ -437,10 +440,14 @@ export default function ChatbotAgent({ onBack, domain }) {
   function sendMessage(text, isFaq = false, faqItem = null) {
     if (!text.trim() || isProcessing) return;
 
-    const userMsg = { id: `u-${Date.now()}`, role: 'user', text: text.trim(), ts: new Date() };
+    const userMsg = {
+      id: `u-${Date.now()}`, role: 'user', text: text.trim(),
+      attachment: isFaq ? null : attachment, ts: new Date(),
+    };
 
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    if (!isFaq) setAttachment(null);
     setIsProcessing(true);
     setActiveSource(null);
 
@@ -626,11 +633,35 @@ export default function ChatbotAgent({ onBack, domain }) {
 
         {/* 입력창 */}
         <div className="shrink-0 px-4 py-3 border-t border-slate-200 bg-white">
+          {attachment && (
+            <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-[11px] text-blue-700">
+              <Paperclip size={12} className="shrink-0" />
+              <span className="truncate font-medium">{attachment.name}</span>
+              <span className="text-blue-400 shrink-0">{attachment.size}</span>
+              <button onClick={() => setAttachment(null)} aria-label="첨부 취소"
+                className="ml-auto text-blue-400 hover:text-blue-700 font-bold shrink-0">×</button>
+            </div>
+          )}
+          {micNotice && (
+            <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-500">
+              <Mic size={12} className="shrink-0" />
+              음성 입력은 이 데모 환경에서 비활성화돼 있습니다 — 질의는 직접 입력해 주세요.
+            </div>
+          )}
           <div className={cn(
             "flex items-end gap-2 rounded-xl border bg-white px-3 py-2 transition-colors",
             showCorrectionBanner ? "border-amber-300" : "border-slate-200 focus-within:border-blue-400"
           )}>
-            <button className="p-1 text-slate-400 hover:text-slate-600 transition-colors shrink-0" aria-label="파일 첨부"><Paperclip size={16} /></button>
+            <button onClick={() => attachRef.current?.click()}
+              className="p-1 text-slate-400 hover:text-slate-600 transition-colors shrink-0" aria-label="파일 첨부"><Paperclip size={16} /></button>
+            <input ref={attachRef} type="file" className="hidden"
+              onChange={e => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                setAttachment({ name: f.name, size: `${(f.size / 1024).toFixed(0)}KB` });
+                setMicNotice(false);
+                e.target.value = '';
+              }} />
             <textarea
               ref={inputRef}
               value={input}
@@ -643,7 +674,10 @@ export default function ChatbotAgent({ onBack, domain }) {
               onInput={e => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px'; }}
               disabled={isProcessing}
             />
-            <button className="p-1 text-slate-400 hover:text-slate-600 transition-colors shrink-0" aria-label="음성 입력"><Mic size={16} /></button>
+            <button onClick={() => { setMicNotice(v => !v); inputRef.current?.focus(); }}
+              aria-pressed={micNotice}
+              className={cn('p-1 transition-colors shrink-0', micNotice ? 'text-slate-600' : 'text-slate-400 hover:text-slate-600')}
+              aria-label="음성 입력"><Mic size={16} /></button>
             <button
               onClick={handleSend}
               disabled={!input.trim() || isProcessing}

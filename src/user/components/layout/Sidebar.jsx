@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   MessageSquare, Bot, Shield, Plus, PanelLeftClose, PanelLeftOpen,
   EyeOff, Server, ShieldCheck, Lock, History, Star, Bell, HelpCircle,
@@ -21,7 +21,10 @@ const Sidebar = ({
   setShowNoticeBanner, setShowQnaModal,
   onSwitchToAdmin, onOpenTutorial, onOpenSettings,
   L = { tabGeneral: "일반", tabAgent: "에이전트", tabSecure: "보안", newChat: "새 대화", recent: "최근 대화" },
-}) => (
+}) => {
+  // 최근 대화 목록 접기/펼치기 (헤더의 이력 아이콘)
+  const [historyOpen, setHistoryOpen] = useState(true);
+  return (
   <aside
     aria-label="사이드바 내비게이션"
     className={cn(
@@ -251,8 +254,11 @@ const Sidebar = ({
           <div className="px-2 space-y-0.5">
             <div className={cn("px-3 mb-2 flex items-center justify-between", th.sidebarLabel)}>
               <span className="text-[10px] font-black uppercase tracking-wider">{L.recent}</span>
-              <button aria-label="대화 이력" className="p-1 rounded-lg hover:bg-white/70 transition-colors"><History className="w-3.5 h-3.5" /></button>
+              <button aria-label={historyOpen ? "최근 대화 접기" : "최근 대화 펼치기"} aria-expanded={historyOpen}
+                onClick={() => setHistoryOpen(v => !v)}
+                className={cn("p-1 rounded-lg hover:bg-white/70 transition-colors", !historyOpen && "opacity-50")}><History className="w-3.5 h-3.5" /></button>
             </div>
+            {historyOpen && (<>
             <div className="px-3 py-1 text-[10px] font-black text-slate-400 uppercase tracking-wider">오늘</div>
             {HISTORY.filter(h => h.isToday).map(h => {
               const HIcon = MODES[h.mode]?.icon || MessageSquare;
@@ -281,6 +287,7 @@ const Sidebar = ({
                 </button>
               );
             })}
+            </>)}
           </div>
         ) : null
       )}
@@ -349,6 +356,7 @@ const Sidebar = ({
       </div>
     </div>
   </aside>
-);
+  );
+};
 
 export default Sidebar;

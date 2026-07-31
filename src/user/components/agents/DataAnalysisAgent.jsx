@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
-import { cn } from "../../utils.jsx";
+import { cn, downloadTextFile } from "../../utils.jsx";
 
 
 const AGENTS=[
@@ -95,6 +95,25 @@ const DataAnalysisAgent=({onBack,domain})=>{
   const [doneIdx,setDoneIdx]=useState([]);
   const [chartTab,setChartTab]=useState('trend');
   const [bulkMode,setBulkMode]=useState(false);
+  const [downloaded,setDownloaded]=useState(false);
+
+  /* 통계 요약 + 현재 보고 있는 차트의 원본 데이터를 엑셀(TSV)로 — 화면에 없는 값은 넣지 않는다 */
+  const downloadResult=()=>{
+    const rows=[['[통계 요약]'],['지표','값','전기 대비'],
+      ...C.statsTable.map(s=>[s.metric,s.value,s.change]),['']];
+    // 탭 키는 trend | region | appeal (렌더 조건과 동일하게 맞출 것)
+    const chart=chartTab==='region'?{title:C.barCaption,data:C.barData}
+      :chartTab==='appeal'?{title:C.stackCaption,data:C.stackData}
+      :{title:C.trendCaption,data:C.trendData};
+    if(chart.data?.length){
+      rows.push([`[${chart.title}]`],Object.keys(chart.data[0]),
+        ...chart.data.map(d=>Object.values(d)));
+    }
+    downloadTextFile('분석결과.xls',rows.map(r=>r.join('\t')).join('\n'),
+      'text/tab-separated-values;charset=utf-8');
+    setDownloaded(true);
+    setTimeout(()=>setDownloaded(false),2000);
+  };
 
   const startAnalysis=()=>{
     setStep(2);setAgentIdx(0);setDoneIdx([]);
@@ -272,8 +291,10 @@ const DataAnalysisAgent=({onBack,domain})=>{
         <button onClick={reset} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[11px] font-bold text-slate-500 hover:bg-slate-50 transition-colors">
           <RotateCcw className="w-3 h-3"/>새 분석
         </button>
-        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[11px] font-bold hover:bg-orange-600 transition-colors shadow-sm">
-          <Download className="w-3 h-3"/>결과 다운로드
+        <button onClick={downloadResult}
+          className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors shadow-sm text-white',
+            downloaded?'bg-emerald-600 hover:bg-emerald-700':'bg-orange-500 hover:bg-orange-600')}>
+          <Download className="w-3 h-3"/>{downloaded?'내려받음':'결과 다운로드'}
         </button>
       </div>
 

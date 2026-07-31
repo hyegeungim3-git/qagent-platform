@@ -8,7 +8,7 @@ import {
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { cn } from "../../utils.jsx";
+import { cn, downloadTextFile } from "../../utils.jsx";
 
 
 const AGENTS=[
@@ -149,6 +149,7 @@ const SummaryAgent=({onBack,domain})=>{
   const [language,setLanguage]=useState('한국어');
   const [focusAreas,setFocusAreas]=useState([]);
   const [copied,setCopied]=useState(false);
+  const [downloaded,setDownloaded]=useState(false);
   const fileRef=useRef(null);
 
   const toggleFocus=(f)=>setFocusAreas(p=>p.includes(f)?p.filter(x=>x!==f):[...p,f]);
@@ -161,6 +162,12 @@ const SummaryAgent=({onBack,domain})=>{
     navigator.clipboard?.writeText(C.summaryContent.replace(/\*\*/g,''));
     setCopied(true);
     setTimeout(()=>setCopied(false),2000);
+  };
+
+  const handleDownloadTxt=()=>{
+    downloadTextFile('문서요약.txt',C.summaryContent.replace(/\*\*/g,''));
+    setDownloaded(true);
+    setTimeout(()=>setDownloaded(false),2000);
   };
 
   const selectedType=SUMMARY_TYPES.find(t=>t.id===summaryType);
@@ -421,8 +428,10 @@ const SummaryAgent=({onBack,domain})=>{
               copied?'bg-amber-500 text-white border-amber-500':'bg-white text-slate-600 border-slate-200 hover:border-amber-400 hover:text-amber-700')}>
             <Copy className="w-3.5 h-3.5"/>{copied?'복사됨!':'복사'}
           </button>
-          <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-600 hover:border-amber-400 hover:text-amber-700 transition-all">
-            <Download className="w-3.5 h-3.5"/>TXT 다운로드
+          <button onClick={handleDownloadTxt}
+            className={cn('flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border transition-all',
+              downloaded?'bg-emerald-50 border-emerald-300 text-emerald-700':'border-slate-200 bg-white text-slate-600 hover:border-amber-400 hover:text-amber-700')}>
+            <Download className="w-3.5 h-3.5"/>{downloaded?'내려받음':'TXT 다운로드'}
           </button>
           <button onClick={reset}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-600 hover:border-amber-400 hover:text-amber-700 transition-all">

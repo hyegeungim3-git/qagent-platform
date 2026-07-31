@@ -33,7 +33,9 @@ const ChatInput = ({
           <button onClick={() => fileInputRef.current?.click()} title="파일 첨부" aria-label="파일 첨부" className={cn("h-8 w-8 rounded-lg flex items-center justify-center transition-colors", isSecure ? "text-slate-500 hover:text-blue-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100")}>
             <Paperclip className="w-4 h-4" />
           </button>
-          <button title="음성 입력" aria-label="음성 입력" className={cn("h-8 w-8 rounded-lg flex items-center justify-center transition-colors", isSecure ? "text-slate-500 hover:text-blue-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100")}>
+          <button title="음성 입력" aria-label="음성 입력"
+            onClick={() => setToast({ message: '음성 입력은 시연 환경에서 제공되지 않습니다. 텍스트로 입력해 주세요.' })}
+            className={cn("h-8 w-8 rounded-lg flex items-center justify-center transition-colors", isSecure ? "text-slate-500 hover:text-blue-400 hover:bg-slate-800" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100")}>
             <Mic className="w-4 h-4" />
           </button>
 

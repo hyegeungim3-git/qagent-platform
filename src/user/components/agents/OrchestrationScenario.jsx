@@ -4,7 +4,7 @@ import {
   Paperclip, ChevronRight, ArrowDown, FileText, Sparkles, Download, UserCheck,
 } from "lucide-react";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { cn } from "../../utils.jsx";
+import { cn, downloadTextFile, buildDocHtml } from "../../utils.jsx";
 import { logAudit } from "../../auditLog.js";
 
 /* 에이전트 강조색 — AgentHub COLOR_MAP과 동일 팔레트 (표시용 부분집합) */
@@ -34,6 +34,30 @@ const OrchestrationScenario = ({ scenario, agents, user, onBack }) => {
 
   // 스테이지별 표시된 로그 줄 수 (실행 중 한 줄씩 나타남)
   const [logCount, setLogCount] = useState({});
+  const [downloaded, setDownloaded] = useState(false);
+
+  /* 완료 카드에 표시된 산출물을 워드 문서로 — 릴레이 경로와 지표를 함께 남긴다 */
+  const handleDownloadReport = () => {
+    const r = scenario.result;
+    const body = [
+      `문서번호: ${r.docNo}`,
+      `요청: ${scenario.request}`,
+      '',
+      '[주요 내용]',
+      ...r.summary.map(s => `· ${s}`),
+      '',
+      '[처리 지표]',
+      ...r.metrics.map(m => `· ${m.label}: ${m.value}`),
+      '',
+      '[릴레이 경로]',
+      ...stages.map((st, i) => `${i + 1}. ${st.agent?.name || st.agentId} — ${st.task}`),
+      '',
+      '※ 본 문서는 시뮬레이션 데모에서 생성된 예시입니다.',
+    ].join('\n');
+    downloadTextFile(`${r.docNo}.doc`, buildDocHtml(r.docTitle, body), 'application/msword;charset=utf-8');
+    setDownloaded(true);
+    setTimeout(() => setDownloaded(false), 2000);
+  };
   const stageRefs = useRef([]);
   const bottomRef = useRef(null);
 
@@ -299,8 +323,10 @@ const OrchestrationScenario = ({ scenario, agents, user, onBack }) => {
                 </div>
               </div>
               <div className="px-4 py-3 border-t border-slate-100 flex items-center gap-2">
-                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-[11px] font-black hover:bg-emerald-700 transition-colors">
-                  <Download className="w-3.5 h-3.5" /> 보고서 내려받기
+                <button onClick={handleDownloadReport}
+                  className={cn('flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-white text-[11px] font-black transition-colors',
+                    downloaded ? 'bg-slate-700 hover:bg-slate-800' : 'bg-emerald-600 hover:bg-emerald-700')}>
+                  <Download className="w-3.5 h-3.5" /> {downloaded ? '내려받음' : '보고서 내려받기'}
                 </button>
                 <button onClick={handleStart}
                   className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-[11px] font-black hover:bg-slate-50 transition-colors">
