@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
-import { cn } from "../../utils.jsx";
+import { cn, agentHeader } from "../../utils.jsx";
 
 
 /* ─── 에이전트 파이프라인 ─── */
@@ -388,6 +388,7 @@ function SourcePreviewPanel({ sourceKey, previews, onClose }) {
 /* ─── 메인 컴포넌트 ─── */
 export default function ChatbotAgent({ onBack, domain }) {
   const C = { ...CONTENT_DEFAULTS, ...(domain?.agentContent?.["agent-chatbot"] || {}) };
+  const H = agentHeader(domain, 'agent-chatbot', { headerTitle: 'AI 챗봇 어시스턴트' }, AGENT_TEAMS);
   const [messages, setMessages] = useState([
     {
       id: 'init',
@@ -552,7 +553,7 @@ export default function ChatbotAgent({ onBack, domain }) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-slate-800 text-sm">AI 챗봇 어시스턴트</span>
+              <span className="font-semibold text-slate-800 text-sm">{H.title}</span>
               {contextCount > 0 && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
                   <Radio size={10} className="animate-pulse" />
