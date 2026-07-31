@@ -37,12 +37,14 @@ description: genos-app(GenOS 멀티 도메인 AI 플랫폼) 작업 오케스트�
 - 파일 수정은 Edit 도구만. PowerShell 치환은 한글 파일을 파괴한다.
 - 새 팩 필드를 만들면 같은 커밋에서 `docs/DOMAIN-PACK-GUIDE.md` 스키마를 갱신한다 (스키마 표류 방지).
 - 관리자 mocks.js에 새 상수를 추가하면 **export let·__REB_DEFAULTS·applyAdminDomain 3곳 등록** — 누락 시 조용히 무시된다.
-- **새 도메인 팩을 추가하면** `.claude/skills/genos-verify/scripts/verify.mjs`의 `DOMAINS` 배열에도 판정 기준(banned 금칙어·generalMarkers·hubMarkers·orchCards)을 **함께 등록** — 안 하면 새 도메인이 자동 검증에서 빠진다(등록 3곳과 같은 "조용한 누락" 계열).
+- **새 도메인 팩을 추가하면** `.claude/skills/genos-verify/scripts/scan-config.mjs`의 `DOMAINS` 배열에도 판정 기준(banned·generalMarkers·hubMarkers·orchCards·deepExtra)을 **함께 등록** — 안 하면 새 도메인이 자동 검증에서 빠진다(등록 3곳과 같은 "조용한 누락" 계열). 이 파일 하나가 verify.mjs·deepscan.mjs 공용 정본이다.
 - 함정을 밟기 쉬운 작업(빌드·자동화·배포·주석) 전에 `references/pitfalls.md`를 읽는다 — 전부 실제 사고 이력이다.
 
 ## Phase 3: 검증 (완료 = 빌드 + 실행 증거)
 
-1. **자동**: `node .claude/skills/genos-verify/scripts/verify.mjs` — 3도메인 금칙어·핵심 마커·콘솔 에러. 결과 표를 보고에 포함.
+1. **자동**: `node .claude/skills/genos-verify/scripts/verify.mjs` — 전 도메인 금칙어·핵심 마커·콘솔 에러(넓고 얕게). 결과 표를 보고에 포함.
+   팩 콘텐츠나 코어 공용 화면(워크플로 패널·문서 레플리카·모달)을 건드렸으면
+   `deepscan.mjs [baseUrl] [domainId]`도 실행 — 에이전트를 실제 실행해 진행·결과·모달까지 본다(도메인당 6~8분).
 2. **수동**: 변경 지점의 실제 조작 (버튼 클릭→상태 변화, 왕복 저장, 시나리오 완주). 스크린샷보다 DOM 텍스트 판정.
 3. **빌드**: ASCII 복사 빌드 EXIT 0 + "✓ built in Xs" (절차·함정: `docs/QUALITY-CHECKLIST.md` §A). "transformed"까지만 보고 통과 판정 금지.
 4. 규모 있는 작업이면 전역 `/quality-gate` 기준의 자기검토 7문을 통과시킨다.

@@ -123,6 +123,7 @@ src/
 | 2026-07-12 | verify.mjs가 스캔 전 genos.uiPrefs 제거 | genos-verify/scripts/verify.mjs | 다크·영어 설정 잔재가 한국어 마커 판정 오염 방지 |
 | 2026-07-12 | 승계 체계 추가 (DECISIONS.md·HANDOVER.md·CLAUDE.md 온보딩 포인터) | docs/, CLAUDE.md | Fable 5 이후 모델이 이어받거나 재현해도 같은 수준 유지 — 설계 '왜'와 온보딩 절차 외재화 |
 | 2026-07-30 | pitfalls §4에 'Pages 설정 소실' 항목 추가 (일시 오류와 구분·복구법) | genos-work/references/pitfalls.md | M.AX 배포 중 configure-pages 404로 build 실패 — 새 런 재시도 2회 낭비 후 원인 판명 |
+| 2026-07-31 | **deepscan.mjs 추가 + scan-config.mjs로 판정 기준 단일화** | genos-verify/scripts/ | verify.mjs가 '초기 화면'만 봐서 *실행해야 나오는* 누수를 구조적으로 못 잡았음(워크플로 패널 하드코딩·문서 레터헤드 REB 로고·사전 검수 모달 부동산 항목 3건이 그렇게 통과됨). 에이전트 13종을 실제 실행해 입력→진행→결과→모달까지 스캔. 도메인 목록·금칙어·에이전트 id는 scan-config.mjs가 정본이며 두 스크립트가 공유(등록 2곳 표류 방지). deepExtra는 도메인별 — 그 도메인의 정상 업무 용어를 넣으면 오탐(행정·제조의 도로명주소 등) |
 
 ## 6. 다음 세션 표준 지시문 (사용자가 이 문구로 시작하면 그대로 수행)
 

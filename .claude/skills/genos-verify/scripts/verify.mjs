@@ -9,49 +9,16 @@
  */
 import fs from "node:fs";
 import puppeteer from "puppeteer-core";
+import { DOMAINS, AGENT_IDS, findChrome, sleep } from "./scan-config.mjs";
 
 const BASE = process.argv[2] || "http://localhost:5173";
 const ONLY = process.argv[3] || null;
 
-// 도메인별 판정 기준 — 새 도메인 팩을 추가하면 여기에 항목을 추가하라 (index.js 등록과 나란히)
-const DOMAINS = [
-  {
-    id: "reb", label: "한국부동산원",
-    banned: ["KOGAS", "kogas", "한빛정밀", "한성시청", "HBP-", "HSC-", "새빛대학교병원", "SUH-"],
-    generalMarkers: ["한국부동산원", "오늘의 업무 브리핑", "실거래 이상거래 탐지"],
-    hubMarkers: ["공시지가 이의신청 서류 일괄 처리", "실거래 신고 이상거래 검증"],
-    orchCards: 2,
-  },
-  {
-    id: "manufacturing", label: "한빛정밀",
-    banned: ["KOGAS", "kogas", "한국부동산원", "공시지가", "표준지", "KREA-", "한성시청", "HSC-", "새빛대학교병원", "SUH-"],
-    generalMarkers: ["한빛정밀", "오늘의 업무 브리핑", "설비 데이터 진단", "도면 설계 지원", "AX 로드맵", "데이터 보안"],
-    hubMarkers: ["프레스 진동 알람 자동 대응", "협력사 검사성적서 일괄 처리", "도면 설계 아웃라인 자동 생성"],
-    orchCards: 3,
-  },
-  {
-    id: "civic", label: "한성시청",
-    banned: ["KOGAS", "kogas", "한국부동산원", "공시지가", "KREA-", "한빛정밀", "HBP-", "새빛대학교병원", "SUH-"],
-    generalMarkers: ["한성시", "오늘의 업무 브리핑", "재난 상황 확인"],
-    hubMarkers: ["옥외광고물 허가 신청 일괄 처리", "호우경보 재난 상황보고 작성"],
-    orchCards: 2,
-  },
-  {
-    id: "hospital", label: "새빛대학교병원",
-    banned: ["KOGAS", "kogas", "한국부동산원", "공시지가", "표준지", "KREA-", "한빛정밀", "HBP-", "한성시청", "HSC-"],
-    generalMarkers: ["오늘의 업무 브리핑", "응급실 현황", "응급실 병상 가동률"],
-    hubMarkers: ["입원 진료비 삭감위험 사전점검", "응급실 포화 경보 대응"],
-    orchCards: 2,
-  },
-];
+// 도메인별 판정 기준·에이전트 목록은 scan-config.mjs가 정본 (deepscan.mjs와 공유)
 
 /* 에이전트 13종 — 내부 화면(허브 안쪽)까지 자동 판정한다.
    해시 라우팅(#/<domain>/user/agent/<id>) 덕분에 클릭 없이 직접 진입 가능. */
-const AGENT_IDS = [
-  "agent-chatbot", "agent-report", "agent-meeting", "agent-knowledge", "agent-internalreg",
-  "agent-ocr", "agent-dbquery", "agent-address", "agent-dataanalysis", "agent-summary",
-  "agent-translate", "agent-review", "agent-safety",
-];
+
 /* 내부 화면에 다른 에이전트/타 도메인 기본값이 새는지 잡는 공통 금칙어
    (팩이 headerTitle을 생략하면 코어 REB 기본 문구가 노출되던 사고를 자동 판정) */
 /* 코어 기본 에이전트 이름 — constants.js에서 직접 뽑아 쓴다(하드코딩 목록은 코어 개명 시 표류한다).
@@ -66,17 +33,7 @@ const CORE_AGENT_NAMES = (() => {
   return [...names];
 })();
 
-function findChrome() {
-  const cands = [
-    process.env.CHROME_PATH,
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    (process.env.LOCALAPPDATA || "") + "\\Google\\Chrome\\Application\\chrome.exe",
-  ].filter(Boolean);
-  return cands.find(p => { try { return fs.existsSync(p); } catch { return false; } });
-}
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function clickByText(page, text, { exact = false } = {}) {
   return page.evaluate(({ text, exact }) => {
