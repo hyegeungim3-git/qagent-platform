@@ -28,6 +28,33 @@ export function agentHeader(domain, agentId, defaults = {}, teams = null) {
   };
 }
 
+/* 문서 레터헤드 로고를 도메인 정보로 즉석 생성한다(SVG data URI).
+   예전엔 REB 로고 래스터 이미지가 기본값이라, 팩이 자기 로고를 안 주면
+   제조·행정·의료 문서에도 한국부동산원 레터헤드가 찍혔다.
+   이미지를 팩마다 넣게 하는 대신 조직명·약칭·브랜드컬러로 그려서 팩 작업을 0으로 만든다.
+   <img src>와 인쇄 HTML 문자열 양쪽에서 그대로 쓸 수 있다. */
+export function orgLogoDataUri(org = {}) {
+  const name = org.name || "조직명";
+  const short = (org.short || "ORG").toUpperCase();
+  const color = org.color || "#334155";
+  const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  // 약칭 길이에 따라 이름 시작 위치를 밀어 겹침을 막는다
+  const nameX = 74 + Math.max(0, short.length - 3) * 13;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 64" width="260" height="64">
+<rect x="4" y="10" width="44" height="44" rx="11" fill="${color}"/>
+<g transform="translate(13,19) scale(0.82)">
+<path d="M16 4.2 L26.6 10.3 L16 16.4 L5.4 10.3 Z" fill="#fff"/>
+<path d="M5.4 10.3 L16 16.4 L16 28.2 L5.4 22.1 Z" fill="#fff" opacity="0.62"/>
+<path d="M26.6 10.3 L26.6 22.1 L16 28.2 L16 16.4 Z" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.85"/>
+<circle cx="23.2" cy="21.4" r="2.1" fill="#fff"/>
+</g>
+<text x="58" y="34" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif" font-size="19" font-weight="800" fill="${color}" letter-spacing="1">${esc(short)}</text>
+<text x="${nameX}" y="34" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif" font-size="16" font-weight="700" fill="#1f2937">${esc(name)}</text>
+<text x="58" y="50" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="2">AgentQ</text>
+</svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
 /* 워드(.doc)로 열리는 최소 HTML 문서 — 제목 + 본문 문단 */
 export function buildDocHtml(title, body) {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

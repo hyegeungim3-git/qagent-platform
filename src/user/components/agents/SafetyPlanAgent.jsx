@@ -9,9 +9,8 @@ import SelfCheckModal from "../SelfCheckModal.jsx";
 import { SAFE_AGENTS, SAFE_RISK_OPTIONS, SAFE_RESULT, APV_LINE_SAFE } from "../../data/responses.js";
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
-import { REB_LOGO } from "../../data/logos.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { agentHeader } from "../../utils.jsx";
+import { agentHeader, orgLogoDataUri } from "../../utils.jsx";
 
 const RISK_DATA={
   '낙상·추락':{level:'높음',freq:'보통',sev:4,lkl:3,lvlColor:'bg-orange-100 text-orange-700 border-orange-200',measure:'미끄럼 방지 신발 착용, 현장 지면 상태 사전 확인'},
@@ -75,15 +74,21 @@ export const CONTENT_DEFAULTS={
   planSections: PLAN_SECTIONS,     // {sub,items:string[3]}[3] — 안전관리 계획 3개 소절. 배열 통째 교체
   dept:'부동산공시처',                        // string — 담당부서(문서 헤더·PDF)
   docNum:'KREA-부동산공시처-2026-032',       // string — 문서번호(문서 헤더·PDF·결재 모달)
-  brandLine:'KREA · 한국부동산원',            // string — 문서 헤더 브랜드 라인
-  logoSrc: REB_LOGO,               // string(data URI) — PDF 출력 헤더 로고
-  logoAlt:'REB 한국부동산원',       // string — 로고 대체 텍스트
+  brandLine: null,                          // 미제공 시 '<약칭> · <조직명>'으로 자동 생성
+  logoSrc: null,                          // 미제공 시 도메인 정보로 레터헤드 자동 생성
+  logoAlt: null,                            // 미제공 시 '<약칭> <조직명>'
   apvRef:'APV-2026-0227-032',      // string — 결재 진행 참조번호
   periodRange:'2026. 03. 01. ~ 2026. 05. 30.', // string — 문서 보기 조사 기간(뒤에 (duration) 병기)
 };
 
 const SafetyPlanAgent = ({ onBack, domain }) => {
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-safety"]||{})};
+
+  /* 문서 레터헤드 — 팩이 자체 로고를 주면 그것을, 아니면 도메인 정보로 생성.
+     (기본값이 REB 래스터 로고여서 타 분야 문서에 한국부동산원이 찍히던 문제) */
+  const orgMeta = { name: domain?.orgName || '조직명', short: domain?.orgShort || 'ORG', color: domain?.brandColor || '#334155' };
+  const docLogo = C.logoSrc || orgLogoDataUri(orgMeta);
+  const docLogoAlt = C.logoAlt || `${orgMeta.short} ${orgMeta.name}`;
   const H=agentHeader(domain,'agent-safety',C,AGENT_TEAMS);
   const {step,setStep,agentIdx,doneIdx,start:startSim,resetSim}=useAgentSimulation(C.agents);
   const [projName,setProjName]=useState(C.defaultProjName);
@@ -325,7 +330,7 @@ const SafetyPlanAgent = ({ onBack, domain }) => {
           <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};</script>
           <div class="hd">
             <div class="hd-grid">
-              <div class="hd-logo"><img src="${C.logoSrc}" alt="${C.logoAlt}"/></div>
+              <div class="hd-logo"><img src="${docLogo}" alt="${docLogoAlt}"/></div>
               <div class="hd-title"><div class="hd-h1">안 전 관 리 계 획 서</div></div>
               <div class="hd-meta">
                 <div class="hd-meta-lbl">담당부서</div>
@@ -382,6 +387,7 @@ const SafetyPlanAgent = ({ onBack, domain }) => {
       {apvState==='selfcheck'&&(
         <SelfCheckModal
           docType="safety"
+          domain={domain}
           onClose={()=>setApvState(null)}
           onProceed={()=>setApvState('modal')}
         />
@@ -489,7 +495,7 @@ const SafetyPlanAgent = ({ onBack, domain }) => {
             <div style={{background:'linear-gradient(135deg,#431407 0%,#7c2d12 55%,#c2410c 100%)'}}>
               <div className="px-10 pt-7 pb-2 flex items-start justify-between">
                 <div>
-                  <div className="text-[10px] tracking-[0.4em] text-orange-200 mb-0.5 font-medium">{C.brandLine}</div>
+                  <div className="text-[10px] tracking-[0.4em] text-orange-200 mb-0.5 font-medium">{C.brandLine || `${orgMeta.short} · ${orgMeta.name}`}</div>
                   <div className="text-[11px] text-orange-300 font-medium">{C.dept}</div>
                 </div>
                 <div className="text-right">

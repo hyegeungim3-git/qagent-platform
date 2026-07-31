@@ -186,8 +186,10 @@ const STATUS_CFG = {
   pending:  { Icon: null,         cls: 'text-slate-300',             bg: 'bg-white',       border: 'border-slate-100',   badge: 'bg-slate-100  text-slate-400',   label: '대기' },
 };
 
-const SelfCheckModal = ({ docType = 'report', onProceed, onClose }) => {
-  const items = CHECKS[docType] ?? CHECKS.report;
+const SelfCheckModal = ({ docType = 'report', domain, onProceed, onClose }) => {
+  /* 점검 항목은 도메인 팩이 우선 — 팩이 selfChecks를 주지 않으면 코어 기본값.
+     (기본값이 부동산 통계 항목이라 제조·의료 문서 상신에도 그게 뜨던 문제) */
+  const items = domain?.selfChecks?.[docType] ?? CHECKS[docType] ?? CHECKS.report;
 
   const [states,   setStates]   = useState(items.map(() => 'pending'));
   const [checked,  setChecked]  = useState(items.map(() => false));   // 사용자 체크박스
@@ -200,7 +202,7 @@ const SelfCheckModal = ({ docType = 'report', onProceed, onClose }) => {
     items.forEach((_, i) => {
       setTimeout(() => setStates(p => { const n=[...p]; n[i]='checking'; return n; }), t);
       t += 320;
-      const delay = DELAYS[i] ?? 600;
+      const delay = DELAYS[i % DELAYS.length] ?? 600; // 항목 수가 8을 넘어도 안전하게
       setTimeout(() => {
         setStates(p => { const n=[...p]; n[i]=items[i].status; return n; });
         // pass 항목은 자동으로 체크

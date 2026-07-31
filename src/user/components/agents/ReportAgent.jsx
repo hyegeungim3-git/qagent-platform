@@ -12,9 +12,8 @@ import ApprovalModal from "../ApprovalModal.jsx";
 import SelfCheckModal from "../SelfCheckModal.jsx";
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
-import { REB_LOGO } from "../../data/logos.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { cn, agentHeader, downloadTextFile, buildDocHtml } from "../../utils.jsx";
+import { cn, agentHeader, downloadTextFile, buildDocHtml, orgLogoDataUri } from "../../utils.jsx";
 
 
 const APV_LINE=[
@@ -208,7 +207,8 @@ const PRESS_RATIO_DATA=[
    본문 데이터는 C(CONTENT_DEFAULTS+팩 병합)의 press* 키에서 생성하고, 조직명·브랜드색은 org에서 취한다.
    팩은 press* 데이터만 공급하면 인쇄물이 완성되며, 필요 시 함수 자체를 통째로 교체할 수도 있다.
    buildPressHtml: 보도자료(통계) 레이아웃 / buildReportHtml: 일반 보고서 레이아웃 */
-const REB_ORG={name:'한국부동산원',short:'REB',color:'#003087',en:'KOREA REAL ESTATE BOARD'};
+/* 인쇄 HTML의 조직 폴백 — 호출부(downloadDoc)는 항상 domain 기반 org를 넘긴다 */
+const FALLBACK_ORG={name:'조직명',short:'ORG',color:'#334155',en:'ORGANIZATION'};
 
 /* ── 인쇄용 SVG 생성 헬퍼 — 기존 인쇄 마크업 구조(HTML/CSS·SVG 차트) 유지, 값·라벨·색만 데이터에서 ── */
 const _r=v=>Math.round(v*100)/100;
@@ -300,7 +300,7 @@ const _pressRatioSvg=C=>{
   </svg>`;
 };
 
-const buildPressHtml=({title,docNum,dept,period,mainWork,nextPlan,special,apvLine,logo},C=CONTENT_DEFAULTS,org=REB_ORG)=>`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+const buildPressHtml=({title,docNum,dept,period,mainWork,nextPlan,special,apvLine,logo},C=CONTENT_DEFAULTS,org=FALLBACK_ORG)=>`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
 <title>${title} — ${docNum}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap');
@@ -441,7 +441,7 @@ ${(C.pressSections||[]).map(sec=>`<div class="sh"><span class="sn">${sec.num}</s
 <p class="footer">본 보고서는 GENOS AI 보고서 작성 에이전트에 의해 자동 생성되었으며, 담당자 검토 후 확정됩니다.</p>
 </body></html>`;
 
-const buildReportHtml=({title,docNum,dept,period,mainWork,nextPlan,special,logo},C=CONTENT_DEFAULTS,org=REB_ORG)=>`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${title} — ${docNum}</title>
+const buildReportHtml=({title,docNum,dept,period,mainWork,nextPlan,special,logo},C=CONTENT_DEFAULTS,org=FALLBACK_ORG)=>`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${title} — ${docNum}</title>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap');
       @page{size:A4;margin:15mm 18mm}
@@ -514,8 +514,8 @@ export const CONTENT_DEFAULTS={
   reportDate:'2026. 03. 13.',               // 일반 보고서 작성일 표기
   approvalSystem:'WorksOn',                 // 전자결재 시스템명 (배지·링크 문구)
   apvRefNo:'APV-2026-0313-027',             // 결재 진행 참조번호
-  logo: REB_LOGO,                           // 문서 헤더 로고 (data URI)
-  logoAlt:'REB 한국부동산원',                // 화면 문서 로고 대체텍스트
+  logo: null,                          // 미제공 시 도메인 정보로 레터헤드 자동 생성
+  logoAlt: null,                            // 미제공 시 '<약칭> <조직명>'
   perfCharts:{                              // {[typeId]:{label,data:{item,[perfDoneKey],[perfGoalKey]}[3]}} — 미매핑 typeId는 첫 항목 사용
     weekly:{label:'주간',data:WEEKLY_CHART},
     monthly:{label:'월간',data:MONTHLY_CHART},
@@ -554,6 +554,12 @@ export const CONTENT_DEFAULTS={
 
 const ReportAgent=({onBack,domain})=>{
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-report"]||{})};
+
+  /* 문서 레터헤드 — 팩이 자체 로고를 주면 그것을, 아니면 도메인 정보로 생성.
+     (기본값이 REB 래스터 로고여서 타 분야 문서에 한국부동산원이 찍히던 문제) */
+  const orgMeta = { name: domain?.orgName || '조직명', short: domain?.orgShort || 'ORG', color: domain?.brandColor || '#334155' };
+  const docLogo = C.logo || orgLogoDataUri(orgMeta);
+  const docLogoAlt = C.logoAlt || `${orgMeta.short} ${orgMeta.name}`;
   const H=agentHeader(domain,'agent-report',C,AGENT_TEAMS);
   const initialDefaults=C.reportDefaults[C.reportTypes[0].id]||{};
   const {step,setStep,agentIdx,doneIdx,start:startSim,resetSim}=useAgentSimulation(AGENTS,{
@@ -617,8 +623,8 @@ ${special||'(해당 없음)'}
     const docTitle=selectedType?.label||C.reportTypes[0].label;
     const org={name:domain?.orgName||'한국부동산원',short:domain?.orgShort||'REB',color:domain?.brandColor||'#003087',en:domain?.orgEn||'KOREA REAL ESTATE BOARD'};
     return {docTitle,html:reportType===C.pressTypeId
-      ?C.buildPressHtml({title:docTitle,docNum:DOC_NUM,dept,period,mainWork,nextPlan,special,apvLine:C.apvLine,logo:C.logo},C,org)
-      :C.buildReportHtml({title:docTitle,docNum:DOC_NUM,dept,period,mainWork,nextPlan,special,logo:C.logo},C,org)};
+      ?C.buildPressHtml({title:docTitle,docNum:DOC_NUM,dept,period,mainWork,nextPlan,special,apvLine:C.apvLine,logo:docLogo},C,org)
+      :C.buildReportHtml({title:docTitle,docNum:DOC_NUM,dept,period,mainWork,nextPlan,special,logo:docLogo},C,org)};
   };
 
   const downloadDoc=()=>{
@@ -909,6 +915,7 @@ ${special||'(해당 없음)'}
       {apvState==='selfcheck'&&(
         <SelfCheckModal
           docType={reportType===C.pressTypeId?'officetel':'report'}
+          domain={domain}
           onClose={()=>setApvState(null)}
           onProceed={()=>setApvState('modal')}
         />
@@ -942,7 +949,7 @@ ${special||'(해당 없음)'}
             <div style={{border:'1px solid #091D58',display:'grid',gridTemplateColumns:'170px 1fr',gridTemplateRows:'auto auto'}}>
               {/* 로고 — 2행 span */}
               <div style={{gridColumn:'1',gridRow:'1/3',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px 14px',background:'#fff',borderRight:'1px solid #091D58'}}>
-                <img src={C.logo} alt={C.logoAlt} style={{width:'130px',height:'auto'}}/>
+                <img src={docLogo} alt={docLogoAlt} style={{width:'130px',height:'auto'}}/>
               </div>
               {/* 문서 제목 */}
               <div style={{gridColumn:'2',gridRow:'1',display:'flex',alignItems:'center',justifyContent:'center',padding:'18px 14px',background:'#e6e6e6',borderBottom:'1px solid #091D58',overflow:'hidden'}}>

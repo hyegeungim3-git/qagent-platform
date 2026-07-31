@@ -9,9 +9,8 @@ import SelfCheckModal from "../SelfCheckModal.jsx";
 import { MEET_AGENTS, MEET_RESULT, APV_LINE_MEET } from "../../data/responses.js";
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
-import { REB_LOGO } from "../../data/logos.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { agentHeader } from "../../utils.jsx";
+import { agentHeader, orgLogoDataUri } from "../../utils.jsx";
 
 /* 도메인 이관: REB 기본 콘텐츠 — 도메인 팩 agentContent["agent-meeting"]로 키 단위 오버라이드 */
 export const CONTENT_DEFAULTS = {
@@ -99,14 +98,20 @@ export const CONTENT_DEFAULTS = {
   ],
   specialNotes:['차기 회의: 2026년 3월 27일(금) 14:00 예정','AI 플랫폼 연동 검토 결과는 서면으로 공람 예정'], // string[2] — §5 특이사항 불릿
   footerText:'본 회의록은 한국부동산원 GENOS AI 회의록 에이전트 v1.0에 의해 자동 생성되었으며, 담당자 검토 후 확정됩니다.', // string — 문서 하단 문구
-  logo: REB_LOGO,               // string(data URI) — 문서 헤더 로고
-  logoAlt:'REB 한국부동산원',   // string — 로고 대체 텍스트
+  logo: null,                          // 미제공 시 도메인 정보로 레터헤드 자동 생성
+  logoAlt: null,                            // 미제공 시 '<약칭> <조직명>'
   resultText: MEET_RESULT,      // string — 원본 편집 탭 초기 텍스트
   apvLine: APV_LINE_MEET,       // {name,...}[3] — 결재선(ApprovalModal 공용)
 };
 
 const MeetingMinutesAgent = ({ onBack, domain }) => {
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-meeting"]||{})};
+
+  /* 문서 레터헤드 — 팩이 자체 로고를 주면 그것을, 아니면 도메인 정보로 생성.
+     (기본값이 REB 래스터 로고여서 타 분야 문서에 한국부동산원이 찍히던 문제) */
+  const orgMeta = { name: domain?.orgName || '조직명', short: domain?.orgShort || 'ORG', color: domain?.brandColor || '#334155' };
+  const docLogo = C.logo || orgLogoDataUri(orgMeta);
+  const docLogoAlt = C.logoAlt || `${orgMeta.short} ${orgMeta.name}`;
   const H=agentHeader(domain,'agent-meeting',C,AGENT_TEAMS);
   const {step,setStep,agentIdx,doneIdx,start:startSim,resetSim}=useAgentSimulation(MEET_AGENTS);
   const [title,setTitle]=useState(C.defaultTitle);
@@ -391,7 +396,7 @@ const MeetingMinutesAgent = ({ onBack, domain }) => {
     <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};</script>
     <div class="hd">
       <div class="hd-grid">
-        <div class="hd-logo"><img src="${C.logo}" alt="${C.logoAlt}"/></div>
+        <div class="hd-logo"><img src="${docLogo}" alt="${docLogoAlt}"/></div>
         <div class="hd-title"><div class="hd-h1">회 의 록</div></div>
         <div class="hd-meta">
           <div class="hd-meta-lbl">담당부서</div>
@@ -485,6 +490,7 @@ const MeetingMinutesAgent = ({ onBack, domain }) => {
       {apvState==='selfcheck'&&(
         <SelfCheckModal
           docType="meeting"
+          domain={domain}
           onClose={()=>setApvState(null)}
           onProceed={()=>setApvState('modal')}
         />
@@ -645,7 +651,7 @@ const MeetingMinutesAgent = ({ onBack, domain }) => {
             <div style={{border:'1px solid #091D58',display:'grid',gridTemplateColumns:'170px 1fr',gridTemplateRows:'auto auto'}}>
               {/* 로고 — 2행 span */}
               <div style={{gridColumn:'1',gridRow:'1/3',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px 14px',background:'#fff',borderRight:'1px solid #091D58'}}>
-                <img src={C.logo} alt={C.logoAlt} style={{width:'130px',height:'auto'}}/>
+                <img src={docLogo} alt={docLogoAlt} style={{width:'130px',height:'auto'}}/>
               </div>
               {/* 문서 제목 */}
               <div style={{gridColumn:'2',gridRow:'1',display:'flex',alignItems:'center',justifyContent:'center',padding:'18px 14px',background:'#e6e6e6',borderBottom:'1px solid #091D58',overflow:'hidden'}}>

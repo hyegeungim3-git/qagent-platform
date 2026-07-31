@@ -7,9 +7,8 @@ import {
 import ApprovalModal from "../ApprovalModal.jsx";
 import AgentWorkflowPanel from "./AgentWorkflowPanel.jsx";
 import { AGENT_TEAMS } from "../../data/constants.js";
-import { REB_LOGO } from "../../data/logos.js";
 import { useAgentSimulation } from "../../hooks/useAgentSimulation.js";
-import { cn, agentHeader } from "../../utils.jsx";
+import { cn, agentHeader, orgLogoDataUri } from "../../utils.jsx";
 
 
 const APV_LINE=[
@@ -98,12 +97,18 @@ export const CONTENT_DEFAULTS={
   dept:'부동산공시처',                     // string — 보고서 헤더 담당부서
   docNum:'KREA-부동산공시처-2026-031',    // string — 보고서 헤더 문서번호
   apvDocNum:'KREA-부동산공시처-2026-034', // string — 결재 상신 모달 문서번호
-  logoSrc: REB_LOGO,                      // string(data URI) — 보고서 헤더 로고 이미지
-  logoAlt:'REB 한국부동산원',              // string — 로고 대체 텍스트
+  logoSrc: null,                          // 미제공 시 도메인 정보로 레터헤드 자동 생성
+  logoAlt: null,                            // 미제공 시 '<약칭> <조직명>'
 };
 
 const DocReviewAgent=({onBack,domain})=>{
   const C={...CONTENT_DEFAULTS,...(domain?.agentContent?.["agent-review"]||{})};
+
+  /* 문서 레터헤드 — 팩이 자체 로고를 주면 그것을, 아니면 도메인 정보로 생성.
+     (기본값이 REB 래스터 로고여서 타 분야 문서에 한국부동산원이 찍히던 문제) */
+  const orgMeta = { name: domain?.orgName || '조직명', short: domain?.orgShort || 'ORG', color: domain?.brandColor || '#334155' };
+  const docLogo = C.logoSrc || orgLogoDataUri(orgMeta);
+  const docLogoAlt = C.logoAlt || `${orgMeta.short} ${orgMeta.name}`;
   const H=agentHeader(domain,'agent-review',C,AGENT_TEAMS);
   const compScore=(()=>{
     const h=C.violations.filter(v=>v.severity==='high').length;
@@ -415,7 +420,7 @@ const DocReviewAgent=({onBack,domain})=>{
             {/* 표준 REB 문서 헤더 */}
             <div style={{border:'1px solid #091D58',display:'grid',gridTemplateColumns:'170px 1fr',gridTemplateRows:'auto auto'}}>
               <div style={{gridColumn:'1',gridRow:'1/3',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px 14px',background:'#fff',borderRight:'1px solid #091D58'}}>
-                <img src={C.logoSrc} alt={C.logoAlt} style={{width:'130px',height:'auto'}}/>
+                <img src={docLogo} alt={docLogoAlt} style={{width:'130px',height:'auto'}}/>
               </div>
               <div style={{gridColumn:'2',gridRow:'1',display:'flex',alignItems:'center',justifyContent:'center',padding:'18px 14px',background:'#e6e6e6',borderBottom:'1px solid #091D58',overflow:'hidden'}}>
                 <div style={{fontSize:'34px',fontWeight:900,letterSpacing:'0.4em',paddingRight:'0.4em',fontFamily:"'HY견고딕','돋움','맑은 고딕',sans-serif",color:'#041E54',lineHeight:1.2,whiteSpace:'nowrap'}}>
