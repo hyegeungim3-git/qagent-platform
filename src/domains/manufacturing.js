@@ -2569,6 +2569,28 @@ LIMIT 50;`,
   adminContent: {
     ADMIN_PERSONA: { name: '서동현', role: '관리자', dept: '스마트팩토리 혁신 TF', email: 'seo@hbp.co.kr' },
 
+    /* ── 보안 아키텍처 — 제조는 OT(공장 제어망)와 IT(사무망)가 분리돼 있고
+       그 경계를 넘는 지점이 발주처 최대 우려다. 흐름을 실제 설비 기준으로 기술한다. */
+    MOCK_DATA_FLOWS: [
+      {id:'df-1',name:'설비 태그 수집 (포스프레임)',source:'프레스·열처리 설비 PLC',zone:'OT 제어망',processedAt:'포스프레임 수집 서버(OT)',dest:'OT 히스토리안',crossing:false,dataClass:'내부',volume:'초당 4,820태그',encryption:'OT망 폐쇄 구간 · 외부 경로 없음',status:'정상'},
+      {id:'df-2',name:'OT → IT 단방향 반출 (분석용)',source:'OT 히스토리안',zone:'OT 제어망',processedAt:'데이터 다이오드(단방향 게이트웨이)',dest:'IT 분석 DB',crossing:true,dataClass:'대외비',volume:'5분 주기 배치',encryption:'단방향 전송만 허용 — IT에서 OT로의 역방향 물리적 차단',status:'통제 중'},
+      {id:'df-3',name:'품질 예측 모델 추론',source:'IT 분석 DB(공정조건·품질실적)',zone:'IT 사무망',processedAt:'사내 GPU 서버',dest:'IT 사용자',crossing:false,dataClass:'대외비',volume:'일 486로트',encryption:'사내망 내 처리 · 외부 전송 없음',status:'정상'},
+      {id:'df-4',name:'설계 도면 온톨로지 검색',source:'PLM 도면 저장소',zone:'IT 사무망',processedAt:'사내 벡터DB·로컬 LLM',dest:'IT 사용자',crossing:false,dataClass:'기밀',volume:'일 2,840건',encryption:'도면 원본은 사내망 밖으로 나가지 않음',status:'정상'},
+      {id:'df-5',name:'플래그십 모델 질의(보안 게이트웨이)',source:'사용자 질의',zone:'IT 사무망',processedAt:'외부 상용 LLM',dest:'IT 사용자',crossing:true,dataClass:'공개',volume:'일 640건',encryption:'도면·공정조건·협력사 단가 자동 마스킹 후 전송',status:'통제 중'},
+    ],
+    MOCK_BOUNDARY_POLICY: [
+      {grade:'기밀',  label:'C', internal:'허용', gateway:'차단',   external:'차단', note:'설계 도면·공정조건 레시피. 사내 GPU에서만 처리하며 게이트웨이 경유 자체가 차단된다'},
+      {grade:'대외비',label:'S', internal:'허용', gateway:'조건부', external:'차단', note:'생산 실적·품질 데이터. 수치 마스킹 후에만 경유 허용, 승인 이력 필수'},
+      {grade:'내부',  label:'I', internal:'허용', gateway:'허용',   external:'차단', note:'사규·작업표준. 협력사 공유 시 별도 승인'},
+      {grade:'공개',  label:'O', internal:'허용', gateway:'허용',   external:'허용', note:'공개 규격·법령 자료'},
+    ],
+    MOCK_EXTERNAL_ACCESS: [
+      {id:'ex-1',org:'대성정공(협력사)',user:'품질담당 A',scope:'검사성적서 제출·판정 결과 조회',grade:'내부',expires:'2026-06-30',mfa:true,lastAccess:'2026-03-31 10:22',status:'활성'},
+      {id:'ex-2',org:'한백금형(협력사)',user:'설계담당 B',scope:'배정 도면 열람(다운로드 불가)',grade:'내부',expires:'2026-05-31',mfa:true,lastAccess:'2026-03-30 16:40',status:'활성'},
+      {id:'ex-3',org:'AI 도입 컨설팅',user:'컨설턴트 C',scope:'집계 지표 열람(로트 원본·공정조건 불가)',grade:'공개',expires:'2026-04-30',mfa:true,lastAccess:'2026-03-28 09:12',status:'활성'},
+      {id:'ex-4',org:'설비 보전 외주',user:'정비담당 D',scope:'담당 설비 진동 이력 조회',grade:'내부',expires:'2026-02-28',mfa:false,lastAccess:'2026-02-27 14:05',status:'만료'},
+    ],
+
     /* ── 데이터 보안(Needs 5) — 입력 차단 규칙·차단 이력·출력 가드레일 ──
        공장·품질 데이터를 AI에 쓸 때의 유출 우려를 화면에서 직접 다룬다.
        secureSuggestions(도면 외부 공유·공정조건 레시피·협력사 단가)와 같은 세계관. */

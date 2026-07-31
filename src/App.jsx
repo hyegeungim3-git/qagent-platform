@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Database, Settings, Cpu, ChevronDown, Bot, Box, Layers, Code, BarChart2, Shield, Briefcase, Users, Grid, List, PieChart, Wrench, Bell, Columns, Monitor, FolderOpen, UserCog, Unplug, Megaphone, Scale, LayoutGrid } from 'lucide-react';
+import { LayoutDashboard, Database, Settings, Cpu, ChevronDown, Bot, Box, Layers, Code, BarChart2, Shield, Briefcase, Users, Grid, List, PieChart, Wrench, Bell, Columns, Monitor, FolderOpen, UserCog, Unplug, Megaphone, Scale, Network, LayoutGrid } from 'lucide-react';
 import { ToastProvider, SidebarItem } from './admin/common.jsx';
 import { applyAdminDomain, ADMIN_PERSONA, ADMIN_APPROVAL_ROWS, MOCK_ABUSE_ALERTS } from './admin/mocks.js';
 import { UsageHistoryPage, SatisfactionMgmtPage, UsageStatsPage, InfoServiceStatsPage } from './admin/pages/analytics.jsx';
@@ -13,6 +13,7 @@ import { LlmManagePage, GuardrailFilterPage, GuardrailLogPage, TrustManagePage, 
 import { AiActCompliancePage } from './admin/pages/compliance.jsx';
 import { PackStudioPage } from './admin/pages/packstudio.jsx';
 import { ScenarioBuilderPage } from './admin/pages/scenariobuilder.jsx';
+import { SecurityArchPage } from './admin/pages/security.jsx';
 import { SystemMonitorPage, AdminPage, UserPage, ConnectedMonitorPage } from './admin/pages/system.jsx';
 import { LlmTraining, VlmTraining, EmbeddingPage, RerankingPage, LeaderboardPage, EvalMetricsPage } from './admin/pages/training.jsx';
 import { ApprovalPage, QuotaPage, UserManagementPage, AccessLogPage, AccessSecurityPage, WorkLogPage, UsageMonitorPage, HrSyncPage } from './admin/pages/users.jsx';
@@ -80,6 +81,7 @@ const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChang
       {id:'guardrail.filter', label:'필터 설정'},
       {id:'guardrail.log',    label:'탐지 로그'},
     ]},
+    {id:'security.arch', label:'보안 아키텍처', icon:Network},
     {id:'aiact', label:'AI 기본법 대응', icon:Scale},
     {id:'packstudio', label:'도메인 팩 스튜디오', icon:LayoutGrid},
     {id:'deploy', label:'도구 · 배포', icon:Wrench, children:[
@@ -158,6 +160,7 @@ const App = ({ onSwitchToUser, onExitPortal, domain, initialMenuId, onRouteChang
     'trainer.llm':<LlmTraining/>,'trainer.vlm':<VlmTraining/>,'trainer.embedding':<EmbeddingPage/>,'trainer.reranking':<RerankingPage/>,
     'eval.leaderboard':<LeaderboardPage/>,'eval.metrics':<EvalMetricsPage/>,
     'guardrail.filter':<GuardrailFilterPage/>,'guardrail.log':<GuardrailLogPage/>,
+    'security.arch':<SecurityArchPage/>,
     'aiact':<AiActCompliancePage/>,
     'packstudio':<PackStudioPage/>,
     'deploy.tools.mcp':<MCPToolsPage/>,'deploy.tools.server':<MCPServerPage/>,'deploy.tools.prompt':<PromptLibraryPage/>,

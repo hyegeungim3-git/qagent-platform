@@ -81,6 +81,29 @@ export let MOCK_GUARDRAIL_LOGS = [
   {id:5,time:'2026-02-08 09:12:33',user:'정대리',query:'퇴직자 연락처 전체',rule:'개인정보 접근',action:'경고'},
 ];
 
+/* ==================== 보안 아키텍처 (OT/IT 경계·외부 접근) ====================
+   발주처가 AI 도입에서 가장 크게 우려하는 지점: 어떤 데이터가 어느 망에서
+   어디까지 가는가. 코어 기본값은 도메인 중립(일반 사무 기준)이고,
+   제조·의료 등은 팩 adminContent로 자기 망 구성을 공급한다. */
+export let MOCK_DATA_FLOWS = [
+  {id:'df-1',name:'사내 문서 RAG 검색',source:'업무망 파일서버',zone:'내부망',processedAt:'내부 GPU 서버',dest:'내부망 사용자',crossing:false,dataClass:'내부',volume:'일 12,400건',encryption:'전송 TLS 1.3 · 저장 AES-256',status:'정상'},
+  {id:'df-2',name:'문서 OCR 처리',source:'스캔 문서 업로드',zone:'내부망',processedAt:'내부 OCR 엔진',dest:'내부 스토리지',crossing:false,dataClass:'내부',volume:'일 286건',encryption:'전송 TLS 1.3 · 저장 AES-256',status:'정상'},
+  {id:'df-3',name:'플래그십 모델 질의(보안 게이트웨이 경유)',source:'사용자 질의',zone:'내부망',processedAt:'외부 상용 LLM',dest:'내부망 사용자',crossing:true,dataClass:'공개',volume:'일 840건',encryption:'전송 TLS 1.3 · 민감정보 마스킹 후 전송',status:'통제 중'},
+  {id:'df-4',name:'외부 공개자료 수집',source:'인터넷 공개 사이트',zone:'외부망',processedAt:'DMZ 수집 서버',dest:'내부 지식베이스',crossing:true,dataClass:'공개',volume:'주 1회 배치',encryption:'단방향 반입(내부→외부 요청 없음)',status:'정상'},
+];
+export let MOCK_BOUNDARY_POLICY = [
+  {grade:'기밀',  label:'C', internal:'허용', gateway:'차단',   external:'차단', note:'내부 GPU에서만 처리. 외부 모델 경유 자체가 차단된다'},
+  {grade:'대외비',label:'S', internal:'허용', gateway:'조건부', external:'차단', note:'마스킹 후에만 게이트웨이 경유 허용, 승인 이력 필수'},
+  {grade:'내부',  label:'I', internal:'허용', gateway:'허용',   external:'차단', note:'외부 직접 전송은 불가'},
+  {grade:'공개',  label:'O', internal:'허용', gateway:'허용',   external:'허용', note:'제한 없음'},
+];
+export let MOCK_EXTERNAL_ACCESS = [
+  {id:'ex-1',org:'협력사 A',user:'외부 담당자 1',scope:'납품 이력 조회',grade:'내부',expires:'2026-06-30',mfa:true,lastAccess:'2026-03-31 10:22',status:'활성'},
+  {id:'ex-2',org:'협력사 B',user:'외부 담당자 2',scope:'검사성적서 제출',grade:'내부',expires:'2026-05-31',mfa:true,lastAccess:'2026-03-30 16:40',status:'활성'},
+  {id:'ex-3',org:'외부 컨설팅',user:'컨설턴트 1',scope:'집계 통계 열람(원본 불가)',grade:'공개',expires:'2026-04-30',mfa:true,lastAccess:'2026-03-28 09:12',status:'활성'},
+  {id:'ex-4',org:'협력사 C',user:'외부 담당자 3',scope:'납품 이력 조회',grade:'내부',expires:'2026-02-28',mfa:false,lastAccess:'2026-02-27 14:05',status:'만료'},
+];
+
 // ==================== LLM ADMIN MOCK DATA ====================
 export let MOCK_LLM_ADMIN_MODELS = [
   {id:'m-001',name:'GPT-OSS-120B',baseModel:'Meta-Llama-3-405B-Instruct',version:'v2.4.1',
@@ -800,6 +823,7 @@ export let ADMIN_MCP_SERVERS = [
    ════════════════════════════════════════════════════════════════ */
 // __RESOLVER_START__
 const __REB_DEFAULTS = {
+  MOCK_DATA_FLOWS, MOCK_BOUNDARY_POLICY, MOCK_EXTERNAL_ACCESS,
   ADMIN_PERSONA,
   ADMIN_MCP_SERVERS,
   MOCK_GPU_NODES,
@@ -883,6 +907,9 @@ const __REB_DEFAULTS = {
 
 export function applyAdminDomain(domain) {
   const o = (domain && domain.adminContent) || {};
+  MOCK_DATA_FLOWS = o.MOCK_DATA_FLOWS !== undefined ? o.MOCK_DATA_FLOWS : __REB_DEFAULTS.MOCK_DATA_FLOWS;
+  MOCK_BOUNDARY_POLICY = o.MOCK_BOUNDARY_POLICY !== undefined ? o.MOCK_BOUNDARY_POLICY : __REB_DEFAULTS.MOCK_BOUNDARY_POLICY;
+  MOCK_EXTERNAL_ACCESS = o.MOCK_EXTERNAL_ACCESS !== undefined ? o.MOCK_EXTERNAL_ACCESS : __REB_DEFAULTS.MOCK_EXTERNAL_ACCESS;
   ADMIN_PERSONA = o.ADMIN_PERSONA !== undefined ? o.ADMIN_PERSONA : __REB_DEFAULTS.ADMIN_PERSONA;
   ADMIN_MCP_SERVERS = o.ADMIN_MCP_SERVERS !== undefined ? o.ADMIN_MCP_SERVERS : __REB_DEFAULTS.ADMIN_MCP_SERVERS;
   MOCK_GPU_NODES = o.MOCK_GPU_NODES !== undefined ? o.MOCK_GPU_NODES : __REB_DEFAULTS.MOCK_GPU_NODES;
