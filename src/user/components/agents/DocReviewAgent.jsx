@@ -420,7 +420,7 @@ const DocReviewAgent=({onBack,domain})=>{
             {/* 표준 REB 문서 헤더 */}
             <div style={{border:'1px solid #091D58',display:'grid',gridTemplateColumns:'170px 1fr',gridTemplateRows:'auto auto'}}>
               <div style={{gridColumn:'1',gridRow:'1/3',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px 14px',background:'#fff',borderRight:'1px solid #091D58'}}>
-                <img src={docLogo} alt={docLogoAlt} style={{width:'130px',height:'auto'}}/>
+                <img src={docLogo} alt={docLogoAlt} style={{width:'156px',height:'auto'}}/>
               </div>
               <div style={{gridColumn:'2',gridRow:'1',display:'flex',alignItems:'center',justifyContent:'center',padding:'18px 14px',background:'#e6e6e6',borderBottom:'1px solid #091D58',overflow:'hidden'}}>
                 <div style={{fontSize:'34px',fontWeight:900,letterSpacing:'0.4em',paddingRight:'0.4em',fontFamily:"'HY견고딕','돋움','맑은 고딕',sans-serif",color:'#041E54',lineHeight:1.2,whiteSpace:'nowrap'}}>

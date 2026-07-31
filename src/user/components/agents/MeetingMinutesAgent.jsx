@@ -355,7 +355,7 @@ const MeetingMinutesAgent = ({ onBack, domain }) => {
       .hd{border:1px solid #091D58}
       .hd-grid{display:grid;grid-template-columns:170px 1fr;grid-template-rows:auto auto}
       .hd-logo{grid-column:1;grid-row:1/3;display:flex;align-items:center;justify-content:center;padding:16px 14px;background:#fff;border-right:1px solid #091D58}
-      .hd-logo img{width:130px;height:auto}
+      .hd-logo img{width:156px;height:auto}
       .hd-title{grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:center;padding:16px 12px;background:#e6e6e6;border-bottom:1px solid #091D58}
       .hd-meta{grid-column:2;grid-row:2;display:grid;grid-template-columns:72px 1fr 72px 1fr}
       .hd-h1{font-size:34px;font-weight:900;letter-spacing:.4em;padding-right:.4em;white-space:nowrap;font-family:'HY견고딕','돋움','맑은 고딕',sans-serif;color:#041E54;line-height:1.2}
@@ -651,7 +651,7 @@ const MeetingMinutesAgent = ({ onBack, domain }) => {
             <div style={{border:'1px solid #091D58',display:'grid',gridTemplateColumns:'170px 1fr',gridTemplateRows:'auto auto'}}>
               {/* 로고 — 2행 span */}
               <div style={{gridColumn:'1',gridRow:'1/3',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px 14px',background:'#fff',borderRight:'1px solid #091D58'}}>
-                <img src={docLogo} alt={docLogoAlt} style={{width:'130px',height:'auto'}}/>
+                <img src={docLogo} alt={docLogoAlt} style={{width:'156px',height:'auto'}}/>
               </div>
               {/* 문서 제목 */}
               <div style={{gridColumn:'2',gridRow:'1',display:'flex',alignItems:'center',justifyContent:'center',padding:'18px 14px',background:'#e6e6e6',borderBottom:'1px solid #091D58',overflow:'hidden'}}>

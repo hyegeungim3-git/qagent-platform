@@ -309,7 +309,7 @@ const buildPressHtml=({title,docNum,dept,period,mainWork,nextPlan,special,apvLin
   body{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;margin:0;color:#1a202c;font-size:12px;line-height:1.75;word-break:keep-all;letter-spacing:-0.01em}
   .hd{border:1px solid ${org.color};display:grid;grid-template-columns:150px 1fr;grid-template-rows:auto auto;margin-bottom:14px}
   .hd-logo{grid-column:1;grid-row:1/3;display:flex;align-items:center;justify-content:center;padding:14px 12px;background:#fff;border-right:1px solid ${org.color}}
-  .hd-logo img{width:120px;height:auto}
+  .hd-logo img{width:150px;height:auto}
   .hd-title{grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:center;padding:14px 12px;background:#e6e6e6;border-bottom:1px solid ${org.color}}
   .hd-h1{font-size:28px;font-weight:900;letter-spacing:.4em;padding-right:.4em;color:${org.color};line-height:1.2}
   .hd-meta{grid-column:2;grid-row:2;display:grid;grid-template-columns:64px 1fr 64px 1fr}
@@ -450,7 +450,7 @@ const buildReportHtml=({title,docNum,dept,period,mainWork,nextPlan,special,logo}
       .hd{border:1px solid ${org.color}}
       .hd-grid{display:grid;grid-template-columns:170px 1fr;grid-template-rows:auto auto}
       .hd-logo{grid-column:1;grid-row:1/3;display:flex;align-items:center;justify-content:center;padding:16px 14px;background:#fff;border-right:1px solid ${org.color}}
-      .hd-logo img{width:130px;height:auto}
+      .hd-logo img{width:156px;height:auto}
       .hd-title{grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:center;padding:16px 12px;background:#e6e6e6;border-bottom:1px solid ${org.color}}
       .hd-meta{grid-column:2;grid-row:2;display:grid;grid-template-columns:72px 1fr 72px 1fr}
       .hd-h1{font-size:34px;font-weight:900;letter-spacing:.4em;padding-right:.4em;white-space:nowrap;font-family:'HY견고딕','돋움','맑은 고딕',sans-serif;color:${org.color};line-height:1.2}
@@ -949,7 +949,7 @@ ${special||'(해당 없음)'}
             <div style={{border:'1px solid #091D58',display:'grid',gridTemplateColumns:'170px 1fr',gridTemplateRows:'auto auto'}}>
               {/* 로고 — 2행 span */}
               <div style={{gridColumn:'1',gridRow:'1/3',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px 14px',background:'#fff',borderRight:'1px solid #091D58'}}>
-                <img src={docLogo} alt={docLogoAlt} style={{width:'130px',height:'auto'}}/>
+                <img src={docLogo} alt={docLogoAlt} style={{width:'156px',height:'auto'}}/>
               </div>
               {/* 문서 제목 */}
               <div style={{gridColumn:'2',gridRow:'1',display:'flex',alignItems:'center',justifyContent:'center',padding:'18px 14px',background:'#e6e6e6',borderBottom:'1px solid #091D58',overflow:'hidden'}}>
