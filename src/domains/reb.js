@@ -324,6 +324,181 @@ const reb = {
   ],
   // 에이전트 카탈로그 오버라이드 없음 (constants.js의 AGENT_TEAMS 원본 사용)
   agentCatalog: {},
+
+  /* ── 관리자 콘텐츠 오버라이드 (adminContent) ──
+     mocks.js의 대부분은 이미 부동산원 기준이라 오버라이드가 필요 없다.
+     여기 있는 것은 '나중에 추가된 관리자 페이지'들 — 코어 기본값을 일부러
+     도메인 중립으로 둔 자리다(다른 발주처에 공시 업무가 새지 않도록).
+     그래서 공공 세계관은 이 팩이 직접 공급한다.
+     대상: 망분리 보안 / 예측 모델 운영 / 데이터 카탈로그·리니지 /
+           지식 증강 전략 / 중대재해처벌법 / 답변 재현성 */
+  adminContent: {
+    /* ── 망분리 보안 아키텍처 ── */
+    MOCK_DATA_FLOWS: [
+      { id: 'df-1', name: '공시 지침·업무 매뉴얼 RAG 검색', source: '문서관리시스템', zone: '내부망', processedAt: '내부 GPU 서버', dest: '내부망 사용자', crossing: false, dataClass: '내부', volume: '일 9,600건', encryption: '전송 TLS 1.3 · 저장 AES-256', status: '정상' },
+      { id: 'df-2', name: '실거래 신고 자료 조회(RTMS 연계)', source: 'RTMS 연계 DB', zone: '내부망', processedAt: '내부 분석 서버', dest: '내부망 사용자', crossing: false, dataClass: '대외비', volume: '주 1,842건', encryption: '전송 TLS 1.3 · 저장 AES-256 · 당사자 식별정보 분리보관', status: '정상' },
+      { id: 'df-3', name: '현장조사 사진·조서 OCR', source: '조사자 업로드', zone: '내부망', processedAt: '내부 OCR 엔진', dest: '내부 스토리지', crossing: false, dataClass: '내부', volume: '일 320건', encryption: '전송 TLS 1.3 · 저장 AES-256', status: '정상' },
+      { id: 'df-4', name: '플래그십 모델 질의(보안 게이트웨이 경유)', source: '사용자 질의', zone: '내부망', processedAt: '외부 상용 LLM', dest: '내부망 사용자', crossing: true, dataClass: '공개', volume: '일 640건', encryption: '전송 TLS 1.3 · 지번·성명·거래금액 마스킹 후 전송', status: '통제 중' },
+      { id: 'df-5', name: '공시가격 열람 공표자료 반출', source: '내부 산정 결과', zone: '내부망', processedAt: '반출 검증 서버', dest: '대국민 공시 시스템', crossing: true, dataClass: '공개', volume: '연 2회 배치', encryption: '단방향 반출 · 승인 이력 필수', status: '통제 중' },
+    ],
+    MOCK_BOUNDARY_POLICY: [
+      { grade: '기밀',   label: 'C', internal: '허용', gateway: '차단',   external: '차단', note: '공시가격 확정 전 산정 내역 — 공표 전 유출 시 시장 영향. 내부 GPU에서만 처리' },
+      { grade: '대외비', label: 'S', internal: '허용', gateway: '조건부', external: '차단', note: '실거래 신고 당사자 정보 — 마스킹 후에만 게이트웨이 경유, 승인 이력 필수' },
+      { grade: '내부',   label: 'I', internal: '허용', gateway: '허용',   external: '차단', note: '조사 지침·업무 매뉴얼. 외부 직접 전송은 불가' },
+      { grade: '공개',   label: 'O', internal: '허용', gateway: '허용',   external: '허용', note: '공표 완료된 공시가격·통계. 제한 없음' },
+    ],
+    MOCK_EXTERNAL_ACCESS: [
+      { id: 'ex-1', org: '서울특별시 강남구', user: '지자체 담당자 1', scope: '관할 표준지 조사 결과 열람', grade: '내부', expires: '2026-06-30', mfa: true, lastAccess: '2026-03-31 09:40', status: '활성' },
+      { id: 'ex-2', org: '감정평가법인 A', user: '조사 위탁 평가사 1', scope: '배정 필지 조사표 입력', grade: '내부', expires: '2026-09-30', mfa: true, lastAccess: '2026-03-31 14:12', status: '활성' },
+      { id: 'ex-3', org: '국토교통부', user: '정책 담당자 1', scope: '집계 통계 열람(개별 필지 불가)', grade: '공개', expires: '2026-12-31', mfa: true, lastAccess: '2026-03-29 11:05', status: '활성' },
+      { id: 'ex-4', org: '감정평가법인 B', user: '조사 위탁 평가사 2', scope: '배정 필지 조사표 입력', grade: '내부', expires: '2026-02-28', mfa: false, lastAccess: '2026-02-26 17:30', status: '만료' },
+    ],
+
+    /* ── 예측 모델 운영(MLOps) ── */
+    MOCK_PRED_MODELS: [
+      { id: 'pm-1', name: '실거래 이상거래 탐지 모델', task: '이진분류', version: 'v2.3', deployed: '2026-01-15',
+        metricName: 'AUC', baseline: 0.89, current: 0.87, threshold: 0.82, status: '정상',
+        samples: '주 1,842건', owner: '부동산통계처', nextRetrain: '2026-04-15' },
+      { id: 'pm-2', name: '공시가격 변동률 예측 모델', task: '회귀', version: 'v1.8', deployed: '2025-11-02',
+        metricName: 'MAE(%p)', baseline: 0.62, current: 0.94, threshold: 0.90, status: '주의',
+        samples: '월 3,200필지', owner: '부동산평가처', nextRetrain: '재학습 검토 중' },
+    ],
+    MOCK_PRED_TREND: [
+      { month: '2025.10', '실거래 이상거래 탐지 모델': 0.89, '공시가격 변동률 예측 모델': 0.62 },
+      { month: '2025.12', '실거래 이상거래 탐지 모델': 0.89, '공시가격 변동률 예측 모델': 0.71 },
+      { month: '2026.02', '실거래 이상거래 탐지 모델': 0.88, '공시가격 변동률 예측 모델': 0.85 },
+      { month: '2026.03', '실거래 이상거래 탐지 모델': 0.87, '공시가격 변동률 예측 모델': 0.94 },
+    ],
+    MOCK_PRED_DRIFT: [
+      { feature: '거래 유형 구성비', psi: 0.31, level: '주의', note: '직거래·법인 매수 비중 증가로 분포 이동' },
+      { feature: '지역별 거래량 분포', psi: 0.24, level: '주의', note: '수도권 외곽 거래 감소 · 학습 시점과 상이' },
+      { feature: '신고 지연일수', psi: 0.09, level: '정상', note: '유의미한 변화 없음' },
+      { feature: '토지 이용 상황', psi: 0.06, level: '정상', note: '유의미한 변화 없음' },
+    ],
+    MOCK_RETRAIN_RUNS: [
+      { id: 'rt-1', model: '공시가격 변동률 예측 모델', trigger: '성능 임계 초과', started: '2026-03-28 02:00',
+        champion: 0.94, challenger: 0.68, verdict: '승격 대기', note: '검증셋 개선 확인. 공시 산정에 직접 쓰이므로 담당 평가사 검토 후 배포' },
+      { id: 'rt-2', model: '실거래 이상거래 탐지 모델', trigger: '정기(분기)', started: '2026-01-15 02:00',
+        champion: 0.86, challenger: 0.89, verdict: '승격 완료', note: 'v2.3으로 배포됨 · 정밀조사 선별 정확도 개선' },
+    ],
+
+    /* ── 데이터 카탈로그 · 리니지 ── */
+    MOCK_DATA_ASSETS: [
+      { id: 'as-1', name: '공시 조사지침·업무 매뉴얼', source: '문서관리시스템', owner: '부동산공시처', grade: '내부',
+        format: 'PDF·HWP', volume: '문서 1,240건', cycle: '연 1회 개정', freshness: '2일 전', quality: 94, standardized: 100,
+        tags: ['RAG 대상', '규정'], consumers: ['지식 검색', '내규 조회', '문서 검토'] },
+      { id: 'as-2', name: '실거래 신고 자료(RTMS)', source: 'RTMS 연계 DB', owner: '부동산통계처', grade: '대외비',
+        format: '관계형 테이블', volume: '주 1,842행', cycle: '일 1회', freshness: '6시간 전', quality: 91, standardized: 82,
+        tags: ['TAG 대상', '이상탐지'], consumers: ['부동산 대장 조회', '공정 데이터 분석', '보고서 작성'] },
+      { id: 'as-3', name: '표준지 조사표·현장 사진', source: '조사자 업로드', owner: '부동산평가처', grade: '내부',
+        format: '이미지·조사표', volume: '연 58,000건', cycle: '연 1회 집중', freshness: '1일 전', quality: 76, standardized: 51,
+        tags: ['OCR 대상'], consumers: ['문서 인식(OCR)', '주소 표준화'] },
+      { id: 'as-4', name: '공시가격 산정 이력', source: '공시 산정 시스템', owner: '부동산공시처', grade: '기밀',
+        format: '관계형 테이블', volume: '연 3,200만 필지', cycle: '연 1회 확정', freshness: '공표 전', quality: 97, standardized: 96,
+        tags: ['TAG 대상', '공표 전 통제'], consumers: ['부동산 대장 조회(권한 제한)'] },
+    ],
+    MOCK_DATA_LINEAGE: {
+      'as-1': { upstream: [{ name: '국토교통부 지침 원본', type: '문서' }, { name: '개정 이력 대장', type: '문서' }],
+        stages: [{ name: '수집', desc: '문서관리시스템 연동 수집', tool: '커넥터' },
+                 { name: '청킹', desc: '조항 단위 분할(512토큰)', tool: 'RAG 파이프라인' },
+                 { name: '임베딩', desc: '벡터 생성·색인', tool: '임베딩 엔진' }],
+        downstream: [{ name: '지식 검색 에이전트', type: '에이전트' }, { name: '내규 조회 에이전트', type: '에이전트' }] },
+      'as-2': { upstream: [{ name: '시군구 신고 접수', type: '외부 시스템' }, { name: '등기 전산자료', type: 'DB' }],
+        stages: [{ name: '연계 수집', desc: '일 1회 RTMS 배치 연계', tool: 'ETL' },
+                 { name: '주소 표준화', desc: 'PNU·법정동 코드 정규화', tool: '기준정보 사전' },
+                 { name: '이상 점수 산출', desc: '괴리율·패턴 피처 생성', tool: '이상탐지 모델' },
+                 { name: '적재', desc: '분석 DB 적재', tool: '분석 DB' }],
+        downstream: [{ name: '부동산 대장 조회', type: '에이전트' }, { name: '이상거래 검증 시나리오', type: '오케스트레이션' }] },
+      'as-3': { upstream: [{ name: '현장 촬영 원본', type: '이미지' }, { name: '수기 조사표', type: '문서' }],
+        stages: [{ name: '전처리', desc: '기울기·노이즈 보정', tool: '이미지 전처리' },
+                 { name: 'OCR', desc: '조사표 항목·표 인식', tool: 'Vision OCR' },
+                 { name: '주소 매칭', desc: '지번→PNU 매칭', tool: '주소 표준화' }],
+        downstream: [{ name: '문서 인식(OCR) 에이전트', type: '에이전트' }, { name: '주소 표준화 에이전트', type: '에이전트' }] },
+      'as-4': { upstream: [{ name: '표준지 조사 결과', type: '테이블' }, { name: '시·도 심의 결과', type: '문서' }],
+        stages: [{ name: '산정', desc: '비교표준지 기반 가격 산정', tool: '공시 산정 시스템' },
+                 { name: '검증', desc: '±30% 재심의 기준 자동 점검', tool: '검증 룰' },
+                 { name: '확정', desc: '심의 후 확정·공표 대기', tool: '결재 시스템' }],
+        downstream: [{ name: '부동산 대장 조회(권한 제한)', type: '에이전트' }] },
+    },
+
+    /* ── 지식 증강 전략 (RAG · CAG · TAG) ── */
+    MOCK_AUG_STRATEGIES: [
+      { id: 'rag', name: 'RAG', full: 'Retrieval-Augmented Generation', desc: '벡터 검색으로 근거 조항을 찾아 답변',
+        targets: ['조사지침·업무 매뉴얼', '가격공시법령'], share: 58, avgLatency: 1240, hitRate: 89, costPer1k: '₩24',
+        strength: '지침이 많고 개정이 잦아도 최신 조항으로 대응', caveat: '검색 지연이 있고 조항 청킹 품질에 좌우된다' },
+      { id: 'cag', name: 'CAG', full: 'Cache-Augmented Generation', desc: '자주 참조하는 기준을 캐시에 적재해 검색 없이 답변',
+        targets: ['공시기준일·이의신청 기간 등 고정 기준'], share: 21, avgLatency: 320, hitRate: 96, costPer1k: '₩11',
+        strength: '"공시기준일은 매년 1월 1일" 같은 답이 항상 동일하게 나온다', caveat: '지침이 개정되면 재적재해야 한다' },
+      { id: 'tag', name: 'TAG', full: 'Table-Augmented Generation', desc: '자연어를 SQL로 변환해 실거래·공시 데이터를 집계',
+        targets: ['실거래 신고 자료', '공시가격 산정 이력'], share: 21, avgLatency: 910, hitRate: 90, costPer1k: '₩18',
+        strength: '"강남구 3월 거래량" 같은 수치는 검색이 아니라 집계해야 정확', caveat: 'PNU·법정동 코드가 표준화돼 있어야 한다' },
+    ],
+    MOCK_AUG_ROUTES: [
+      { id: 'rt-1', order: 1, when: '거래량·변동률·괴리율 등 수치 질의', keywords: '건수, 변동률, 괴리율, 추이, 대비', strategy: 'TAG', hits: 1620, enabled: true },
+      { id: 'rt-2', order: 2, when: '고정 기준·기한 조회', keywords: '공시기준일, 이의신청 기간, 열람 기간, 제출 기한', strategy: 'CAG', hits: 1480, enabled: true },
+      { id: 'rt-3', order: 3, when: '그 외 지침·법령 근거가 필요한 질의', keywords: '(기본 경로)', strategy: 'RAG', hits: 4280, enabled: true },
+    ],
+    MOCK_CAG_CACHE: [
+      { id: 'cc-1', name: '공시 업무 고정 기준 요약', tokens: '38K', loaded: '2026-03-28 02:10', sourceRev: 'v4 (2026-03-27)', status: '최신', hits: 1240 },
+      { id: 'cc-2', name: '이의신청 처리 절차', tokens: '24K', loaded: '2026-03-15 02:10', sourceRev: 'v2 (2026-03-14)', status: '최신', hits: 580 },
+      { id: 'cc-3', name: '현장조사 12개 확인 항목', tokens: '18K', loaded: '2026-02-20 02:10', sourceRev: 'v7 (2026-03-25)', status: '재적재 필요', hits: 410 },
+    ],
+
+    /* ── 중대재해처벌법 대응 (공공기관도 적용 대상 — 현장조사 업무가 핵심 위험) ── */
+    MOCK_SAFETY_DUTIES: [
+      { id: 'sd-1', clause: '제1호', name: '안전보건 목표·경영방침 설정', status: '이행', evidence: '2026년 안전보건 경영방침 공표', last: '2026-01-05', owner: '경영지원처', auto: false },
+      { id: 'sd-2', clause: '제2호', name: '안전보건 전담 조직 구성', status: '이행', evidence: '안전보건 전담 조직 지정서', last: '2026-01-10', owner: '경영지원처', auto: false },
+      { id: 'sd-3', clause: '제3호', name: '유해·위험요인 확인·개선 절차', status: '이행', evidence: '현장조사 위험성평가 이력 (플랫폼 자동 축적)', last: '2026-03-28', owner: '부동산평가처', auto: true },
+      { id: 'sd-4', clause: '제4호', name: '재해예방 예산 편성·집행', status: '이행', evidence: '2026년 안전 예산 집행 내역', last: '2026-03-20', owner: '경영지원처', auto: false },
+      { id: 'sd-5', clause: '제5호', name: '안전보건관리책임자 업무 수행 평가', status: '미이행', evidence: '반기 평가 미실시', last: '2025-12-30', owner: '경영지원처', auto: false },
+      { id: 'sd-6', clause: '제6호', name: '안전 담당 인력 배치', status: '이행', evidence: '조사 권역별 안전 담당 지정', last: '2026-02-14', owner: '경영지원처', auto: false },
+      { id: 'sd-7', clause: '제7호', name: '종사자 의견 청취 절차', status: '이행', evidence: '현장조사자 의견청취 결과 (플랫폼 자동 축적)', last: '2026-03-25', owner: '부동산평가처', auto: true },
+      { id: 'sd-8', clause: '제8호', name: '중대재해 대응 매뉴얼 마련', status: '이행', evidence: '현장조사 비상대응 매뉴얼 v3', last: '2026-02-01', owner: '경영지원처', auto: false },
+      { id: 'sd-9', clause: '제9호', name: '도급·위탁 시 안전 확보 기준', status: '주의', evidence: '위탁 감정평가법인 4개사 중 1개사 평가 미실시', last: '2026-03-10', owner: '부동산평가처', auto: false },
+    ],
+    MOCK_SAFETY_RISK_LOG: [
+      { id: 'sr-1', task: '표준지 현장실사 (도심 상업지역)', doc: 'KREA-부동산평가처-2026-041', assessed: '2026-03-28', by: '김민준', risks: 6, actions: 6, status: '조치 완료' },
+      { id: 'sr-2', task: '표준지 현장실사 (산지·경사지)', doc: 'KREA-부동산평가처-2026-039', assessed: '2026-03-21', by: '박지현', risks: 7, actions: 5, status: '조치 중' },
+      { id: 'sr-3', task: '노후 건축물 외관 조사', doc: 'KREA-부동산평가처-2026-034', assessed: '2026-03-14', by: '김민준', risks: 5, actions: 5, status: '조치 완료' },
+      { id: 'sr-4', task: '동절기 현장조사 (한파 대비)', doc: 'KREA-부동산평가처-2026-028', assessed: '2026-02-20', by: '이상호', risks: 4, actions: 4, status: '조치 완료' },
+    ],
+    MOCK_SAFETY_TRAINING: [
+      { id: 'st-1', name: '현장조사 안전 교육 (정기)', target: '조사 담당 직원', done: 128, total: 128, date: '2026-03-05', status: '완료' },
+      { id: 'st-2', name: '교통안전·차량 운행 교육', target: '출장 차량 운행자', done: 96, total: 96, date: '2026-02-18', status: '완료' },
+      { id: 'st-3', name: '위탁 조사기관 안전 교육', target: '감정평가법인 조사자', done: 38, total: 52, date: '2026-03-22', status: '진행 중' },
+      { id: 'st-4', name: '폭염·한파 대응 특별교육', target: '하계·동계 조사 인력', done: 74, total: 128, date: '2026-03-27', status: '진행 중' },
+    ],
+
+    /* ── 답변 재현성 (이의신청 대응·감사 대비 5년 보존) ── */
+    MOCK_REPRO_SNAPSHOTS: [
+      { id: 'sn-1', at: '2026-03-31 14:22', question: '표준지 공시기준일이 언제인가요?',
+        strategy: 'CAG', model: 'Llama-3-Korean 70B', modelVer: 'v1.4', kbRev: 'kb-2026.03.27',
+        promptVer: 'p-2.1', temp: 0.2, guardrailVer: 'g-1.8', confidence: 96,
+        sources: [{ name: '공시 업무 고정 기준 요약', rev: 'v4 (2026-03-27)' }],
+        reproducible: true, drift: [] },
+      { id: 'sn-2', at: '2026-03-24 10:05', question: '3월 강남구 실거래 신고 건수와 괴리율 알려줘',
+        strategy: 'TAG', model: 'Llama-3-Korean 70B', modelVer: 'v1.4', kbRev: 'kb-2026.03.20',
+        promptVer: 'p-2.1', temp: 0.1, guardrailVer: 'g-1.8', confidence: 91,
+        sources: [{ name: '실거래 신고 자료(RTMS)', rev: '2026-03-24 집계' }],
+        reproducible: false, drift: ['RTMS 신고 정정분이 반영되어 3월 집계가 재마감됨 (1,842 → 1,851건)'] },
+      { id: 'sn-3', at: '2026-03-18 16:40', question: '이의신청 처리 기한과 절차가 어떻게 되나요?',
+        strategy: 'RAG', model: 'Llama-3-Korean 70B', modelVer: 'v1.4', kbRev: 'kb-2026.03.14',
+        promptVer: 'p-2.0', temp: 0.2, guardrailVer: 'g-1.7', confidence: 94,
+        sources: [{ name: '이의신청 처리 절차', rev: 'v2 (2026-03-14)' }],
+        reproducible: false, drift: ['프롬프트 개정 p-2.0 → p-2.1', '가드레일 g-1.7 → g-1.8 (법령 인용 시 조항 명시 강제)'] },
+      { id: 'sn-4', at: '2026-02-27 09:18', question: '현장실사 시 의무 확인 항목이 몇 개인가요?',
+        strategy: 'RAG', model: 'Llama-3-Korean 70B', modelVer: 'v1.3', kbRev: 'kb-2026.02.20',
+        promptVer: 'p-2.0', temp: 0.2, guardrailVer: 'g-1.7', confidence: 89,
+        sources: [{ name: '현장조사 12개 확인 항목', rev: 'v6 (2026-02-14)' }],
+        reproducible: false, drift: ['모델 교체 v1.3 → v1.4', '지침 개정으로 근거 문서가 v6 → v7로 갱신됨'] },
+    ],
+    MOCK_REPRO_POLICY: {
+      retentionYears: 5,
+      captured: '질의·답변·근거 문서 개정본·모델/프롬프트/가드레일 버전·파라미터',
+      excluded: '보안 세션(SECURE) 질의 — 무저장 원칙에 따라 스냅샷 대상 아님',
+      items: ['질의 원문', '답변 전문', '증강 전략(RAG/CAG/TAG)', '모델·버전', '지식베이스 리비전', '근거 문서 개정본', '프롬프트 버전', 'temperature', '가드레일 버전', '응답 신뢰도'],
+    },
+  },
 };
 
 export default reb;
