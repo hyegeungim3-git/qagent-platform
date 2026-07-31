@@ -54,4 +54,5 @@
 - **sampleAnswers 순서 = 우선순위**: `find` 첫 매칭이 이긴다. 광범위 키워드('프레스', '보고서') 항목보다 구체 항목을 앞에. 새 제안 카드 질의를 만들면 mapIntel metricKeywords와 충돌하는지 먼저 확인(지도 매칭이 sampleAnswers보다 우선).
 - **금칙어 스캔은 DOM에서**: 소스 grep만으로는 코어 하드코딩 누수를 못 잡는다(과거 MCP 서버 페이지 api.reb.or.kr 누수는 DOM 스캔에서만 발견). verify.mjs 또는 QUALITY-CHECKLIST B-2 절차로.
 - 검수 오탐 이력: SelfCheckModal·buildRawText·SummaryAgent 비교테이블은 정상 동작이다 — "죽은 코드"로 보고하지 말 것 (재검증 완료된 사안).
+- **죽은 버튼은 두 종류다**: ①`onClick` 자체가 없는 무동작 ②핸들러는 있는데 안에서 터지는 크래시. 정적 스캔(`<button>`에 onClick 유무)은 ①만 잡는다. 실제 사고: 관리자 9개 컴포넌트가 `const { setToast } = useToast()`로 구조분해했는데 **useToast()는 함수(addToast)를 반환** → 41개 지점이 클릭 즉시 `TypeError: setToast is not a function`. 판정법: 훅/컨텍스트의 **provider value 타입을 먼저 확인**하고, 의심 지점은 브라우저에서 `window.addEventListener('error', …)` 걸고 클릭할 것(React가 에러를 비동기로 다시 던져 try/catch로는 안 잡힌다). 토스트처럼 3초 후 사라지는 UI는 MutationObserver로 관측.
 - 세계관 수치는 발명 전에 grep: 같은 사건의 숫자(신고 47건, RMS 4.2mm/s, 1,842건)가 팩 안 여러 필드에 흩어져 있다. 한 곳만 고치면 데모에서 모순이 노출된다.
