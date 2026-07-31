@@ -28,6 +28,8 @@ import RightPanel from "./user/components/layout/RightPanel.jsx";
 import AgentBuilderModal from "./user/components/modals/AgentBuilderModal.jsx";
 import SatisfactionModal from "./user/components/modals/SatisfactionModal.jsx";
 import TutorialModal from "./user/components/modals/TutorialModal.jsx";
+import ShiftHandoverModal from "./user/components/ShiftHandoverModal.jsx";
+import { buildDraft, readIncoming } from "./user/shiftHandover.js";
 import ErrorReportModal from "./user/components/modals/ErrorReportModal.jsx";
 import QnaModal from "./user/components/modals/QnaModal.jsx";
 import DocPreviewModal from "./user/components/modals/DocPreviewModal.jsx";
@@ -142,6 +144,8 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
   const [satComment, setSatComment] = useState('');
   // 튜토리얼
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showHandover, setShowHandover] = useState(false);
+  const [handoverTick, setHandoverTick] = useState(0); // 인수인계 확정 후 카드 갱신용
   // 오류 신고
   const [showErrReport, setShowErrReport] = useState(false);
   const [errReportMsgId, setErrReportMsgId] = useState(null);
@@ -439,6 +443,20 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
     [liveNotifs, domain.notifications]
   );
 
+  /* 교대 인수인계 카드 — 팩이 shiftHandover를 주지 않으면 null(카드 비노출).
+     handoverTick은 확정 저장 후 '받은 인수인계' 건수를 다시 읽기 위한 것. */
+  const handoverCard = useMemo(() => {
+    if (!domain.shiftHandover) return null;
+    const draft = buildDraft(domain, { notifications: NOTIFS });
+    const incoming = readIncoming(domain);
+    return {
+      shiftLabel: draft?.shiftLabel || "",
+      shiftTime: draft?.shiftTime || "",
+      draftCount: draft?.items?.length || 0,
+      incomingCount: incoming?.items?.length || 0,
+    };
+  }, [domain, NOTIFS, handoverTick]);
+
   // 데스크톱→모바일 뷰포트 전환 시 열려 있던 사이드바·우측 패널이 오버레이로 겹쳐 뜨는 것 방지
   // (matchMedia change와 resize를 병행 — 에뮬레이션 환경에서 change 미발화 대비)
   useEffect(() => {
@@ -613,6 +631,7 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
               briefingItems={NOTIFS}
               onNavigateAgent={(agentId) => { setChatTab("AGENT"); setActiveAgentId(agentId); }}
               liveCfg={liveCfg} liveState={liveState} liveSpeed={liveSpeed} setLiveSpeed={setLiveSpeed}
+              handover={handoverCard} onOpenHandover={() => setShowHandover(true)} domainColor={domain.brandColor}
               L={L}
             />
           )}
@@ -698,6 +717,16 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
           satRating={satRating} setSatRating={setSatRating}
           satComment={satComment} setSatComment={setSatComment}
           onClose={() => setShowSatisfaction(false)} setToast={setToast}
+        />
+      )}
+      {showHandover && domain.shiftHandover && (
+        <ShiftHandoverModal
+          domain={domain}
+          incoming={readIncoming(domain)}
+          draft={buildDraft(domain, { notifications: NOTIFS })}
+          userName={USER_INFO?.name}
+          onClose={() => setShowHandover(false)}
+          onSaved={() => { setHandoverTick(t => t + 1); setToast({ message: "인수인계를 확정했습니다. 다음 조가 이어받습니다." }); }}
         />
       )}
       {showTutorial && <TutorialModal onClose={() => setShowTutorial(false)} />}

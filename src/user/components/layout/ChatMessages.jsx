@@ -4,7 +4,7 @@ import {
   FileCheck, Languages, FileText, Search, Sparkles, Clock, Star,
   Shield, User, CheckCircle2, AlertTriangle, Copy, ThumbsUp, ThumbsDown,
   BookOpen, ExternalLink, Paperclip, Eye, FileDown, Loader2, Briefcase,
-  Bell, ChevronRight,
+  Bell, ChevronRight, ArrowRightLeft,
 } from "lucide-react";
 import { cn, SecurityBadge } from "../../utils.jsx";
 import { SECURE_SUGGESTIONS as BASE_SECURE_SUGGESTIONS } from "../../data/constants.js";
@@ -30,6 +30,7 @@ const ChatMessages = ({
   onErrReport, onDocPreview, onFeedback,
   briefingItems = [], onNavigateAgent,
   liveCfg = null, liveState = null, liveSpeed = 1, setLiveSpeed,
+  handover = null, onOpenHandover, domainColor = '#334155',
   L = { suggested: "추천 질문", recent: "최근 대화", briefing: "오늘의 업무 브리핑", pending: (n) => `처리 대기 ${n}건` },
 }) => {
   const ModeIcon = mc.icon;
@@ -200,6 +201,40 @@ const ChatMessages = ({
                       ))}
                     </div>
                   </div>
+                )}
+                {/* ── 교대 인수인계 (팩 shiftHandover 공급 시) ── */}
+                {mode === "GENERAL" && handover && (
+                  <button onClick={onOpenHandover}
+                    className="w-full max-w-2xl mb-4 rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all text-left overflow-hidden group">
+                    <div className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-100 flex items-center gap-2">
+                      <ArrowRightLeft className="w-3.5 h-3.5" style={{ color: domainColor }} />
+                      <span className="text-[12px] font-black text-slate-800">교대 인수인계</span>
+                      <span className="ml-auto text-[10px] font-bold text-slate-400">
+                        {handover.shiftLabel}{handover.shiftTime ? ` · ${handover.shiftTime}` : ""}
+                      </span>
+                    </div>
+                    <div className="px-4 py-3 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        {handover.incomingCount > 0 ? (
+                          <p className="text-[12px] text-slate-700 font-medium">
+                            직전 조에서 <b>{handover.incomingCount}건</b>이 넘어왔습니다
+                            {handover.draftCount > 0 && <> · 이번 조 초안 <b>{handover.draftCount}건</b> 준비됨</>}
+                          </p>
+                        ) : (
+                          <p className="text-[12px] text-slate-700 font-medium">
+                            이번 조 인수인계 초안 <b>{handover.draftCount}건</b>이 준비됐습니다
+                          </p>
+                        )}
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          알람·조치·미결을 자동으로 모아 다음 조에 넘깁니다
+                        </p>
+                      </div>
+                      <span className="flex items-center gap-0.5 text-[11px] font-black shrink-0 group-hover:gap-1.5 transition-all"
+                        style={{ color: domainColor }}>
+                        열기 <ChevronRight className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                  </button>
                 )}
                 {/* TRANSLATE 모드 전용: 언어 선택 + 요약 길이 */}
                 {mode === "TRANSLATE" && (
