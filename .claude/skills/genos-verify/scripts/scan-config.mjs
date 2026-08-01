@@ -5,6 +5,8 @@
  *    (src/domains/index.js 등록과 나란히 — 빠뜨리면 새 도메인이 검증에서 조용히 빠진다)
  */
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 /* 도메인별 판정 기준
  *  banned      : 얕은 스캔(verify)용 금칙어 — 타 도메인 조직명·문서번호 접두
@@ -104,6 +106,21 @@ export const AGENT_IDS = [
   "agent-ocr", "agent-dbquery", "agent-address", "agent-dataanalysis", "agent-summary",
   "agent-translate", "agent-review", "agent-safety",
 ];
+
+/* 관리자 메뉴 전체 목록 — App.jsx의 라우팅 맵을 그대로 읽는다.
+   여기에 목록을 하드코딩하면 메뉴가 늘어날 때 조용히 스캔에서 빠지므로
+   소스를 정본으로 삼는다(등록 지점이 둘로 갈라지는 것을 막는다). */
+export function adminMenus() {
+  try {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const app = path.resolve(here, "../../../../src/App.jsx");
+    const s = fs.readFileSync(app, "utf8");
+    const m = s.match(/'([a-z0-9.]+)':\s*<[A-Za-z]/g) || [];
+    return [...new Set(m.map(x => x.match(/'([^']+)'/)[1]))];
+  } catch {
+    return [];
+  }
+}
 
 export function findChrome() {
   const cands = [

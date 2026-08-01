@@ -83,7 +83,7 @@ export const KnowledgeManagementPage = () => {
       showToast('문서 파싱 완료 — 레이아웃 요소 구조화됨','success');
     },3200);
   };
-  const {showToast}=useToast();
+  const showToast=useToast();   // useToast()는 addToast '함수'를 반환한다 — 구조분해하면 undefined가 되어 클릭 시 크래시
   const rootFlds=flds.filter(f=>!f.parent);
   const getKids=id=>flds.filter(f=>f.parent===id);
   const selDocs=(docs[sel?.id]||[]);
