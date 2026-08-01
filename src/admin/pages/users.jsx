@@ -409,7 +409,9 @@ export const WorkLogPage = () => {
   const hitText = l => { const s = q.trim(); return !s || [l.user,l.dept,l.ip,l.detail,l.target,l.action,l.file].some(v => v && String(v).includes(s)); };
   const pick = arr => arr.filter(l => inRange(l) && hitText(l));
   const TABS = [{id:'access',label:'🔑 접속 로그'},{id:'work',label:'⚙️ 작업 로그'},{id:'query',label:'💬 질의 이력'},{id:'extract',label:'📥 추출·출력 로그'}];
-  const LogTable = ({cols,rows}) => (
+  /* ⚠ <LogTable/>로 렌더하면 매 렌더마다 새 타입이 되어 검색 input이 리마운트된다
+     (한 글자만 입력되는 증상). 함수 호출 {logTable(...)}로 쓸 것. */
+  const logTable = ({cols,rows}) => (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-1 min-w-0"><Search className="w-4 h-4 text-gray-400 shrink-0"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="사용자·IP·내용 검색..." className="flex-1 text-[13px] outline-none font-medium text-gray-700 placeholder:text-gray-400"/></div>
@@ -434,8 +436,8 @@ export const WorkLogPage = () => {
       <div className="flex gap-0.5 mb-6 border-b border-gray-200 -mx-6 px-6">
         {TABS.map(t=><button key={t.id} onClick={()=>setTab(t.id)} className={`px-4 py-2.5 text-[13px] font-bold border-b-2 whitespace-nowrap transition-colors ${tab===t.id?'border-blue-600 text-blue-700 bg-blue-50/60':'border-transparent text-gray-500 hover:text-gray-700'}`}>{t.label}</button>)}
       </div>
-      {tab==='access' && <LogTable cols={['일시','사용자','부서','IP','행위','상세']} rows={accessRows}/>}
-      {tab==='work' && <LogTable cols={['일시','사용자','부서','IP','행위 유형','대상','상세']} rows={workRows}/>}
+      {tab==='access' && logTable({cols:['일시','사용자','부서','IP','행위','상세'], rows:accessRows})}
+      {tab==='work' && logTable({cols:['일시','사용자','부서','IP','행위 유형','대상','상세'], rows:workRows})}
       {tab==='query' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-3 flex-wrap">
@@ -462,7 +464,7 @@ export const WorkLogPage = () => {
           </table>
         </div>
       )}
-      {tab==='extract' && <LogTable cols={['일시','사용자','부서','추출 유형','파일명','크기','레코드 수']} rows={extractRows}/>}
+      {tab==='extract' && logTable({cols:['일시','사용자','부서','추출 유형','파일명','크기','레코드 수'], rows:extractRows})}
     </PageShell>
   );
 };

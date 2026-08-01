@@ -381,13 +381,17 @@ const UserApp = ({ onSwitchToAdmin, onExitPortal, domain, initialTab, initialAge
         const idx = messages.findIndex(m => m.id === msg.id);
         let query = "";
         for (let i = idx - 1; i >= 0; i--) if (messages[i].role === "user") { query = messages[i].content; break; }
-        arr.unshift({
-          id: `UF-${Date.now()}`, query, answer: (msg.content || "").slice(0, 120),
+        /* 한 답변에 대한 평가는 하나만 남긴다 — 평가를 바꾸면 이전 것을 대체.
+           그러지 않으면 마음을 바꾼 사용자 한 명이 '정확 1건 + 할루시네이션 1건'으로
+           양쪽에 계상돼 관리자 품질 지표가 부풀려진다. */
+        const rest = arr.filter(f => f.msgId !== msg.id);
+        rest.unshift({
+          id: `UF-${msg.id}`, msgId: msg.id, query, answer: (msg.content || "").slice(0, 120),
           rating, reason: reason || "",
           confidence: typeof msg.confidence === "number" ? msg.confidence / 100 : null,
           date: new Date().toISOString().slice(0, 10),
         });
-        localStorage.setItem(key, JSON.stringify(arr.slice(0, 30)));
+        localStorage.setItem(key, JSON.stringify(rest.slice(0, 30)));
       } catch { /* 저장 실패는 데모 흐름에 영향 없음 */ }
     }
     if (chatTab !== "SECURE") logAudit({ type: "feedback", summary: `${rating === "good" ? "도움됨" : "도움 안 됨"}${reason ? ` · ${reason}` : ""}` });

@@ -126,6 +126,7 @@ const InternalRegAgent = ({ onBack, domain }) => {
   const [apvMsg, setApvMsg]           = useState('검토 요청드립니다.');
   const [copied, setCopied]           = useState(false);
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);   // 추천 질의 클릭 시 입력창으로 포커스를 옮겨 '반영됐다'는 피드백을 준다
 
   useEffect(() => {
     if (step === 3) bottomRef.current?.scrollIntoView({behavior:'smooth'});
@@ -215,7 +216,10 @@ const InternalRegAgent = ({ onBack, domain }) => {
   );
 
   /* ── 공통 하단 입력창 ── */
-  const InputBar = ({disabled=false}) => (
+  /* ⚠ 컴포넌트로 렌더(<InputBar/>)하면 안 된다 — 부모 안에서 정의된 함수라
+     매 렌더마다 새 타입이 되어 textarea가 리마운트되고 포커스가 날아간다
+     (첫 글자만 입력되는 증상). 반드시 {inputBar(...)}처럼 함수로 호출할 것. */
+  const inputBar = ({disabled=false}={}) => (
     <div className="shrink-0 bg-white border-t border-slate-100 px-4 py-3 space-y-2.5">
       {/* 범주 + 조회 방식 */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -244,6 +248,7 @@ const InternalRegAgent = ({ onBack, domain }) => {
       {/* 텍스트 입력 */}
       <div className="flex gap-2 items-end">
         <textarea
+          ref={inputRef}
           value={query}
           onChange={e=>setQuery(e.target.value)}
           onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSend();}}}
@@ -280,7 +285,7 @@ const InternalRegAgent = ({ onBack, domain }) => {
         <div className="w-full max-w-md space-y-2">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider text-center mb-3">자주 묻는 질문</div>
           {C.suggestions.map(s => (
-            <button key={s} onClick={()=>setQuery(s)} className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-medium text-slate-600 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50 transition-all shadow-sm text-left">
+            <button key={s} onClick={()=>{setQuery(s); inputRef.current?.focus();}} className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-xl text-[13px] font-medium text-slate-600 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50 transition-all shadow-sm text-left">
               <Sparkles className="w-3.5 h-3.5 text-blue-400 shrink-0"/>
               {s}
               <ChevronRight className="w-3.5 h-3.5 text-slate-300 ml-auto shrink-0"/>
@@ -288,7 +293,7 @@ const InternalRegAgent = ({ onBack, domain }) => {
           ))}
         </div>
       </div>
-      <InputBar/>
+      {inputBar()}
     </div>
   );
 
@@ -363,7 +368,7 @@ const InternalRegAgent = ({ onBack, domain }) => {
               </div>
             </div>
           </div>
-          <InputBar disabled={true}/>
+          {inputBar({disabled:true})}
         </div>
         {/* 오른쪽: 워크플로우 패널 */}
         <div className="hidden lg:flex w-72 shrink-0 border-l border-slate-100 bg-gradient-to-b from-slate-50 to-white p-4 overflow-y-auto flex-col">
@@ -566,7 +571,7 @@ const InternalRegAgent = ({ onBack, domain }) => {
       </div>
 
       {/* 하단 입력창 (추가 질의) */}
-      <InputBar/>
+      {inputBar()}
     </div>
   );
 };

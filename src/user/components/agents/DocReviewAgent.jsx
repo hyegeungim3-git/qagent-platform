@@ -447,8 +447,10 @@ const DocReviewAgent=({onBack,domain})=>{
             <div className="bg-white px-10 py-8 space-y-7">
               {/* compliance gauge */}
               {(()=>{
-                const R=38,C=2*Math.PI*R;
-                const offset=C*(1-compScore/100);
+                /* ⚠ 둘레 변수를 C로 두면 콘텐츠 객체 C를 가려서, 아래 C.violations가
+                   숫자의 속성이 되어 화면 전체가 흰 화면으로 죽는다(실제로 겪음). CIRC로 분리한다. */
+                const R=38,CIRC=2*Math.PI*R;
+                const offset=CIRC*(1-compScore/100);
                 const gc=compScore>=80?'#10b981':compScore>=60?'#f59e0b':'#ef4444';
                 const gtc=compScore>=80?'text-emerald-600':compScore>=60?'text-amber-600':'text-red-600';
                 const glabel=compScore>=80?'양호':compScore>=60?'개선 필요':'위험';
@@ -458,7 +460,7 @@ const DocReviewAgent=({onBack,domain})=>{
                       <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                         <circle cx="50" cy="50" r={R} fill="none" stroke="#e2e8f0" strokeWidth="10"/>
                         <circle cx="50" cy="50" r={R} fill="none" stroke={gc} strokeWidth="10"
-                          strokeDasharray={`${C}`} strokeDashoffset={`${offset}`} strokeLinecap="round"/>
+                          strokeDasharray={`${CIRC}`} strokeDashoffset={`${offset}`} strokeLinecap="round"/>
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
                         <div className={cn('text-[20px] font-black leading-none',gtc)}>{compScore}%</div>
