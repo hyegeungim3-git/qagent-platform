@@ -24,6 +24,7 @@
  */
 import puppeteer from "puppeteer-core";
 import { ADMIN_PAGES, ADMIN_BANNED, adminMenus, findChrome, sleep, RESET_STORAGE } from "./scan-config.mjs";
+import { sweepScreen, preparePage } from "./sweep.mjs";
 
 const ARGS = process.argv.slice(2).filter(a => !a.startsWith("--"));
 const FLAGS = process.argv.slice(2).filter(a => a.startsWith("--"));
@@ -102,14 +103,7 @@ if (!SKIP_CLICK) {
   const menus = adminMenus();
   const page = await browser.newPage();
   await page.setViewport({ width: 1440, height: 900 });
-  const errs = [];
-  page.on("pageerror", e => errs.push(String(e.message || e)));
-  page.on("console", m => {
-    if (m.type() !== "error") return;
-    const t = m.text();
-    // 리소스 404 등 잡음은 제외하고 '핸들러가 죽은' 신호만 본다
-    if (/TypeError|is not a function|undefined|Cannot read/.test(t)) errs.push("console: " + t.slice(0, 160));
-  });
+  const errs = await preparePage(page);
 
   await page.goto(BASE, { waitUntil: "networkidle2" });
   await page.evaluate(RESET_STORAGE);
@@ -117,61 +111,9 @@ if (!SKIP_CLICK) {
 
   let clicked = 0;
   for (const menu of menus) {
-    const url = `${BASE}/#/${CLICK_DOMAIN}/admin/${menu}`;
-    await page.goto(url, { waitUntil: "networkidle2" });
-    await page.evaluate(RESET_STORAGE);
-    await sleep(450);
-    const seen = [];
-    let reloadedOnce = false;   // 탭 전환으로 가려진 버튼을 되살리기 위한 1회 재적재
-    // 탭 전환으로 새 버튼이 드러나므로 매번 다시 훑는다. 상한은 폭주 방지용.
-    for (let i = 0; i < 120; i++) {
-      const before = errs.length;
-      const label = await page.evaluate((seenArr) => {
-        const skip = /포털 선택|사용자 포털|로그아웃/;
-        const btns = [...document.querySelectorAll("main button")]
-          .filter(b => b.offsetParent !== null && !b.disabled);
-        for (const b of btns) {
-          const key = ((b.getAttribute("aria-label") || "") + "|" + b.innerText.replace(/\s+/g, " ").trim()).slice(0, 60);
-          if (seenArr.includes(key)) continue;
-          if (skip.test(key)) { seenArr.push(key); continue; }
-          b.click();
-          return key;
-        }
-        return null;
-      }, seen);
-      /* 현재 DOM에 안 눌러 본 버튼이 없다고 끝내면 안 된다.
-         탭을 전환한 상태라 이전 탭에만 있던 버튼이 화면에서 사라졌을 뿐일 수 있다
-         (이 함정 때문에 처음엔 545개를 눌러 놓고도 크래시를 못 잡았다).
-         한 번 새로 적재해 기본 탭으로 되돌린 뒤 남은 버튼을 마저 누른다. */
-      if (!label) {
-        if (reloadedOnce) break;
-        reloadedOnce = true;
-        await page.goto(url, { waitUntil: "networkidle2" });
-        await sleep(400);
-        continue;
-      }
-      reloadedOnce = false;
-      seen.push(label);
-      clicked++;
-      await sleep(230);
-
-      const state = await page.evaluate(() => {
-        const m = document.querySelector("main");
-        return { len: m ? m.innerText.trim().length : 0, hash: location.hash };
-      });
-      for (const e of errs.slice(before)) {
-        clickFindings.push(`${menu} · "${label.replace(/^\|/, "")}" → ${e.slice(0, 110)}`);
-      }
-      if (state.len < 80) {
-        clickFindings.push(`${menu} · "${label.replace(/^\|/, "")}" → 화면이 비었음(본문 ${state.len}자)`);
-      }
-      // 모달이 열렸으면 닫고, 다른 화면으로 이동했으면 원래 메뉴로 되돌린다
-      await page.keyboard.press("Escape");
-      if (state.hash !== `#/${CLICK_DOMAIN}/admin/${menu}` || state.len < 80) {
-        await page.goto(url, { waitUntil: "networkidle2" });
-        await sleep(350);
-      }
-    }
+    const r = await sweepScreen(page, `${BASE}/#/${CLICK_DOMAIN}/admin/${menu}`, { label: menu, errs });
+    clicked += r.clicked;
+    clickFindings.push(...r.findings);
     process.stdout.write(".");
   }
   process.stdout.write("\n");
